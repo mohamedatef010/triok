@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Видеомонтаж — Онлайн-уроки"
+description = "Российская платформа онлайн-уроков по видеомонтажу. Студенты могут просматривать первые 20% видео бесплатно, покупать полный доступ через ЮКасса и СБП, оставлять отзывы, добавлять в избранное и корзину. Администратор управляет каталогом через CMS по адресу /admm."
+version = "1.0.0"
+id = "artifacts/video-courses"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25123
+
+[services.development]
+run = "pnpm --filter @workspace/video-courses run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/video-courses", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/video-courses/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25123"
+BASE_PATH = "/"
