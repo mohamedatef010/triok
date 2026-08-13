@@ -31,7 +31,8 @@ export function useFavorites() {
     localStorage.setItem("local_favs", JSON.stringify(localFavs));
   }, [localFavs]);
 
-  const items = isAuthenticated ? (serverFavs || []) : localFavs;
+  const serverFavList = Array.isArray(serverFavs) ? serverFavs : [];
+  const items = isAuthenticated ? serverFavList : localFavs;
 
   const add = async (video: Video) => {
     if (isAuthenticated) {

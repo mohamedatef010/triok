@@ -17,6 +17,8 @@ export interface VideoDetail {
   /** @nullable */
   previewVideoUrl?: string | null;
   /** @nullable */
+  previewDurationSeconds?: number | null;
+  /** @nullable */
   durationSeconds?: number | null;
   price: number;
   /** @nullable */

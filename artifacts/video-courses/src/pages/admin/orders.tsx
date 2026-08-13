@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/table";
 import { LoadingSpinner } from "@/components/ui/states";
 import { Button } from "@/components/ui/button";
+import { useSEO } from "@/hooks/use-seo";
 
 export function AdminOrders() {
+  useSEO({ robots: "noindex, follow" });
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminListOrders({ page, limit: 10 });
 
@@ -27,11 +29,11 @@ export function AdminOrders() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Заказы</h1>
+        <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Заказы</h1>
       </div>
 
-      <div className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm">
-        <Table>
+      <div className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead>ID</TableHead>

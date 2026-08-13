@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Film, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSEO } from "@/hooks/use-seo";
 
 const formSchema = z.object({
   name: z.string().min(2, "Минимум 2 символа"),
@@ -17,6 +18,7 @@ const formSchema = z.object({
 });
 
 export function RegisterPage() {
+  useSEO({ robots: "noindex, follow" });
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const registerMut = useRegister();

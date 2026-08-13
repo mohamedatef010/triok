@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ShoppingCart, Users, Eye } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { LoadingSpinner } from "@/components/ui/states";
+import { useSEO } from "@/hooks/use-seo";
 
 export function AdminDashboard() {
+  useSEO({ robots: "noindex, follow" });
   const { data: stats, isLoading: statsLoading } = useGetAnalyticsOverview();
   const { data: visitorsData, isLoading: visitorsLoading } = useGetDailyVisitors();
   const { data: viewsData, isLoading: viewsLoading } = useGetVideoViewStats();
@@ -13,7 +15,7 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold tracking-tight">Обзор</h1>
+      <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Обзор</h1>
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

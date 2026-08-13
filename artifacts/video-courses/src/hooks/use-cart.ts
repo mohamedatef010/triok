@@ -33,7 +33,9 @@ export function useCart() {
     localStorage.setItem("local_cart", JSON.stringify(localCart));
   }, [localCart]);
 
-  const items = isAuthenticated ? (serverCart?.items || []) : localCart;
+  const serverCartItems = Array.isArray(serverCart?.items) ? serverCart!.items : 
+                          Array.isArray(serverCart) ? (serverCart as any) : [];
+  const items = isAuthenticated ? serverCartItems : localCart;
   const total = isAuthenticated 
     ? (serverCart?.total || 0)
     : localCart.reduce((acc, item) => acc + (item.discountPrice ?? item.price), 0);

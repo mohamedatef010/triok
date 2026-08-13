@@ -2,8 +2,10 @@ import { Link } from "wouter";
 import { useCompareStore } from "@/hooks/use-compare";
 import { Button } from "@/components/ui/button";
 import { Scale, Trash2, ArrowRight, Star, Play } from "lucide-react";
+import { useSEO } from "@/hooks/use-seo";
 
 export function ComparePage() {
+  useSEO({ robots: "noindex, follow" });
   const { videos, removeVideo, clear } = useCompareStore();
 
   if (videos.length === 0) {
@@ -79,10 +81,10 @@ export function ComparePage() {
                   </div>
                   <div className="h-14 flex items-center px-4 rounded-xl bg-muted/30 text-amber-500 gap-1">
                     <Star className="h-4 w-4 fill-current" />
-                    <span className="text-foreground">{video.averageRating.toFixed(1)}</span>
+                    <span className="text-foreground">{video.averageRating ? Number(video.averageRating).toFixed(1) : "0.0"}</span>
                   </div>
                   <div className="h-14 flex items-center px-4 rounded-xl bg-muted/30">
-                    {video.reviewCount}
+                    {video.reviewCount ?? 0}
                   </div>
                   <div className="h-14 flex items-center px-4 rounded-xl bg-muted/30">
                     {video.viewCount}

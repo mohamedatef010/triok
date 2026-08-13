@@ -36,6 +36,7 @@ import type {
   DailyVisitor,
   DiscountInput,
   ErrorResponse,
+  GetVideoManifestParams,
   HealthStatus,
   ListVideosParams,
   LoginInput,
@@ -44,10 +45,12 @@ import type {
   PaymentInitInput,
   PaymentResponse,
   PaymentStatus,
+  PlaybackResponse,
   RegisterInput,
   Review,
   ReviewInput,
   SuccessResponse,
+  UploadUrlResponse,
   User,
   UserUpdate,
   Video,
@@ -1635,6 +1638,314 @@ export function useGetSimilarVideos<TData = Awaited<ReturnType<typeof getSimilar
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetSimilarVideosQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVideoUploadUrlUrl = (id: number,) => {
+
+
+
+
+  return `/api/videos/${id}/upload-url`
+}
+
+/**
+ * @summary Get a presigned S3 upload URL (admin only)
+ */
+export const getVideoUploadUrl = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<UploadUrlResponse> => {
+
+  return customFetch<UploadUrlResponse>(getGetVideoUploadUrlUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVideoUploadUrlMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getVideoUploadUrl>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof getVideoUploadUrl>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['getVideoUploadUrl'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof getVideoUploadUrl>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  getVideoUploadUrl(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GetVideoUploadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof getVideoUploadUrl>>>
+
+    export type GetVideoUploadUrlMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Get a presigned S3 upload URL (admin only)
+ */
+export const useGetVideoUploadUrl = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof getVideoUploadUrl>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof getVideoUploadUrl>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getGetVideoUploadUrlMutationOptions(options));
+    }
+
+export const getProcessVideoUrl = (id: number,) => {
+
+
+
+
+  return `/api/videos/${id}/process`
+}
+
+/**
+ * @summary Start video processing to HLS (admin only)
+ */
+export const processVideo = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<SuccessResponse> => {
+
+  return customFetch<SuccessResponse>(getProcessVideoUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getProcessVideoMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processVideo>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof processVideo>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['processVideo'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof processVideo>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  processVideo(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProcessVideoMutationResult = NonNullable<Awaited<ReturnType<typeof processVideo>>>
+
+    export type ProcessVideoMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Start video processing to HLS (admin only)
+ */
+export const useProcessVideo = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processVideo>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof processVideo>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getProcessVideoMutationOptions(options));
+    }
+
+export const getGetVideoPlaybackUrl = (id: number,) => {
+
+
+
+
+  return `/api/videos/${id}/playback`
+}
+
+/**
+ * @summary Get signed HLS playback URL depending on purchase status
+ */
+export const getVideoPlayback = async (id: number, options?: Parameters<typeof customFetch>[1]): Promise<PlaybackResponse> => {
+
+  return customFetch<PlaybackResponse>(getGetVideoPlaybackUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVideoPlaybackQueryKey = (id: number,) => {
+    return [
+    `/api/videos/${id}/playback`
+    ] as const;
+    }
+
+
+export const getGetVideoPlaybackQueryOptions = <TData = Awaited<ReturnType<typeof getVideoPlayback>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVideoPlayback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVideoPlaybackQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVideoPlayback>>> = ({ signal }) => getVideoPlayback(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVideoPlayback>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVideoPlaybackQueryResult = NonNullable<Awaited<ReturnType<typeof getVideoPlayback>>>
+export type GetVideoPlaybackQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get signed HLS playback URL depending on purchase status
+ */
+
+export function useGetVideoPlayback<TData = Awaited<ReturnType<typeof getVideoPlayback>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVideoPlayback>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVideoPlaybackQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getGetVideoManifestUrl = (id: number,
+    params: GetVideoManifestParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/videos/${id}/manifest?${stringifiedParams}` : `/api/videos/${id}/manifest`
+}
+
+/**
+ * @summary Get HLS manifest with presigned S3 segment URLs
+ */
+export const getVideoManifest = async (id: number,
+    params: GetVideoManifestParams, options?: Parameters<typeof customFetch>[1]): Promise<string> => {
+
+  return customFetch<string>(getGetVideoManifestUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetVideoManifestQueryKey = (id: number,
+    params?: GetVideoManifestParams,) => {
+    return [
+    `/api/videos/${id}/manifest`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetVideoManifestQueryOptions = <TData = Awaited<ReturnType<typeof getVideoManifest>>, TError = ErrorType<unknown>>(id: number,
+    params: GetVideoManifestParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVideoManifest>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetVideoManifestQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getVideoManifest>>> = ({ signal }) => getVideoManifest(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getVideoManifest>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetVideoManifestQueryResult = NonNullable<Awaited<ReturnType<typeof getVideoManifest>>>
+export type GetVideoManifestQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get HLS manifest with presigned S3 segment URLs
+ */
+
+export function useGetVideoManifest<TData = Awaited<ReturnType<typeof getVideoManifest>>, TError = ErrorType<unknown>>(
+ id: number,
+    params: GetVideoManifestParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getVideoManifest>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetVideoManifestQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

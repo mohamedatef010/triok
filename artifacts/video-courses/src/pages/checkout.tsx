@@ -5,9 +5,11 @@ import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSEO } from "@/hooks/use-seo";
 
 // Small checkout page that creates an order from cart and redirects to payment
 export function CheckoutPage() {
+  useSEO({ robots: "noindex, follow" });
   const [, setLocation] = useLocation();
   const cart = useCart();
   const createOrder = useCreateOrder();

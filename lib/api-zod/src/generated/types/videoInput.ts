@@ -18,6 +18,8 @@ export interface VideoInput {
   /** @nullable */
   previewVideoUrl?: string | null;
   /** @nullable */
+  previewDurationSeconds?: number | null;
+  /** @nullable */
   durationSeconds?: number | null;
   /** @minimum 0 */
   price: number;

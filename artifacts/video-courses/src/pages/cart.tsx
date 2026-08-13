@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useSEO } from "@/hooks/use-seo";
 
 export function CartPage() {
+  useSEO({ robots: "noindex, follow" });
   const { items, total, remove, clear } = useCart();
   const { isAuthenticated } = useAuth();
 
@@ -45,6 +47,8 @@ export function CartPage() {
                   <img 
                     src={item.thumbnailUrl || undefined} 
                     alt={item.title} 
+                    loading="lazy" 
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                 </div>

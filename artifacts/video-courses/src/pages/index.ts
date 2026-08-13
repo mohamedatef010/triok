@@ -6,6 +6,7 @@ export { FavoritesPage } from './favorites';
 export { ComparePage } from './compare';
 export { HelpPage } from './help';
 export { ContactsPage } from './contacts';
+export { TermsPage } from './terms';
 export { VideoDetailPage } from './video-detail';
 export { ProfilePage } from './profile';
 export { PaymentPage } from './payment';
@@ -18,3 +19,7 @@ export { AdminDashboard } from './admin/dashboard';
 export { AdminVideos } from './admin/videos';
 export { AdminOrders } from './admin/orders';
 export { AdminUsers } from './admin/users';
+export { AdminAuthorSection } from './admin/author-section';
+export { AdminReviewsSection } from './admin/reviews-section';
+export { RequisitesPage } from './requisites';
+

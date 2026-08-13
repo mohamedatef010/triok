@@ -1,3 +1,6 @@
+import { config } from "dotenv";
+config(); // Load .env from the current working directory (artifacts/api-server/)
+
 import app from "./app";
 import { logger } from "./lib/logger";
 

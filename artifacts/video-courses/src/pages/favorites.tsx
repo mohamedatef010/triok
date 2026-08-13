@@ -3,8 +3,10 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Heart, Play, Star, Trash2 } from "lucide-react";
+import { useSEO } from "@/hooks/use-seo";
 
 export function FavoritesPage() {
+  useSEO({ robots: "noindex, follow" });
   const { items, remove } = useFavorites();
 
   if (items.length === 0) {
@@ -54,10 +56,10 @@ export function FavoritesPage() {
               <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
                 <div className="flex items-center text-amber-500">
                   <Star className="h-3.5 w-3.5 fill-current mr-1" />
-                  <span className="font-medium text-foreground">{video.averageRating.toFixed(1)}</span>
+                  <span className="font-medium text-foreground">{video.averageRating ? Number(video.averageRating).toFixed(1) : "0.0"}</span>
                 </div>
                 <span>•</span>
-                <span>{video.reviewCount} отзывов</span>
+                <span>{video.reviewCount ?? 0} отзывов</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

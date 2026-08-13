@@ -3,9 +3,16 @@ import { useEffect, useState } from "react";
 export function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as "light" | "dark") || "light";
+      const stored = (localStorage.getItem("theme") as "light" | "dark") || "dark";
+      const root = window.document.documentElement;
+      if (stored === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+      return stored;
     }
-    return "light";
+    return "dark";
   });
 
   useEffect(() => {

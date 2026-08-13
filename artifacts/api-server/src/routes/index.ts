@@ -10,6 +10,7 @@ import ordersRouter from "./orders";
 import paymentsRouter from "./payments";
 import adminRouter from "./admin";
 import analyticsRouter from "./analytics";
+import sitemapRouter from "./sitemap";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(ordersRouter);
 router.use(paymentsRouter);
 router.use(adminRouter);
 router.use(analyticsRouter);
+router.use(sitemapRouter);
 
 export default router;

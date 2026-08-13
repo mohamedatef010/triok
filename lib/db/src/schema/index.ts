@@ -6,3 +6,5 @@ export * from "./orders";
 export * from "./favorites";
 export * from "./cart";
 export * from "./analytics";
+export * from "./videoAccess";
+export * from "./site-settings";

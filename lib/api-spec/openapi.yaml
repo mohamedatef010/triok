@@ -440,6 +440,87 @@ paths:
                 items:
                   $ref: "#/components/schemas/Video"
 
+  /videos/{id}/upload-url:
+    post:
+      operationId: getVideoUploadUrl
+      tags: [videos]
+      summary: Get a presigned S3 upload URL (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /videos/{id}/process:
+    post:
+      operationId: processVideo
+      tags: [videos]
+      summary: Start video processing to HLS (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Processing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /videos/{id}/playback:
+    get:
+      operationId: getVideoPlayback
+      tags: [videos]
+      summary: Get signed HLS playback URL depending on purchase status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Playback URL info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaybackResponse"
+
+  /videos/{id}/manifest:
+    get:
+      operationId: getVideoManifest
+      tags: [videos]
+      summary: Get HLS manifest with presigned S3 segment URLs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: HLS Manifest
+          content:
+            application/vnd.apple.mpegurl:
+              schema:
+                type: string
+
   # ── Reviews ───────────────────────────────────────────────────────
   /videos/{id}/reviews:
     get:
@@ -1040,6 +1121,8 @@ components:
           type: string
         videoUrl:
           type: ["string", "null"]
+        previewDurationSeconds:
+          type: ["integer", "null"]
         durationSeconds:
           type: ["integer", "null"]
         price:
@@ -1080,6 +1163,8 @@ components:
           type: ["string", "null"]
         previewVideoUrl:
           type: ["string", "null"]
+        previewDurationSeconds:
+          type: ["integer", "null"]
         durationSeconds:
           type: ["integer", "null"]
         price:
@@ -1121,6 +1206,8 @@ components:
           type: ["string", "null"]
         previewVideoUrl:
           type: ["string", "null"]
+        previewDurationSeconds:
+          type: ["integer", "null"]
         durationSeconds:
           type: ["integer", "null"]
         price:
@@ -1148,6 +1235,8 @@ components:
           type: ["string", "null"]
         previewVideoUrl:
           type: ["string", "null"]
+        previewDurationSeconds:
+          type: ["integer", "null"]
         durationSeconds:
           type: ["integer", "null"]
         price:
@@ -1175,6 +1264,25 @@ components:
           type: integer
         limit:
           type: integer
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadUrl, key]
+      properties:
+        uploadUrl:
+          type: string
+        key:
+          type: string
+
+    PlaybackResponse:
+      type: object
+      required: [manifestUrl, type]
+      properties:
+        manifestUrl:
+          type: string
+        type:
+          type: string
+          enum: [preview, full]
 
     VideoStats:
       type: object

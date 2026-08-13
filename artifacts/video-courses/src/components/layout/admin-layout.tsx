@@ -1,68 +1,126 @@
-import { Link } from "wouter";
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Film, ShoppingCart, Users, ArrowLeft } from "lucide-react";
+import { LogOut, LayoutDashboard, Film, ShoppingCart, Users, ArrowLeft, Star, Menu, X } from "lucide-react";
+
+const navItems = [
+  { href: "/admm/dashboard", icon: LayoutDashboard, label: "Дашборд" },
+  { href: "/admm/videos", icon: Film, label: "Видео и курсы" },
+  { href: "/admm/orders", icon: ShoppingCart, label: "Заказы" },
+  { href: "/admm/users", icon: Users, label: "Пользователи" },
+  { href: "/admm/author-section", icon: Film, label: "Контент сайта" },
+  { href: "/admm/reviews-section", icon: Star, label: "Отзывы" },
+];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAdmin, logout } = useAuth();
+  const { user } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [location] = useLocation();
 
-  // If not admin and not loading, we should ideally redirect, but we'll handle that in components or a guard hook.
-  // For now just render the sidebar.
+  const SidebarContent = () => (
+    <>
+      <div className="h-16 flex items-center gap-3 px-4 font-bold text-white tracking-tight border-b border-slate-800 shrink-0">
+        <img src="/n13.jpg" alt="CMS Logo" className="h-9 w-auto max-w-[100px] object-contain shrink-0 filter drop-shadow" />
+        <span className="bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent font-black text-sm tracking-wider">
+          CMS АДМИН
+        </span>
+        {/* Close btn on mobile */}
+        <button
+          className="ml-auto lg:hidden text-slate-400 hover:text-white p-1"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <nav className="flex-1 py-4 px-3 flex flex-col gap-1 overflow-y-auto">
+        {navItems.map(({ href, icon: Icon, label }) => (
+          <Link key={href} href={href}>
+            <Button
+              variant="ghost"
+              className={`w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800 ${
+                location === href ? "bg-slate-800 text-white" : ""
+              }`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <Icon className="mr-3 h-5 w-5 shrink-0" /> {label}
+            </Button>
+          </Link>
+        ))}
+      </nav>
+
+      <div className="p-4 border-t border-slate-800 shrink-0">
+        <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white" asChild>
+          <Link href="/" onClick={() => setSidebarOpen(false)}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> На сайт
+          </Link>
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-400/10 mt-2"
+          onClick={() => {
+            localStorage.removeItem("admin_token");
+            window.location.href = "/admm";
+          }}
+        >
+          <LogOut className="mr-2 h-4 w-4" /> Выйти
+        </Button>
+      </div>
+    </>
+  );
 
   return (
     <div className="flex min-h-[100dvh] w-full bg-slate-100 dark:bg-slate-900 absolute top-0 left-0 z-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 font-bold text-white tracking-tight border-b border-slate-800">
-          АДМИН-ПАНЕЛЬ
-        </div>
-        <nav className="flex-1 py-6 px-3 flex flex-col gap-1">
-          <Link href="/admm/dashboard">
-            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800">
-              <LayoutDashboard className="mr-3 h-5 w-5" /> Дашборд
-            </Button>
-          </Link>
-          <Link href="/admm/videos">
-            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800">
-              <Film className="mr-3 h-5 w-5" /> Видео и курсы
-            </Button>
-          </Link>
-          <Link href="/admm/orders">
-            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800">
-              <ShoppingCart className="mr-3 h-5 w-5" /> Заказы
-            </Button>
-          </Link>
-          <Link href="/admm/users">
-            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800">
-              <Users className="mr-3 h-5 w-5" /> Пользователи
-            </Button>
-          </Link>
-        </nav>
-        <div className="p-4 border-t border-slate-800">
-          <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white" asChild>
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" /> На сайт
-            </Link>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-400/10 mt-2"
-            onClick={() => {
-              localStorage.removeItem("admin_token");
-              window.location.href = "/admm";
-            }}
-          >
-            <LogOut className="mr-2 h-4 w-4" /> Выйти
-          </Button>
-        </div>
+
+      {/* ── Desktop Sidebar (hidden on mobile) ── */}
+      <aside className="hidden lg:flex w-64 bg-slate-950 text-slate-300 flex-col shrink-0">
+        <SidebarContent />
       </aside>
 
-      {/* Main Content */}
+      {/* ── Mobile Sidebar Overlay ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
+      )}
+
+      {/* ── Mobile Sidebar Drawer ── */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-72 max-w-[85vw] bg-slate-950 text-slate-300 flex flex-col z-50 lg:hidden
+          transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* ── Main Content ── */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden text-foreground">
-        <header className="h-16 bg-white dark:bg-slate-950 border-b flex items-center px-8 shrink-0 justify-end">
-          <div className="text-sm font-medium">Администратор {user?.name}</div>
+        {/* Header */}
+        <header className="h-14 lg:h-16 bg-white dark:bg-slate-950 border-b flex items-center px-4 lg:px-8 shrink-0 gap-3">
+          {/* Hamburger - mobile only */}
+          <button
+            className="lg:hidden text-foreground p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="lg:hidden text-sm font-bold bg-gradient-to-r from-amber-500 to-amber-300 bg-clip-text text-transparent">
+            CMS АДМИН
+          </span>
+          <div className="ml-auto text-xs lg:text-sm font-medium text-muted-foreground">
+            {user?.name}
+          </div>
         </header>
-        <div className="flex-1 overflow-auto p-8">
+
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto p-4 lg:p-8">
           {children}
         </div>
       </main>

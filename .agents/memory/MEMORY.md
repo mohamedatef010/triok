@@ -1,1 +1,0 @@
-- [Video courses platform](video-courses-platform.md) — Zod v4 must be externalized in esbuild AND added as direct dep in api-server; monorepo libs use TypeScript source exports.

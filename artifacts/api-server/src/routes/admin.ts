@@ -1,6 +1,9 @@
 import { Router, IRouter } from "express";
-import { db, usersTable, ordersTable, orderItemsTable, videosTable, categoriesTable } from "@workspace/db";
+import { db, usersTable, ordersTable, orderItemsTable, videosTable, categoriesTable, siteSettingsTable } from "@workspace/db";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { generateUploadUrl, s3Client } from "@workspace/storage";
 import { eq, sql, desc } from "drizzle-orm";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { signToken } from "../lib/auth";
 import { requireAdmin } from "../middlewares/requireAuth";
@@ -12,10 +15,12 @@ import {
   SetVideoDiscountBody,
   SetVideoDiscountParams,
 } from "@workspace/api-zod";
+import { authLimiter } from "../middlewares/rateLimiter";
+import { optimizeAuthorVideoFromS3 } from "../lib/authorMediaProcessor";
 
 const router: IRouter = Router();
 
-router.post("/admin/login", async (req, res): Promise<void> => {
+router.post("/admin/login", authLimiter, async (req, res): Promise<void> => {
   const parsed = AdminLoginBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
   const { username, password } = parsed.data;
@@ -136,5 +141,156 @@ router.patch("/admin/videos/:id/discount", requireAdmin, async (req, res): Promi
   if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
   res.json({ id: video.id, title: video.title, description: video.description ?? null, thumbnailUrl: video.thumbnailUrl ?? "", videoUrl: video.videoUrl ?? null, durationSeconds: video.durationSeconds ?? null, price: Number(video.price), discountPrice: video.discountPrice != null ? Number(video.discountPrice) : null, categoryId: video.categoryId ?? null, categoryName: null, viewCount: video.viewCount, averageRating: 0, reviewCount: 0, isFeatured: video.isFeatured, isPublished: video.isPublished, createdAt: video.createdAt });
 });
+
+/* ── Author media (public read via API proxy) ── */
+router.get("/author-media/:filename", async (req, res): Promise<void> => {
+  const filename = req.params.filename as string;
+  if (!filename || filename.includes("..") || filename.includes("/")) {
+    res.status(400).json({ error: "Invalid filename" });
+    return;
+  }
+
+  const bucket = process.env.S3_BUCKET || "video-courses";
+  const key = `author-media/${filename}`;
+
+  try {
+    const response = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    if (!response.Body) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    if (response.ContentType) {
+      res.setHeader("Content-Type", response.ContentType);
+    }
+    res.setHeader("Cache-Control", "public, max-age=86400");
+
+    const stream = response.Body as NodeJS.ReadableStream;
+    stream.pipe(res);
+  } catch (error) {
+    req.log.error(error);
+    res.status(404).json({ error: "Not found" });
+  }
+});
+
+/* ── Site Settings (public read) ── */
+router.get("/site-settings/:key", async (req, res): Promise<void> => {
+  const key = req.params.key as string;
+  const [setting] = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key));
+  if (!setting) { res.status(404).json({ error: "Not found" }); return; }
+  try {
+    res.json({ key: setting.key, value: JSON.parse(setting.value) });
+  } catch {
+    res.json({ key: setting.key, value: setting.value });
+  }
+});
+
+/* ── Site Settings (admin read) ── */
+router.get("/admin/site-settings/:key", requireAdmin, async (req, res): Promise<void> => {
+  const key = req.params.key as string;
+  const [setting] = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key));
+  if (!setting) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  try {
+    res.json({ key: setting.key, value: JSON.parse(setting.value) });
+  } catch {
+    res.json({ key: setting.key, value: setting.value });
+  }
+});
+
+/* ── Site Settings (admin write) ── */
+router.put("/admin/site-settings/:key", requireAdmin, async (req, res): Promise<void> => {
+  const key = req.params.key as string;
+  const body = z.object({ value: z.any() }).safeParse(req.body);
+  if (!body.success) { res.status(400).json({ error: body.error.message }); return; }
+  const valueStr = JSON.stringify(body.data.value);
+  const [existing] = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key));
+  if (existing) {
+    await db.update(siteSettingsTable).set({ value: valueStr }).where(eq(siteSettingsTable.key, key));
+  } else {
+    await db.insert(siteSettingsTable).values({ key, value: valueStr });
+  }
+  res.json({ success: true, key, value: body.data.value });
+});
+
+/* ── Author Section Video Upload (optimized for web) ── */
+router.post("/admin/upload-author-video-url", requireAdmin, async (_req, res): Promise<void> => {
+  try {
+    const key = `author-media/temp/${Date.now()}-${Math.random().toString(36).substring(7)}.mp4`;
+    const uploadUrl = await generateUploadUrl(key, "video/mp4");
+    res.json({ uploadUrl, key });
+  } catch (error) {
+    _req.log.error(error);
+    res.status(500).json({ error: "Failed to generate video upload URL" });
+  }
+});
+
+router.post("/admin/process-author-video", requireAdmin, async (req, res): Promise<void> => {
+  const parsed = z.object({ key: z.string().min(1) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  try {
+    const result = await optimizeAuthorVideoFromS3(parsed.data.key);
+    res.json(result);
+  } catch (error) {
+    req.log.error(error);
+    res.status(500).json({ error: "Failed to process video" });
+  }
+});
+
+/* ── Image Upload (WebP thumbnail) ── */
+router.post("/admin/upload-image-url", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    // Always store as WebP for optimal web performance
+    const key = `images/${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+    const uploadUrl = await generateUploadUrl(key, "image/webp");
+
+    // Construct public URL via our proxy endpoint (works regardless of S3 visibility)
+    const publicUrl = `/api/thumbnails/${key.replace("images/", "")}`;
+
+    res.json({ uploadUrl, url: publicUrl, key });
+  } catch (error) {
+    req.log.error(error);
+    res.status(500).json({ error: "Failed to generate upload URL" });
+  }
+});
+
+/* ── Thumbnail Proxy (serve uploaded thumbnails from S3) ── */
+async function serveThumbnail(req: any, res: any): Promise<void> {
+  const filename = req.params.filename as string;
+  if (!filename || filename.includes("..") || filename.includes("/")) {
+    res.status(400).json({ error: "Invalid filename" });
+    return;
+  }
+
+  const bucket = process.env.S3_BUCKET || "video-courses";
+  const key = `images/${filename}`;
+
+  try {
+    const response = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    if (!response.Body) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    res.setHeader("Content-Type", response.ContentType || "image/webp");
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+    const stream = response.Body as NodeJS.ReadableStream;
+    stream.pipe(res);
+  } catch {
+    res.status(404).json({ error: "Not found" });
+  }
+}
+
+/* Original public path (kept intact) */
+router.get("/thumbnails/:filename", serveThumbnail);
+/* Alias under /admin/thumbnails (same handler, same behavior) */
+router.get("/admin/thumbnails/:filename", serveThumbnail);
 
 export default router;

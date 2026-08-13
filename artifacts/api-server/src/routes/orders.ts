@@ -1,5 +1,5 @@
 import { Router, IRouter } from "express";
-import { db, ordersTable, orderItemsTable, videosTable, cartItemsTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, videosTable, cartItemsTable, videoAccessTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { ListOrdersResponse, CreateOrderBody, GetOrderParams } from "@workspace/api-zod";
@@ -64,6 +64,20 @@ router.post("/orders", requireAuth, async (req, res): Promise<void> => {
 
   if (videoIds.length === 0) {
     res.status(400).json({ error: "Нет товаров для заказа" });
+    return;
+  }
+  
+  // Check if any video is already purchased
+  const existingAccess = await db
+    .select()
+    .from(videoAccessTable)
+    .where(and(eq(videoAccessTable.userId, req.user!.userId)));
+    
+  const ownedVideoIds = new Set(existingAccess.map(a => a.videoId));
+  const alreadyOwned = videoIds.filter(id => ownedVideoIds.has(id));
+  
+  if (alreadyOwned.length > 0) {
+    res.status(400).json({ error: "Вы уже купили один أو أكثر من الفيديوهات" });
     return;
   }
 

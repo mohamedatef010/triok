@@ -95,6 +95,8 @@ export interface Video {
   /** @nullable */
   videoUrl?: string | null;
   /** @nullable */
+  previewDurationSeconds?: number | null;
+  /** @nullable */
   durationSeconds?: number | null;
   price: number;
   /** @nullable */
@@ -121,6 +123,8 @@ export interface VideoDetail {
   videoUrl?: string | null;
   /** @nullable */
   previewVideoUrl?: string | null;
+  /** @nullable */
+  previewDurationSeconds?: number | null;
   /** @nullable */
   durationSeconds?: number | null;
   price: number;
@@ -151,6 +155,8 @@ export interface VideoInput {
   /** @nullable */
   previewVideoUrl?: string | null;
   /** @nullable */
+  previewDurationSeconds?: number | null;
+  /** @nullable */
   durationSeconds?: number | null;
   /** @minimum 0 */
   price: number;
@@ -173,6 +179,8 @@ export interface VideoUpdate {
   /** @nullable */
   previewVideoUrl?: string | null;
   /** @nullable */
+  previewDurationSeconds?: number | null;
+  /** @nullable */
   durationSeconds?: number | null;
   price?: number;
   /** @nullable */
@@ -188,6 +196,24 @@ export interface VideoListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  key: string;
+}
+
+export type PlaybackResponseType = typeof PlaybackResponseType[keyof typeof PlaybackResponseType];
+
+
+export const PlaybackResponseType = {
+  preview: 'preview',
+  full: 'full',
+} as const;
+
+export interface PlaybackResponse {
+  manifestUrl: string;
+  type: PlaybackResponseType;
 }
 
 export type VideoStatsByCategoryItem = {
@@ -398,6 +424,10 @@ export const ListVideosSort = {
   price_desc: 'price_desc',
   rating: 'rating',
 } as const;
+
+export type GetVideoManifestParams = {
+token: string;
+};
 
 export type AdminListOrdersParams = {
 page?: number;

@@ -11,8 +11,10 @@ import {
 import { LoadingSpinner } from "@/components/ui/states";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, User } from "lucide-react";
+import { useSEO } from "@/hooks/use-seo";
 
 export function AdminUsers() {
+  useSEO({ robots: "noindex, follow" });
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAdminListUsers({ page, limit: 10 });
 
@@ -21,11 +23,11 @@ export function AdminUsers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Пользователи</h1>
+        <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Пользователи</h1>
       </div>
 
-      <div className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm">
-        <Table>
+      <div className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm overflow-x-auto">
+        <Table className="min-w-[600px]">
           <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead>ID</TableHead>

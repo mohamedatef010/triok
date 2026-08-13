@@ -1,195 +1,1788 @@
+import { useState, useRef, Fragment, useEffect, useCallback } from "react";
+import { useSEO } from "@/hooks/use-seo";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useGetFeaturedVideos } from "@workspace/api-client-react";
+import { useGetFeaturedVideos, useGetVideoPlayback } from "@workspace/api-client-react";
+import ReactPlayer from "react-player";
 import { Button } from "@/components/ui/button";
-import { Play, ArrowRight, Star, ChevronRight } from "lucide-react";
-import heroBanner from "@assets/hero-banner.jpg";
-import authorAvatar from "@assets/author-avatar.jpg";
+import {
+  Play,
+  ArrowRight,
+  Star,
+  CheckCircle,
+  Clock,
+  Award,
+  Sparkles,
+  Video,
+  X,
+  Flame,
+  Zap,
+  Quote,
+  Send,
+  Youtube,
+  MessageSquare,
+  Film,
+  BookOpen,
+  Users,
+  Compass,
+  ImageIcon,
+  Instagram,
+  Mail,
+  MessageCircle
+} from "lucide-react";
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { Card, CardContent } from "@/components/ui/card";
 
-export function HomePage() {
-  const { data: featuredVideos, isLoading, error } = useGetFeaturedVideos();
+/* ── Visual assets ──
+   n1.jpg is served from the public folder as /n1.jpg */
+const HERO_IMAGE_SRC = "/n1.jpg";
+const heroAvatar = "https://image.qwenlm.ai/public_source/eaa9d9e3-ae37-4110-9836-468770a4b316/12dd3bf23-8156-4de4-8ab4-1848d6d2d24b.png";
+const authorAvatar = "/n12.png";
+
+// Updated STATS according to new texts
+const STATS = [
+  { icon: Award, value: "10+ лет", label: "опыта в иллюзионном искусстве" },
+  { icon: CheckCircle, value: "Практика", label: "фокусы, которые можно повторить" },
+  { icon: Clock, value: "Пошагово", label: "от простых движений до полноценного трюка" },
+];
+
+// Updated marquee items
+const MARQUEE_ITEMS = [
+  "Фокусы", "Иллюзии", "Секреты магии", "Карточные трюки", "Ментальная магия",
+  "Пошаговые уроки", "Мастер-классы", "Удивляй друзей", "Открывай мир иллюзий"
+];
+
+const WAVE_HEIGHTS = [10, 18, 12, 22, 16, 8, 20, 14, 24, 12, 18, 10, 22, 16, 8, 14, 24, 18, 12, 20, 10, 16, 22, 14, 8, 18, 12, 24, 16, 10, 20, 14, 18, 8, 22, 12, 16, 24, 10, 18];
+
+/* ── Magic-props floating background layers (playing cards / wand / hat / coin) ──
+   Items are PAUSED by default; they drift only while hovered, freeze in
+   place when the mouse leaves, and resume from the same frame on re-hover. */
+const MAGIC_LAYERS = [
+  {
+    depth: 16,
+    items: [
+      { type: "spark", top: "14%", left: "5%", size: 32, rot: -12, op: 0.24, delay: "-1s", dur: "9s" },
+      { type: "coin", top: "30%", left: "16%", size: 22, rot: 8, op: 0.22, delay: "-3s", dur: "8s" },
+      { type: "hat", top: "68%", left: "7%", size: 40, rot: -6, op: 0.23, delay: "-5s", dur: "10s" },
+      { type: "wand", top: "82%", left: "24%", size: 46, rot: 18, op: 0.21, delay: "-2s", dur: "9.5s" },
+      { type: "ring", top: "12%", left: "46%", size: 30, rot: 10, op: 0.2, delay: "-4s", dur: "8.5s" },
+      { type: "fan", top: "58%", left: "44%", size: 40, rot: -8, op: 0.2, delay: "-6s", dur: "10s" },
+      { type: "star", top: "24%", left: "88%", size: 24, rot: 0, op: 0.22, delay: "-2.5s", dur: "9s" },
+      { type: "spark", top: "80%", left: "70%", size: 28, rot: 14, op: 0.21, delay: "-7s", dur: "8s" },
+      { type: "cardSpade", top: "10%", left: "62%", size: 26, rot: -14, op: 0.22, delay: "-3.5s", dur: "9.5s" },
+      { type: "cardHeart", top: "50%", left: "26%", size: 24, rot: 10, op: 0.2, delay: "-6.5s", dur: "8.5s" },
+      { type: "cardClub", top: "90%", left: "44%", size: 26, rot: 6, op: 0.21, delay: "-1.5s", dur: "9s" },
+    ],
+  },
+  {
+    depth: 34,
+    items: [
+      { type: "fan", top: "6%", left: "28%", size: 52, rot: 10, op: 0.22, delay: "-2s", dur: "9s" },
+      { type: "hat", top: "44%", left: "2%", size: 52, rot: -8, op: 0.24, delay: "-4s", dur: "10s" },
+      { type: "ring", top: "62%", left: "36%", size: 38, rot: 16, op: 0.21, delay: "-1s", dur: "8.5s" },
+      { type: "wand", top: "8%", left: "74%", size: 56, rot: -14, op: 0.22, delay: "-5s", dur: "9.5s" },
+      { type: "coin", top: "86%", left: "50%", size: 26, rot: 0, op: 0.23, delay: "-3s", dur: "8s" },
+      { type: "star", top: "36%", left: "92%", size: 32, rot: 8, op: 0.21, delay: "-6s", dur: "9s" },
+      { type: "cardFan", top: "28%", left: "12%", size: 44, rot: -12, op: 0.24, delay: "-2.5s", dur: "10s" },
+      { type: "cardMagic", top: "66%", left: "66%", size: 42, rot: 9, op: 0.23, delay: "-4.5s", dur: "9s" },
+      { type: "cardDiamond", top: "14%", left: "56%", size: 34, rot: 14, op: 0.22, delay: "-7s", dur: "8.5s" },
+    ],
+  },
+  {
+    depth: 58,
+    items: [
+      { type: "spark", top: "20%", left: "40%", size: 44, rot: -10, op: 0.28, delay: "-2s", dur: "8s" },
+      { type: "wand", top: "72%", left: "12%", size: 64, rot: 12, op: 0.24, delay: "-4s", dur: "9s" },
+      { type: "fan", top: "10%", left: "66%", size: 58, rot: 6, op: 0.24, delay: "-6s", dur: "8.5s" },
+      { type: "hat", top: "54%", left: "86%", size: 54, rot: -10, op: 0.24, delay: "-1s", dur: "9.5s" },
+      { type: "ring", top: "88%", left: "64%", size: 34, rot: 0, op: 0.26, delay: "-5s", dur: "8s" },
+      { type: "cardSpade", top: "40%", left: "56%", size: 48, rot: -16, op: 0.28, delay: "-3s", dur: "9s" },
+      { type: "cardFan", top: "82%", left: "34%", size: 52, rot: 12, op: 0.25, delay: "-5.5s", dur: "10s" },
+      { type: "cardHeart", top: "6%", left: "88%", size: 44, rot: 8, op: 0.26, delay: "-2s", dur: "8.5s" },
+    ],
+  },
+];
+
+
+
+/* ── Magic-prop SVG shapes for the ambient background (hover-to-drift + mouse parallax) ── */
+function MagicFloatItem({ type, size }: { type: string; size: number }) {
+  if (type === "spark") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+        <path d="M20 2l3.5 11.5L35 17l-11.5 3.5L20 32l-3.5-11.5L5 17l11.5-3.5L20 2z" fill="#fbbf24" fillOpacity="0.35" stroke="#f59e0b" strokeOpacity="0.75" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+  if (type === "star") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+        <path d="M20 4l4.2 12.8H38l-10.5 7.6 4 12.8L20 29.6 8.5 37.2l4-12.8L2 16.8h13.8L20 4z" fill="#f59e0b" fillOpacity="0.28" stroke="#fbbf24" strokeOpacity="0.7" strokeWidth="1.2" />
+      </svg>
+    );
+  }
+  if (type === "ring") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="18" stroke="#f59e0b" strokeOpacity="0.55" strokeWidth="2" strokeDasharray="4 6" />
+        <circle cx="24" cy="24" r="10" stroke="#fbbf24" strokeOpacity="0.45" strokeWidth="1.5" />
+        <circle cx="24" cy="8" r="3" fill="#fbbf24" fillOpacity="0.85" />
+      </svg>
+    );
+  }
+  if (type === "fan") {
+    return (
+      <svg width={size} height={size * 0.9} viewBox="0 0 90 80" fill="none">
+        <rect x="8" y="18" width="34" height="52" rx="5" transform="rotate(-18 25 44)" fill="#101426" stroke="#f59e0b" strokeOpacity="0.45" strokeWidth="2" />
+        <rect x="48" y="18" width="34" height="52" rx="5" transform="rotate(18 65 44)" fill="#101426" stroke="#f59e0b" strokeOpacity="0.45" strokeWidth="2" />
+        <rect x="28" y="10" width="34" height="52" rx="5" fill="#101426" stroke="#f59e0b" strokeOpacity="0.65" strokeWidth="2" />
+        <path d="M45 28c-3 5-8 6-8 11a8 8 0 0 0 16 0c0-5-5-6-8-11z" fill="#f59e0b" fillOpacity="0.55" />
+      </svg>
+    );
+  }
+  if (type === "wand") {
+    return (
+      <svg width={size} height={size * 0.24} viewBox="0 0 120 26" fill="none">
+        <rect x="4" y="10" width="92" height="7" rx="3.5" fill="#1c1917" stroke="#f59e0b" strokeOpacity="0.6" strokeWidth="1.5" />
+        <rect x="96" y="10" width="20" height="7" rx="3.5" fill="#fbbf24" fillOpacity="0.8" />
+        <path d="M112 2l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="#fbbf24" fillOpacity="0.9" />
+      </svg>
+    );
+  }
+  if (type === "hat") {
+    return (
+      <svg width={size} height={size * 0.8} viewBox="0 0 80 64" fill="none">
+        <rect x="46" y="4" width="16" height="24" rx="3" transform="rotate(14 54 16)" fill="#e2e8f0" fillOpacity="0.9" />
+        <path d="M22 52 V22 Q40 10 58 22 V52" fill="#1c1917" stroke="#f59e0b" strokeOpacity="0.6" strokeWidth="2" />
+        <rect x="22" y="40" width="36" height="7" fill="#f59e0b" fillOpacity="0.7" />
+        <ellipse cx="40" cy="52" rx="36" ry="8" fill="#1c1917" stroke="#f59e0b" strokeOpacity="0.6" strokeWidth="2" />
+      </svg>
+    );
+  }
+  /* ── Playing cards (sleight-of-hand / casino style) ── */
+  if (
+    type === "cardSpade" ||
+    type === "cardHeart" ||
+    type === "cardDiamond" ||
+    type === "cardClub"
+  ) {
+    const suitMap: Record<string, { suit: string; rank: string }> = {
+      cardSpade: { suit: "♠", rank: "A" },
+      cardHeart: { suit: "♥", rank: "K" },
+      cardDiamond: { suit: "♦", rank: "Q" },
+      cardClub: { suit: "♣", rank: "J" },
+    };
+    const { suit, rank } = suitMap[type];
+    return (
+      <svg width={size} height={size * 1.45} viewBox="0 0 44 64" fill="none">
+        <rect x="2" y="2" width="40" height="60" rx="6" fill="#0f0d13" stroke="#fbbf24" strokeOpacity="0.75" strokeWidth="1.6" />
+        <rect x="6.5" y="6.5" width="31" height="51" rx="3.5" fill="none" stroke="#f59e0b" strokeOpacity="0.3" strokeWidth="1" strokeDasharray="3 4" />
+        <text x="10" y="17" fontSize="10" fontWeight="900" fill="#fbbf24" fillOpacity="0.95">{rank}</text>
+        <text x="10" y="28" fontSize="9" fill="#fbbf24" fillOpacity="0.9">{suit}</text>
+        <text x="22" y="46" fontSize="20" textAnchor="middle" fill="#fbbf24" fillOpacity="0.9">{suit}</text>
+        <text x="34" y="58" fontSize="10" fontWeight="900" textAnchor="end" fill="#fbbf24" fillOpacity="0.95" transform="rotate(180 33 54)">{rank}</text>
+      </svg>
+    );
+  }
+  /* ── Fan of three playing cards (sleight-of-hand flourish) ── */
+  if (type === "cardFan") {
+    return (
+      <svg width={size} height={size * 0.95} viewBox="0 0 96 92" fill="none">
+        <g transform="translate(12 10) rotate(-22 22 40)">
+          <rect x="0" y="0" width="40" height="58" rx="6" fill="#0f0d13" stroke="#f59e0b" strokeOpacity="0.55" strokeWidth="1.6" />
+          <text x="20" y="38" fontSize="16" textAnchor="middle" fill="#f59e0b" fillOpacity="0.8">♥</text>
+        </g>
+        <g transform="translate(42 10) rotate(22 22 40)">
+          <rect x="0" y="0" width="40" height="58" rx="6" fill="#0f0d13" stroke="#f59e0b" strokeOpacity="0.55" strokeWidth="1.6" />
+          <text x="20" y="38" fontSize="16" textAnchor="middle" fill="#f59e0b" fillOpacity="0.8">♣</text>
+        </g>
+        <g transform="translate(27 4)">
+          <rect x="0" y="0" width="42" height="62" rx="6" fill="#141118" stroke="#fbbf24" strokeOpacity="0.85" strokeWidth="1.8" />
+          <text x="21" y="40" fontSize="19" textAnchor="middle" fill="#fbbf24" fillOpacity="0.95">♠</text>
+          <path d="M21 8l1.7 4.2 4.2 1.7-4.2 1.7L21 20l-1.7-4.4-4.2-1.7 4.2-1.7L21 8z" fill="#fbbf24" fillOpacity="0.8" />
+        </g>
+      </svg>
+    );
+  }
+  /* ── Magic trick card (wand + sparkle motif — sleight of hand) ── */
+  if (type === "cardMagic") {
+    return (
+      <svg width={size} height={size * 1.45} viewBox="0 0 44 64" fill="none">
+        <rect x="2" y="2" width="40" height="60" rx="6" fill="#141118" stroke="#fbbf24" strokeOpacity="0.8" strokeWidth="1.6" />
+        <rect x="6.5" y="6.5" width="31" height="51" rx="3.5" fill="none" stroke="#f59e0b" strokeOpacity="0.25" strokeWidth="1" />
+        <rect x="10" y="32" width="24" height="4.6" rx="2.3" transform="rotate(-32 22 34)" fill="#1c1917" stroke="#fbbf24" strokeOpacity="0.9" strokeWidth="1.2" />
+        <rect x="28.5" y="21" width="7" height="4.6" rx="2.3" transform="rotate(-32 32 23)" fill="#fbbf24" fillOpacity="0.95" />
+        <path d="M14 12l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6 1.6-4z" fill="#fbbf24" fillOpacity="0.85" />
+        <path d="M32 44l1.3 3.2 3.2 1.3-3.2 1.3-1.3 3.2-1.3-3.2-3.2-1.3 3.2-1.3 1.3-3.2z" fill="#fbbf24" fillOpacity="0.75" />
+      </svg>
+    );
+  }
+  /* coin */
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <circle cx="20" cy="20" r="16" fill="#f59e0b" fillOpacity="0.25" stroke="#fbbf24" strokeOpacity="0.8" strokeWidth="2" />
+      <circle cx="20" cy="20" r="10" fill="none" stroke="#fbbf24" strokeOpacity="0.5" strokeWidth="1.5" />
+      <path d="M20 12l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.5-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z" fill="#fbbf24" fillOpacity="0.8" />
+    </svg>
+  );
+}
+
+/* ── Ambient Dust Particle Component ── */
+function DustParticles() {
+  const particles = Array.from({ length: 35 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    size: 1 + Math.random() * 2,
+    duration: 8 + Math.random() * 16,
+    delay: Math.random() * 8,
+    opacity: 0.15 + Math.random() * 0.25,
+  }));
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={heroBanner} 
-            alt="Video Editing Workspace" 
-            className="w-full h-full object-cover"
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full bg-amber-200 dust-particle"
+          style={{
+            left: p.left,
+            top: p.top,
+            width: p.size,
+            height: p.size,
+            opacity: p.opacity,
+            animationDuration: `${p.duration}s`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Sequentially drawn connector line (film ribbon between videos) ── */
+function SpiralConnector({ active = false }: { active?: boolean }) {
+  return (
+    <div className="relative w-7 shrink-0 flex items-center justify-center">
+      <svg className="w-full h-3 overflow-visible" viewBox="0 0 28 12" preserveAspectRatio="none">
+        <line
+          x1="2"
+          y1="6"
+          x2="26"
+          y2="6"
+          stroke="#f59e0b"
+          strokeOpacity="0.65"
+          strokeWidth="2"
+          strokeLinecap="round"
+          pathLength={100}
+          strokeDasharray="100"
+          style={{ strokeDashoffset: active ? 0 : 100, transition: "stroke-dashoffset .55s ease-out" }}
+        />
+      </svg>
+      <span
+        className={`absolute right-0 h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)] transition-opacity duration-500 ${active ? "opacity-100" : "opacity-0"}`}
+      />
+    </div>
+  );
+}
+
+function formatDuration(seconds?: number | null): string | null {
+  if (!seconds) return null;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) {
+    return `${h}ч ${m}мин`;
+  }
+  return `${m}мин`;
+}
+
+/** Minimal line-art top hat for the hero CTA */
+function CtaTrickIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <ellipse cx="12" cy="17.25" rx="7.25" ry="2.1" />
+      <path d="M8.25 16.75V10a3.75 3.75 0 0 1 7.5 0v6.75" />
+      <path d="M9.25 12.75h5.5" />
+    </svg>
+  );
+}
+
+export function HomePage() {
+  useSEO({
+    description: "Удивительные фокусы и секретные трюки, которые помогут впечатлить друзей. Пошаговые объяснения, полезные материалы и уникальные секреты для начинающих и опытных фокусников.",
+    canonical: "/",
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Классный Фокус",
+        "url": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai/catalog?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Классный Фокус",
+        "url": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai",
+        "logo": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai/logo2.png"
+      }
+    ]
+  });
+
+  const { data: rawFeaturedVideos, isLoading, error } = useGetFeaturedVideos();
+  const apiVideos = Array.isArray(rawFeaturedVideos) ? rawFeaturedVideos : [];
+
+  // Only show real videos added by admin via API
+  const displayVideos = apiVideos;
+
+  // Active Video Modal State
+  const [activePreviewVideo, setActivePreviewVideo] = useState<any | null>(null);
+
+  /* ── Hero poster image: n1.jpg from public folder ── */
+  const heroImgSrc = HERO_IMAGE_SRC;
+
+  /* ── CTA section: mouse-follow spotlight & orbit rings ── */
+  const ctaCardRef = useRef<HTMLDivElement | null>(null);
+  const [ctaPointer, setCtaPointer] = useState({ x: 50, y: 50 });
+
+  const handleCtaPointerMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = ctaCardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setCtaPointer({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  /* ── Hero: Enhanced smooth mouse-parallax (professional & eye-comfortable) ── */
+  const heroSectionRef = useRef<HTMLElement | null>(null);
+  const bgLayersRef = useRef<(HTMLDivElement | null)[]>([]);
+  const heroImageRef = useRef<HTMLDivElement | null>(null);
+  const lightBeamRef = useRef<HTMLDivElement | null>(null);
+  const parallaxTarget = useRef({ x: 0, y: 0 });
+  const parallaxCurrent = useRef({ x: 0, y: 0 });
+  const parallaxVelocity = useRef({ x: 0, y: 0 });
+
+  const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const rect = heroSectionRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    // Smoother normalized coordinates with reduced sensitivity
+    parallaxTarget.current = {
+      x: ((e.clientX - rect.left) / rect.width - 0.5) * 1.2, // Reduced range for comfort
+      y: ((e.clientY - rect.top) / rect.height - 0.5) * 0.8, // Even less vertical movement
+    };
+  }, []);
+
+  const handleHeroMouseLeave = useCallback(() => {
+    parallaxTarget.current = { x: 0, y: 0 };
+  }, []);
+
+  useEffect(() => {
+    let raf = 0;
+    const depths = [10, 22, 40]; // Reduced depths for subtler movement
+    const smoothingFactor = 0.035; // Very smooth interpolation
+
+    const tick = () => {
+      // Calculate velocity for momentum effect
+      const targetX = parallaxTarget.current.x;
+      const targetY = parallaxTarget.current.y;
+
+      parallaxVelocity.current.x = (targetX - parallaxCurrent.current.x) * smoothingFactor;
+      parallaxVelocity.current.y = (targetY - parallaxCurrent.current.y) * smoothingFactor;
+
+      parallaxCurrent.current.x += parallaxVelocity.current.x;
+      parallaxCurrent.current.y += parallaxVelocity.current.y;
+
+      // Apply to background layers with natural-feeling depth
+      bgLayersRef.current.forEach((layerEl, layerIndex) => {
+        if (!layerEl) return;
+        const layerDepth = depths[layerIndex] ?? 15;
+        const layerRot = parallaxCurrent.current.x * (layerIndex + 1) * 0.25; // Less rotation
+        const tx = parallaxCurrent.current.x * layerDepth;
+        const ty = parallaxCurrent.current.y * layerDepth;
+        layerEl.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${layerRot}deg)`;
+      });
+
+      // Apply subtle movement to hero image container (creates parallax against background)
+      if (heroImageRef.current) {
+        const imgTx = parallaxCurrent.current.x * -6;
+        const imgTy = parallaxCurrent.current.y * -4;
+        const imgRot = parallaxCurrent.current.x * -0.3;
+        heroImageRef.current.style.transform = `translate3d(${imgTx}px, ${imgTy}px, 0) rotate(${imgRot}deg)`;
+      }
+
+      // Move the light beam with the mouse for realistic lighting
+      if (lightBeamRef.current && heroSectionRef.current) {
+        const rect = heroSectionRef.current.getBoundingClientRect();
+        const lightX = 50 + parallaxCurrent.current.x * 15;
+        const lightY = 50 + parallaxCurrent.current.y * 10;
+        lightBeamRef.current.style.background = `radial-gradient(ellipse 50% 70% at ${lightX}% ${lightY}%, rgba(251,191,36,0.08) 0%, transparent 70%)`;
+      }
+
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  /* ── Courses spiral: sequential reveal — video appears, then a line grows to the next one ── */
+  const spiralRef = useRef<HTMLDivElement | null>(null);
+  const [spiralStep, setSpiralStep] = useState(-1);
+
+  useEffect(() => {
+    const el = spiralRef.current;
+    if (!el) return;
+    let spiralInterval: ReturnType<typeof setInterval> | null = null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && spiralInterval === null) {
+            let stepCounter = 0;
+            setSpiralStep(0);
+            spiralInterval = setInterval(() => {
+              stepCounter += 1;
+              setSpiralStep(stepCounter);
+              if (stepCounter >= 14 && spiralInterval) {
+                clearInterval(spiralInterval);
+              }
+            }, 320);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (spiralInterval) clearInterval(spiralInterval);
+    };
+  }, []);
+
+  // Card i appears at step i*2, the line leading to it at step i*2 - 1
+  const isCardVisible = (spiralIdx: number) => spiralStep >= spiralIdx * 2;
+  const isLinkVisible = (spiralIdx: number) => spiralStep >= spiralIdx * 2 - 1;
+
+  /* ── Course card renderer (shared between mobile grid & desktop spiral flow) ── */
+  const renderCourseCard = (video: any) => {
+    const durationText = video.duration || formatDuration(video.durationSeconds);
+    return (
+      <>
+        {/* Thumbnail / Video Preview Overlay */}
+        <div className="relative aspect-video overflow-hidden bg-slate-950">
+          <img
+            src={video.thumbnailUrl || "https://image.qwenlm.ai/public_source/2d826fc3-d8ca-4fdd-afe7-1a198c300694/19903dcea-c171-465f-b4af-c85e8b69b3a5.png"}
+            alt={video.title}
+            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-108"
           />
-          <div className="absolute inset-0 bg-slate-950/70 dark:bg-slate-950/80 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+
+          {/* Dark Vignette Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-300" />
+
+          {/* Play Button Overlay - now navigates directly to video detail page */}
+          <Link
+            href={`/video/${video.id}`}
+            className="absolute inset-0 flex items-center justify-center group/btn focus:outline-none"
+            title="Смотреть курс"
+          >
+            <div className="h-14 w-14 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-400/40 group-hover/btn:scale-115 transition-transform duration-300">
+              <Play className="h-6 w-6 fill-current ml-1" />
+            </div>
+          </Link>
+
+          {/* Discount Badge */}
+          {video.discountPrice && (
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-lg border border-white/20">
+              -{Math.round((1 - video.discountPrice / video.price) * 100)}%
+            </div>
+          )}
+
+          {/* Category Pill */}
+          {video.categoryName && (
+            <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-amber-400 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border border-amber-400/30">
+              {video.categoryName}
+            </div>
+          )}
+
+          {/* Duration badge */}
+          {durationText && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] font-semibold text-white/90 bg-slate-950/70 backdrop-blur-md px-2 py-0.5 rounded-md">
+              <Clock className="h-3 w-3 text-amber-400" /> {durationText}
+            </div>
+          )}
         </div>
 
-        <div className="container relative z-10 px-4 text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight max-w-4xl mx-auto drop-shadow-sm">
-            Освойте искусство <span className="text-accent">видеомонтажа</span> на профессиональном уровне
-          </h1>
-          <p className="text-lg md:text-xl text-slate-200 mb-10 max-w-2xl mx-auto font-medium">
-            Практические уроки, реальные проекты и техники кинематографичного монтажа. 
-            От основ до цветокоррекции и саунд-дизайна.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="w-full sm:w-auto text-lg h-14 px-8 rounded-full" asChild>
-              <Link href="/catalog">Смотреть курсы</Link>
+        {/* Card Content */}
+        <div className="p-5 flex flex-col justify-between flex-grow">
+          <div>
+            <Link href={`/video/${video.id}`}>
+              <h3 className="font-bold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-200 mb-2 cursor-pointer">
+                {video.title}
+              </h3>
+            </Link>
+
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
+              <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                <Star className="h-3.5 w-3.5 fill-current mr-1 text-amber-400" />
+                <span>{video.averageRating ? Number(video.averageRating).toFixed(1) : "0.0"}</span>
+              </div>
+              <span className="text-muted-foreground">•</span>
+              <span>{video.reviewCount ?? 0} отзывов</span>
+            </div>
+          </div>
+
+        <div className="pt-3 border-t border-border/60 flex items-center justify-between mt-auto">
+          <div className="flex items-baseline gap-2">
+            {video.discountPrice ? (
+              <>
+                <span className="font-black text-lg text-primary">{video.discountPrice} ₽</span>
+                <span className="text-xs text-muted-foreground line-through">{video.price} ₽</span>
+              </>
+            ) : (
+              <span className="font-black text-lg text-primary">{video.price} ₽</span>
+            )}
+          </div>
+
+          <Link href={`/video/${video.id}`}>
+            <Button size="sm" variant="ghost" className="text-xs font-bold text-amber-500 hover:text-amber-400 hover:bg-amber-400/10 rounded-full">
+              Подробнее &rarr;
             </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto text-lg h-14 px-8 rounded-full bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-md" asChild>
-              <Link href="/#about">Первый монтаж бесплатно</Link>
-            </Button>
+          </Link>
+        </div>
+      </div>
+    </>
+  );
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+
+      {/* ── Global decorative keyframes (Enhanced) ── */}
+      <style>{`
+        @keyframes heroFadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes heroFadeLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes heroFadeRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes heroFadeDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes heroZoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes waveBarAnim { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+        @keyframes floatYAnim { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes cardFlyAnimV2 {
+          0%,100% { transform: translateY(0) rotate(var(--fly-rot, 0deg)); }
+          25% { transform: translateY(-8px) rotate(calc(var(--fly-rot, 0deg) + 2deg)); }
+          50% { transform: translateY(-14px) rotate(var(--fly-rot, 0deg)); }
+          75% { transform: translateY(-6px) rotate(calc(var(--fly-rot, 0deg) - 2deg)); }
+        }
+        @keyframes magicDrift {
+          0%,100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+          50% { transform: translateY(-16px) rotate(calc(var(--rot, 0deg) + 8deg)); }
+        }
+        @keyframes playheadAnim { 0% { left: 3%; } 100% { left: 94%; } }
+        @keyframes shineSweep { 0% { transform: translateX(-160%) skewX(-18deg); } 55%,100% { transform: translateX(280%) skewX(-18deg); } }
+        @keyframes gradientFlow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        @keyframes slowSpinAnim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes slowSpinReverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+        @keyframes dashMove { from { stroke-dashoffset: 120; } to { stroke-dashoffset: 0; } }
+        @keyframes dustDrift {
+          0% { transform: translate(0, 0) scale(1); opacity: 0; }
+          15% { opacity: var(--dust-op, 0.3); }
+          50% { transform: translate(calc(var(--dx, 20px)), calc(var(--dy, -40px))) scale(1.1); }
+          85% { opacity: var(--dust-op, 0.3); }
+          100% { transform: translate(calc(var(--dx, 20px) * 2), calc(var(--dy, -40px) * 2)) scale(0.8); opacity: 0; }
+        }
+        @keyframes heroImgBreath {
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.01); }
+        }
+        @keyframes lightPulse {
+          0%,100% { opacity: 0.6; }
+          50% { opacity: 0.9; }
+        }
+        @keyframes beamFlicker {
+          0%,100% { opacity: 0.55; }
+          45% { opacity: 0.85; }
+          60% { opacity: 0.7; }
+        }
+        @keyframes filmGrainShift {
+          0% { transform: translate(0, 0); }
+          10% { transform: translate(-1px, 1px); }
+          20% { transform: translate(1px, -1px); }
+          30% { transform: translate(-1px, 0); }
+          40% { transform: translate(1px, 1px); }
+          50% { transform: translate(0, -1px); }
+          60% { transform: translate(-1px, 1px); }
+          70% { transform: translate(1px, 0); }
+          80% { transform: translate(0, 1px); }
+          90% { transform: translate(-1px, -1px); }
+          100% { transform: translate(0, 0); }
+        }
+        .hero-anim { opacity: 0; animation: heroFadeUp .9s cubic-bezier(.22,1,.36,1) forwards; }
+        .hero-anim-left { opacity: 0; animation: heroFadeLeft .9s cubic-bezier(.22,1,.36,1) forwards; }
+        .hero-anim-right { opacity: 0; animation: heroFadeRight .9s cubic-bezier(.22,1,.36,1) forwards; }
+        .hero-anim-down { opacity: 0; animation: heroFadeDown .9s cubic-bezier(.22,1,.36,1) forwards; }
+        .hero-anim-zoom { opacity: 0; animation: heroZoomIn .9s cubic-bezier(.22,1,.36,1) forwards; }
+        .marquee-track { animation: marqueeScroll 32s linear infinite; }
+        .wave-bar { animation: waveBarAnim 1.1s ease-in-out infinite; transform-origin: bottom; }
+        .float-chip { animation: floatYAnim 5s ease-in-out infinite; }
+        .fly-card-v2 { animation: cardFlyAnimV2 7s ease-in-out infinite; }
+        /* Magic props: paused by default → drift only while hovered,
+           freeze in place on leave, resume from same frame on re-hover */
+        .magic-float {
+          display: inline-block;
+          animation: magicDrift var(--dur, 10s) ease-in-out infinite;
+          animation-play-state: paused;
+          transition: opacity .35s ease, filter .35s ease, transform .35s ease;
+          cursor: pointer;
+          will-change: transform;
+        }
+        .magic-float:hover {
+          animation-play-state: running;
+          opacity: calc(var(--base-op, 0.18) + 0.25);
+          filter: drop-shadow(0 0 18px rgba(251,191,36,0.6));
+          transform: scale(1.15);
+        }
+        .playhead-line { animation: playheadAnim 9s linear infinite alternate; }
+        .slow-spin { animation: slowSpinAnim 30s linear infinite; }
+        .slow-spin-reverse { animation: slowSpinReverse 22s linear infinite; }
+        .dash-anim { stroke-dasharray: 6 6; animation: dashMove 3s linear infinite; }
+        .btn-shine { position: relative; overflow: hidden; }
+        .btn-shine::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 38%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+          transform: translateX(-160%) skewX(-18deg); animation: shineSweep 3.4s ease-in-out infinite; }
+        .text-flow-gradient { background-size: 200% 200%; animation: gradientFlow 5s ease infinite; }
+        .dust-particle { animation: dustDrift var(--dur, 12s) ease-in-out infinite; }
+        .hero-img-breath { animation: heroImgBreath 6s ease-in-out infinite; }
+        .light-pulse { animation: lightPulse 4s ease-in-out infinite; }
+        .stage-beam { animation: beamFlicker 5.5s ease-in-out infinite; }
+        .film-grain { animation: filmGrainShift 0.4s steps(2) infinite; }
+
+        /* Smooth cursor tracking for hero */
+        .hero-section {
+          perspective: 1200px;
+          perspective-origin: center;
+        }
+        .hero-img-container {
+          transition: transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          will-change: transform;
+          transform-style: preserve-3d;
+        }
+        .parallax-layer {
+          will-change: transform;
+          transition: transform 0.1s linear;
+          backface-visibility: hidden;
+        }
+        @media (max-width: 1023px) {
+          .mobile-hero-img-mask {
+            -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0.5) 78%, rgba(0,0,0,0) 98%);
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0.5) 78%, rgba(0,0,0,0) 98%);
+          }
+        }
+      `}</style>
+
+      {/* ── Hero Section (Enhanced Realistic Dark Magic-Show) ── */}
+      <section
+        ref={heroSectionRef}
+        onMouseMove={handleHeroMouseMove}
+        onMouseLeave={handleHeroMouseLeave}
+        className="hero-section relative min-h-[94vh] lg:min-h-[860px] flex items-center overflow-hidden pt-24 pb-24 bg-gradient-to-b from-amber-50/90 via-stone-100 to-amber-50/70 dark:from-[#0d0b14] dark:via-[#0a0908] dark:to-[#0f0a08] text-slate-900 dark:text-white border-b border-amber-500/20 dark:border-amber-500/10"
+      >
+
+        {/* Realistic layered background with depth (dark mode extra layer) */}
+        <div className="absolute inset-0 hidden dark:block bg-gradient-to-b from-[#0d0b14] via-[#0a0908] to-[#0f0a08]" />
+
+        {/* ── EXTRA STAGE ATMOSPHERE: spotlight cones, golden halo & stage-floor glow ── */}
+        <div
+          className="absolute -top-44 left-1/2 -translate-x-1/2 w-[1500px] h-[720px] pointer-events-none light-pulse"
+          style={{ background: "radial-gradient(ellipse 55% 45% at 50% 0%, rgba(245,158,11,0.13), transparent 70%)" }}
+        />
+        <div
+          className="stage-beam absolute -top-28 left-[10%] w-[380px] h-[840px] pointer-events-none"
+          style={{
+            background: "linear-gradient(195deg, rgba(251,191,36,0.16), rgba(251,191,36,0.05) 55%, transparent 75%)",
+            clipPath: "polygon(44% 0, 56% 0, 100% 100%, 0% 100%)",
+            filter: "blur(20px)",
+            transform: "rotate(16deg)",
+          }}
+        />
+        <div
+          className="stage-beam absolute -top-28 right-[10%] w-[380px] h-[840px] pointer-events-none"
+          style={{
+            background: "linear-gradient(165deg, rgba(251,191,36,0.16), rgba(251,191,36,0.05) 55%, transparent 75%)",
+            clipPath: "polygon(44% 0, 56% 0, 100% 100%, 0% 100%)",
+            filter: "blur(20px)",
+            transform: "rotate(-16deg)",
+            animationDelay: "2.2s",
+          }}
+        />
+        {/* Rich golden halo behind the poster side */}
+        <div className="absolute top-1/4 right-[-180px] w-[560px] h-[560px] bg-amber-400/10 rounded-full blur-[150px] pointer-events-none light-pulse" style={{ animationDelay: "1.2s" }} />
+        {/* Stage-floor glow rising behind the stats bar */}
+        <div
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1100px] h-[260px] pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 50% 65% at 50% 100%, rgba(245,158,11,0.12), transparent 72%)" }}
+        />
+
+        {/* Cinematic film grain overlay for realism */}
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none film-grain mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.7 0 0 0 0 0.3 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Faint static suit texture — subtle */}
+        <div
+          className="absolute inset-0 opacity-[0.02] pointer-events-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cg fill='%23f59e0b' font-family='serif' font-size='30'%3E%3Ctext x='18' y='46'%3E%E2%99%A0%3C/text%3E%3Ctext x='112' y='86'%3E%E2%99%A5%3C/text%3E%3Ctext x='40' y='140'%3E%E2%99%A3%3C/text%3E%3Ctext x='132' y='166'%3E%E2%99%A6%3C/text%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: "180px 180px"
+          }}
+        />
+
+        {/* Mouse-parallax floating MAGIC PROPS (playing cards / wand / hat / coin).
+            Each prop drifts only while hovered; on mouse-leave it freezes in
+            place and resumes from the same frame on the next hover. */}
+        {MAGIC_LAYERS.map((layer, layerIndex) => (
+          <div
+            key={layerIndex}
+            ref={(el) => { bgLayersRef.current[layerIndex] = el; }}
+            className="parallax-layer absolute -inset-16 pointer-events-none"
+            style={{ zIndex: 1 }}
+          >
+            {layer.items.map((item, itemIndex) => (
+              <span
+                key={itemIndex}
+                className="magic-float absolute leading-none select-none pointer-events-auto"
+                style={{
+                  top: item.top,
+                  left: item.left,
+                  opacity: item.op,
+                  animationDelay: item.delay,
+                  ["--dur" as any]: item.dur,
+                  ["--rot" as any]: `${item.rot}deg`,
+                  ["--base-op" as any]: item.op,
+                }}
+                title="✦"
+              >
+                <MagicFloatItem type={item.type} size={item.size} />
+              </span>
+            ))}
+          </div>
+        ))}
+
+        {/* Ambient gold glows — softer, more realistic */}
+        <div className="absolute top-[-140px] right-[-120px] w-[620px] h-[620px] bg-amber-500/8 rounded-full blur-[180px] pointer-events-none light-pulse" />
+        <div className="absolute bottom-[-160px] left-[-120px] w-[520px] h-[520px] bg-amber-600/5 rounded-full blur-[180px] pointer-events-none light-pulse" style={{ animationDelay: "2s" }} />
+        <div className="absolute top-1/3 left-[-200px] w-[400px] h-[400px] bg-indigo-900/20 rounded-full blur-[160px] pointer-events-none" />
+
+        {/* Dynamic mouse-following light beam */}
+        <div
+          ref={lightBeamRef}
+          className="absolute inset-0 pointer-events-none z-[2] transition-all duration-300 ease-out"
+          style={{ background: `radial-gradient(ellipse 50% 70% at 50% 50%, rgba(251,191,36,0.06) 0%, transparent 70%)` }}
+        />
+
+        {/* Floating dust particles for atmosphere */}
+        <DustParticles />
+
+        {/* Professional cinematic vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(255,255,255,0.35)_100%)] dark:bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.7)_100%)] pointer-events-none z-[2]" />
+
+        {/* Top and bottom edge gradients for natural blend */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 dark:from-black/60 to-transparent pointer-events-none z-[2]" />
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-stone-100/90 dark:from-black/80 to-transparent pointer-events-none z-[2]" />
+
+        <div className="container relative z-30 px-4 mx-auto w-full">
+          {/* items-start: верх постера n1.jpg ровно совпадает с верхом левой колонки («Профессия…») */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+
+            {/* ── Left Column: value proposition (bottom margin = safe zone for the stats bar) ── */}
+            <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start lg:mb-28">
+
+              {/* Category badges - updated texts */}
+              <div className="flex flex-wrap items-center gap-2 mb-7 hero-anim-down" style={{ animationDelay: "0.05s" }}>
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 rounded-lg shadow-lg shadow-amber-500/20">
+                  <Sparkles className="h-3.5 w-3.5" /> Искусство удивлять
+                </span>
+                {/* Keep the second badge as is because no replacement provided */}
+                <span className="px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-white/80 border border-slate-200/80 text-slate-700 dark:bg-white/5 dark:border-white/15 dark:text-slate-200 rounded-lg shadow-sm backdrop-blur-sm">
+                  С трудоустройством
+                </span>
+              </div>
+
+              {/* Massive, High-Impact Typography - updated heading */}
+              <h1 className="text-4xl md:text-5xl lg:text-[58px] xl:text-[64px] font-black text-slate-900 dark:text-white tracking-tight leading-[1.08] mb-6 hero-anim-left" style={{ animationDelay: "0.15s" }}>
+                Научись фокусам, которые действительно хочется показать друзьям
+              </h1>
+
+              {/* Benefit subtext - updated */}
+              <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300/90 mb-9 max-w-xl leading-relaxed font-medium hero-anim-left" style={{ animationDelay: "0.25s" }}>
+                Научись эффектным фокусам, раскрывай секреты иллюзионного искусства и удивляй друзей и близких. Понятные пошаговые уроки от профессионального фокусника.
+              </p>
+
+              {/* Bold CTAs - updated button text */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10 hero-anim-up" style={{ animationDelay: "0.35s" }}>
+                <Button size="lg" className="btn-shine h-14 px-8 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:opacity-90 shadow-xl shadow-amber-500/25 transition-all text-base border-none" asChild>
+                  <Link href="/catalog" className="inline-flex items-center gap-2">
+                    <CtaTrickIcon className="h-4 w-4 shrink-0" />
+                    Смотри секрет трюка
+                    <ArrowRight className="h-4 w-4 shrink-0 opacity-70" />
+                  </Link>
+                </Button>
+                <Button
+                  size="lg" variant="outline"
+                  className="h-14 px-8 rounded-xl bg-white/60 text-slate-900 border-slate-300/80 hover:bg-amber-400/15 hover:border-amber-500/50 dark:bg-transparent dark:text-white dark:border-white/25 dark:hover:bg-amber-400/10 dark:hover:border-amber-400/60 shadow-sm transition-all text-base font-bold backdrop-blur-sm"
+                  asChild
+                >
+                  <Link href="/#about">
+                    <Play className="h-4 w-4 mr-2 text-amber-400 fill-current" /> Хочешь удивить друзей?
+                  </Link>
+                </Button>
+              </div>
+
+            </div>
+
+            {/* ── Right Column: poster + floating UI cards (clean non-overlapping slots) ──
+                Верх постера совпадает с верхом левого текста, а низ доходит до панели
+                статистики («~10 лет…») и аккуратно уходит за неё. */}
+            <div className="lg:col-span-6 xl:col-span-7 relative hero-anim-right lg:-ml-6 xl:-ml-10" style={{ animationDelay: "0.3s" }}>
+              <div
+                ref={heroImageRef}
+                className="hero-img-container relative mx-auto max-w-[900px] h-[420px] sm:h-[520px] lg:h-[720px] xl:h-[780px]"
+              >
+
+                {/* Soft golden aura behind image */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] sm:w-[500px] sm:h-[500px] bg-amber-500/12 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] bg-amber-400/8 rounded-full blur-[80px] pointer-events-none" />
+
+                {/* Main poster image */}
+                <div className="absolute inset-0 w-full h-full hero-img-breath flex items-start justify-center -top-16 sm:-top-24 lg:-top-32">
+                  {/* Natural size background image behind person's head */}
+                  <img
+                    src="/n13.jpg"
+                    alt="Background text"
+                    className="absolute z-0 -top-8 sm:-top-12 left-1/2 -translate-x-1/2 -rotate-6 max-w-full h-auto object-contain pointer-events-none"
+                    style={{
+                      maskImage: "linear-gradient(to bottom, black 50%, transparent 98%)",
+                      WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 98%)"
+                    }}
+                  />
+                  <img
+                    src={HERO_IMAGE_SRC}
+                    alt="Максим Берестнев"
+                    className="relative z-10 max-h-[110%] w-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] mobile-hero-img-mask"
+                  />
+                </div>
+
+                {/* ── Outer Orbit Ring Line ── */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[290px] xs:w-[340px] sm:w-[540px] md:w-[640px] lg:w-[700px] h-[280px] xs:h-[320px] sm:h-[500px] md:h-[580px] lg:h-[620px] rounded-full border border-dashed border-amber-400/20 pointer-events-none slow-spin" />
+
+                {/* ── 5 BALANCED FLOATING ORBIT CARDS (updated texts) ── */}
+
+                {/* 1. Bottom-Center on mobile / Top-Right on desktop: "10+" */}
+                <div className="float-chip absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6" style={{ animationDelay: "0.5s" }}>
+                  <Star className="h-3.5 w-3.5 xs:h-5 w-5 text-amber-400 fill-current" />
+                  <div className="leading-tight">
+                    <div className="text-xs xs:text-sm font-black text-white">10+</div>
+                    <div className="text-[8px] xs:text-[10px] font-semibold text-slate-400">лет в мире иллюзий</div>
+                  </div>
+                </div>
+
+                {/* 2. Mid-Right: Experience → changed to "Видеоуроки" and "понятно и пошагово" + updated subtitle */}
+                <div className="float-chip absolute top-[100px] right-[-12px] xs:right-[0px] z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6" style={{ animationDelay: "0.8s" }}>
+                  <div className="text-xs xs:text-sm sm:text-base font-black text-amber-400 leading-none mb-0.5 xs:mb-1">Видеоуроки</div>
+                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">понятно и пошагово</div>
+                  <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1">Практический опыт выступлений и обучения</div>
+                </div>
+
+                {/* 3. Bottom-Right: Quick Start → changed to "✨ Первый фокус" and new subtitle */}
+                <div className="float-chip absolute top-[260px] right-[-8px] xs:right-[15px] z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]" style={{ animationDelay: "1.1s" }}>
+                  <div className="text-xs xs:text-sm mb-0.5 xs:mb-1">✨</div>
+                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Первый фокус</div>
+                  <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1">Научись своему первому эффектному фокусу</div>
+                </div>
+
+                {/* 4. Bottom-Left: Free Trial → changed to "Бесплатно" and "Попробуй первый урок" */}
+                <div className="float-chip absolute top-[270px] left-[-8px] xs:left-[15px] z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]" style={{ animationDelay: "1.9s" }}>
+                  <div className="text-xs xs:text-sm sm:text-base font-black text-emerald-400 leading-none mb-0.5 xs:mb-1">Бесплатно</div>
+                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Попробуй первый урок</div>
+                  {/* third line removed as per new design */}
+                </div>
+
+                {/* 5. Mid-Left: Community → changed to "Для всех" and "от новичков до увлечённых магией" */}
+                <div className="float-chip absolute top-[110px] left-[-12px] xs:left-[0px] z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]" style={{ animationDelay: "1.4s" }}>
+                  <div className="h-6 w-6 xs:h-7 w-7 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mb-1 xs:mb-2 shrink-0">
+                    <Users className="h-3.5 w-3.5 xs:h-4 w-4" />
+                  </div>
+                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Для всех</div>
+                  <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5">от новичков до увлечённых магией</div>
+                </div>
+
+              </div>
+
+              {/* Author short info footer - Desktop only - Positioned at the bottom of the image to hide sharp edge */}
+              <div className="absolute bottom-8 lg:bottom-12 xl:bottom-16 left-1/2 -translate-x-1/2 z-40 hidden lg:flex w-max items-center gap-3 py-2.5 pl-2.5 pr-5 bg-white/80 border border-slate-200/80 dark:bg-[#151310]/90 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl shadow-black/20 hero-anim-up" style={{ animationDelay: "0.45s" }}>
+                <img src={heroAvatar} alt="Максим Берестнев" className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
+                <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="font-extrabold text-slate-900 dark:text-white">Максим Берестнев</span> — профессиональный фокусник и преподаватель
+                </p>
+              </div>
+
+            </div>
+
+            {/* Author card — mobile only, updated text */}
+            <div className="flex lg:hidden items-center gap-3 py-2.5 pl-2.5 pr-5 mt-4 mx-auto bg-white/75 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-lg shadow-slate-200/50 dark:shadow-black/30 w-fit">
+              <img src={heroAvatar} alt="Максим Берестнев" className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
+              <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <span className="font-extrabold text-slate-900 dark:text-white">Максим Берестнев</span> — профессиональный фокусник и преподаватель
+              </p>
+            </div>
+
+          </div>
+
+          {/* Core Stats bar - updated with new STATS */}
+          <div className="relative z-30 mt-6 lg:-mt-24 grid grid-cols-1 md:grid-cols-3 border border-white/10 rounded-3xl bg-[#141210]/90 backdrop-blur-xl overflow-hidden shadow-xl shadow-black/40 hero-anim-zoom" style={{ animationDelay: "0.55s" }}>
+            {STATS.map(({ icon: Icon, value, label }, index) => (
+              <div
+                key={label}
+                className={`flex items-center gap-4 px-8 py-6 text-left transition-colors hover:bg-white/5
+                  ${index < 2 ? "border-b md:border-b-0 md:border-r border-white/10" : ""}
+                `}
+              >
+                <div className="h-12 w-12 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center shrink-0">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="text-xl font-black text-white leading-tight">{value}</div>
+                  <div className="text-xs font-semibold text-slate-400 mt-1">{label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* Dark blend zone: hides any poster overflow below the stats bar */}
+        <div className="absolute inset-x-0 bottom-12 h-44 bg-gradient-to-t from-[#08070a] via-[#08070a]/80 to-transparent pointer-events-none z-20" />
+
+        {/* Marquee ticker (dark) - updated items */}
+        <div className="absolute bottom-0 inset-x-0 z-10 border-t border-white/10 bg-black/70 backdrop-blur-md py-3.5 overflow-hidden">
+          <div className="marquee-track flex whitespace-nowrap items-center gap-10 w-max">
+            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((marqueeItem, marqueeIdx) => (
+              <span key={marqueeIdx} className="flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-400">
+                {marqueeItem}
+                <span className="text-amber-500/80 text-sm">✦</span>
+              </span>
+            ))}
           </div>
         </div>
+
       </section>
 
-      {/* Featured Videos */}
-      <section className="py-24 bg-background">
-        <div className="container px-4">
-          <div className="flex items-end justify-between mb-12">
+      {/* ── Featured Video Courses Grid (Sequential spiral storytelling on desktop) ── */}
+      <section className="py-24 bg-background relative">
+        <div className="container px-4 mx-auto">
+
+          <div className="sr sr-fade-up flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-14">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight mb-2">Популярные курсы</h2>
-              <p className="text-muted-foreground">Лучшие материалы для старта и прокачки навыков</p>
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs uppercase tracking-widest mb-3 border border-amber-400/20">
+                <Flame className="h-3.5 w-3.5 text-amber-400" /> Видеоуроки & Мастер-классы
+              </div>
+              {/* Updated heading */}
+              <h2 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">Открой для себя мир настоящих фокусов</h2>
+              {/* Updated subheading */}
+              <p className="text-muted-foreground text-base">Карточные трюки, иллюзии, секретные техники и мастер-классы от профессионального фокусника. Выбирай то, что тебе интересно, и начинай удивлять окружающих.</p>
             </div>
-            <Button variant="ghost" className="hidden sm:flex group" asChild>
+            <Button variant="outline" className="hidden sm:flex group items-center gap-2 rounded-full border-primary/20 hover:border-primary hover:text-primary transition-all duration-300 font-bold px-6" asChild>
               <Link href="/catalog">
-                Все курсы <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                Все курсы
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
               </Link>
             </Button>
           </div>
 
           {isLoading ? (
             <VideoGridSkeleton />
-          ) : error ? (
-            <ErrorState error={error} />
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {featuredVideos?.slice(0, 8).map((video) => (
-                <Link key={video.id} href={`/video/${video.id}`} className="group flex flex-col gap-3">
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-muted">
-                    <img 
-                      src={video.thumbnailUrl || undefined} 
-                      alt={video.title}
-                      className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                        <Play className="h-5 w-5 fill-current" />
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                      {video.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-                      <div className="flex items-center text-amber-500">
-                        <Star className="h-3.5 w-3.5 fill-current mr-1" />
-                        <span className="font-medium">{video.averageRating.toFixed(1)}</span>
-                      </div>
-                      <span>•</span>
-                      <span>{video.reviewCount} отзывов</span>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2">
-                      {video.discountPrice ? (
-                        <>
-                          <span className="font-bold text-lg">{video.discountPrice} ₽</span>
-                          <span className="text-sm text-muted-foreground line-through">{video.price} ₽</span>
-                        </>
-                      ) : (
-                        <span className="font-bold text-lg">{video.price} ₽</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+          ) : displayVideos.length === 0 ? (
+            <div className="text-center py-24 rounded-3xl border border-dashed border-amber-400/20 bg-amber-400/5">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-500 mb-4 border border-amber-400/20">
+                <Film className="h-8 w-8" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Курсы скоро появятся</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">Новые видеокурсы уже готовятся — следите за обновлениями!</p>
             </div>
+          ) : (
+            <>
+              {/* ── Mobile / Tablet: comfortable classic grid ── */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-7">
+                {displayVideos.slice(0, 8).map((video: any, videoIdx: number) => (
+                  <div
+                    key={video.id}
+                    data-sr-delay={String([0, 80, 160, 260, 80, 160, 260, 320][videoIdx] ?? 0)}
+                    className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
+                  >
+                    {renderCourseCard(video)}
+                  </div>
+                ))}
+              </div>
+
+                {/* ── Desktop: standard grid layout with fixed columns ── */}
+              <div ref={spiralRef} className="hidden lg:block">
+
+                {/* Spiral start marker */}
+                <div className="flex items-center gap-2 mb-4 sr sr-fade-in">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)] animate-pulse" />
+                  <span className="h-px w-10 bg-gradient-to-r from-amber-400/70 to-transparent" />
+                </div>
+
+                {/* Desktop Grid — fixed 4 columns, natural card sizes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                  {displayVideos.map((video: any, videoIdx: number) => (
+                    <div
+                      key={video.id}
+                      data-sr-delay={String([0, 100, 200, 300][videoIdx % 4] ?? 0)}
+                      className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
+                    >
+                      {renderCourseCard(video)}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Spiral end marker */}
+                <div className="flex items-center justify-end gap-2 mt-4">
+                  <span className="h-px w-10 bg-gradient-to-l from-amber-400/70 to-transparent" />
+                  <span className="h-2 w-2 rounded-full bg-amber-400/80" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
+                  <span className="h-1 w-1 rounded-full bg-amber-400/40" />
+                </div>
+              </div>
+            </>
           )}
-          
-          <div className="mt-8 flex justify-center sm:hidden">
-            <Button variant="outline" className="w-full" asChild>
-              <Link href="/catalog">Смотреть все курсы</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
-      {/* About Author Section */}
-      <section id="about" className="py-24 bg-slate-50 dark:bg-slate-900 border-y">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
-            <div className="w-full md:w-1/2 flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary to-accent rounded-3xl blur-2xl opacity-20 dark:opacity-30"></div>
-                <img 
-                  src={authorAvatar} 
-                  alt="Автор курсов" 
-                  className="relative z-10 w-full max-w-md aspect-[4/5] object-cover rounded-3xl shadow-2xl"
-                />
+      {/* ── Storytelling "About Author" Section (Light, Personal Conversation) ── */}
+      <AboutSection />
+
+      {/* ── NEW SECTION: Social Media Videos ── */}
+      <SocialVideosSection />
+
+      {/* ── Free Trial CTA Banner (Light, mouse-follow interactive) ── */}
+      <ReviewsSection />
+
+      {/* ── Interactive Demo Video Modal ── */}
+      {activePreviewVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300">
+          <div className="relative w-full max-w-4xl bg-card border rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                <h3 className="font-bold text-lg leading-tight line-clamp-1">{activePreviewVideo.title}</h3>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setActivePreviewVideo(null)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-            <div className="w-full md:w-1/2 space-y-6">
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary font-medium text-sm">
-                Опыт более 10 лет
+
+            {/* Video Player */}
+            <div className="relative aspect-video bg-black">
+              <PreviewVideoPlayer video={activePreviewVideo} />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 bg-card flex flex-col sm:flex-row items-center justify-between gap-4 border-t">
+              <div>
+                <p className="text-sm text-muted-foreground line-clamp-2">{activePreviewVideo.description}</p>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-                Привет, я занимаюсь видеомонтажом профессионально
-              </h2>
-              <blockquote className="text-xl text-muted-foreground italic border-l-4 border-accent pl-6 py-2">
-                "Всем доброго времени суток, занимаюсь видеомонтажом около 10 лет. 
-                Готов смонтировать пробный ролик с ваших исходников до 5 мин. бесплатно) 
-                Это не моя постоянная деятельность, а как творческое увлечение. 
-                Жду ваших предложений"
-              </blockquote>
-              <div className="pt-4 flex items-center gap-4">
-                <Button size="lg" asChild>
-                  <Link href="/contacts">Связаться со мной</Link>
+              <div className="flex items-center gap-3 shrink-0">
+                <Button variant="outline" className="rounded-full" onClick={() => setActivePreviewVideo(null)}>
+                  Закрыть
+                </Button>
+                <Button className="btn-glow font-bold rounded-full" asChild>
+                  <Link href={`/video/${activePreviewVideo.id}`}>
+                    Перейти к курсу ({activePreviewVideo.discountPrice || activePreviewVideo.price} ₽)
+                  </Link>
                 </Button>
               </div>
             </div>
+
           </div>
         </div>
-      </section>
+      )}
 
-      {/* Testimonials */}
-      <section className="py-24 bg-background">
-        <div className="container px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight mb-4">Отзывы учеников</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Узнайте, что говорят те, кто уже прошел обучение и начал создавать свои собственные проекты
-            </p>
+    </div>
+  );
+}
+
+// --- NEW COMPONENTS FOR ABOUT & CTA (Added for Dark Mode & Admin Editing) ---
+
+function PreviewVideoPlayer({ video }: { video: any }) {
+  const { data: playbackData, isLoading } = useGetVideoPlayback(video.id);
+  const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-4 border-amber-400 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  const url = playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO;
+
+  return (
+    <ReactPlayer
+      url={url}
+      playing={true}
+      controls
+      width="100%"
+      height="100%"
+      className="bg-black object-contain absolute top-0 left-0"
+      config={{ file: { forceHLS: url.includes(".m3u8") } }}
+      onContextMenu={(e: any) => e.preventDefault()}
+    />
+  );
+}
+
+function isAuthorVideoMedia(url: string, mediaType?: string): boolean {
+  if (mediaType === "video") return true;
+  if (mediaType === "image") return false;
+  return /^data:video\//.test(url) || /\.(mp4|webm|mov)(\?.*)?$/i.test(url);
+}
+
+function resolveAuthorMediaUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith("/api/author-media/")) return url;
+  const match = url.match(/\/author-media\/([^/?#]+)$/);
+  if (match) return `/api/author-media/${match[1]}`;
+  return url;
+}
+
+function LazyAutoplayVideo({ src, className }: { src: string; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const video = videoRef.current;
+        if (!video) return;
+
+        if (entry.isIntersecting) {
+          if (!video.src) {
+            video.src = src;
+            video.load();
+          }
+          video.play().catch(() => { });
+        } else {
+          video.pause();
+        }
+      },
+      { rootMargin: "0px", threshold: 0.1 },
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [src]);
+
+  return (
+    <div ref={containerRef} className="relative z-10 w-full h-full">
+      <video
+        ref={videoRef}
+        className={className}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+      />
+    </div>
+  );
+}
+
+function AboutSection() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['site-settings', 'author_section'],
+    queryFn: async () => {
+      const res = await fetch('/api/site-settings/author_section');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const json = await res.json();
+      return json.value;
+    },
+    retry: false,
+  });
+
+  // true only when data was successfully loaded from the server
+  const hasData = !isLoading && !isError && data != null;
+  const content = data ?? {};
+
+  const NO_INFO = 'Информация не заполнена';
+
+  if (isLoading) {
+    return (
+      <section id="about" className="py-28 bg-[#faf8f3] dark:bg-[#0c0a12] text-slate-900 dark:text-white relative overflow-hidden border-y border-amber-100/80 dark:border-amber-500/10">
+        <div className="container px-4 mx-auto text-center">Загрузка...</div>
+    </section>
+    );
+  }
+
+  return (
+    <section id="about" className="py-28 bg-[#faf8f3] dark:bg-[#0c0a12] text-slate-900 dark:text-white relative overflow-hidden border-y border-amber-100/80 dark:border-amber-500/10 transition-colors duration-500">
+      {/* Warm ambient glows */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-amber-200/40 dark:bg-amber-500/10 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-200/40 dark:bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-10 left-0 w-[420px] h-[420px] bg-rose-100/60 dark:bg-rose-500/10 rounded-full blur-[130px] pointer-events-none" />
+
+      {/* Soft paper grain */}
+      <div className="absolute inset-0 opacity-[0.03] dark:opacity-10 pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")` }} />
+
+      {/* Decorative dashed arc top-right */}
+      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full border-2 border-dashed border-amber-200/80 dark:border-amber-500/20 pointer-events-none" />
+      <div className="absolute -bottom-28 -left-28 h-80 w-80 rounded-full border-2 border-dashed border-indigo-200/70 dark:border-indigo-500/20 pointer-events-none" />
+
+      <div className="container px-4 mx-auto relative z-10">
+        {/* Section Header Badge */}
+        <div className="sr sr-fade-up text-center max-w-3xl mx-auto mb-16">
+          <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase tracking-widest mb-4 border border-amber-200 dark:border-amber-500/20 shadow-sm"
+            style={{
+              fontFamily: content.textStyles?.badgeText?.fontFamily,
+              color: content.textStyles?.badgeText?.color
+            }}>
+            <Compass className="h-4 w-4 text-amber-500" />
+            {hasData && content.badgeText ? content.badgeText : 'История мастера'}
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { name: "Александр В.", rating: 5, text: "Отличная подача материала. Без воды, всё по делу. Особенно понравился блок про цветокоррекцию — наконец-то понял, как работают кривые." },
-              { name: "Елена С.", rating: 5, text: "Никогда не думала, что смогу сама монтировать такие крутые ролики. Автор объясняет сложные вещи очень простым языком." },
-              { name: "Михаил Д.", rating: 5, text: "Воспользовался бесплатным пробным монтажом, результат превзошел ожидания! После этого сразу купил полный курс. Рекомендую!" }
-            ].map((review, i) => (
-              <Card key={i} className="bg-muted/50 border-none">
-                <CardContent className="p-8">
-                  <div className="flex items-center text-amber-500 mb-4">
-                    {Array.from({length: 5}).map((_, j) => (
-                      <Star key={j} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-6 line-clamp-4 leading-relaxed">
-                    "{review.text}"
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center font-bold text-primary">
-                      {review.name.charAt(0)}
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white mb-4"
+            style={{
+              fontFamily: content.textStyles?.heading?.fontFamily,
+              color: content.textStyles?.heading?.color
+            }}>
+            {hasData && content.heading ? content.heading : <span className="text-slate-400 italic font-normal text-2xl">{NO_INFO}</span>}
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-lg"
+            style={{
+              fontFamily: content.textStyles?.subheading?.fontFamily,
+              color: content.textStyles?.subheading?.color
+            }}>
+            {hasData && content.subheading ? content.subheading : ''}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-4">
+          {/* Author Profile Frame — layered creative stack */}
+          <div className="sr sr-fade-right lg:col-span-5 relative flex flex-col items-center lg:sticky lg:top-24">
+            {/* Orbit ring behind photo */}
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 pointer-events-none">
+              <div className="slow-spin h-[280px] w-[280px] sm:h-[420px] sm:w-[420px] rounded-full border border-dashed border-amber-300/60 dark:border-amber-500/20" />
+            </div>
+
+            {/* Layered photo composition */}
+            <div className="relative w-full max-w-[320px] sm:max-w-md mx-auto group/stack">
+              <div className="absolute -inset-2.5 rotate-[9deg] rounded-[2.4rem] bg-gradient-to-br from-indigo-200/80 to-cyan-100/80 dark:from-indigo-500/20 dark:to-cyan-500/20 shadow-lg shadow-indigo-900/10 transition-transform duration-500 ease-out group-hover/stack:rotate-[11deg]" />
+              <div className="absolute -inset-2.5 -rotate-[5deg] rounded-[2.4rem] bg-gradient-to-br from-amber-300/90 via-amber-200 to-amber-100 dark:from-amber-500/30 dark:via-amber-500/20 dark:to-amber-500/10 shadow-lg shadow-amber-900/15 transition-transform duration-500 ease-out group-hover/stack:-rotate-[7deg]" />
+              <div className="absolute -inset-2.5 rotate-[2.5deg] rounded-[2.4rem] border-2 border-dashed border-amber-400/60 dark:border-amber-500/30 transition-transform duration-500 ease-out group-hover/stack:rotate-[4deg]" />
+
+              <div className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl shadow-amber-900/20 border-[6px] border-white dark:border-slate-800 group z-10 transition-transform duration-500 ease-out group-hover/stack:-translate-y-1.5">
+                {hasData && content.photoUrl ? (
+                  isAuthorVideoMedia(content.photoUrl, content.photoMediaType) ? (
+                    <LazyAutoplayVideo
+                      src={resolveAuthorMediaUrl(content.photoUrl)}
+                      className="relative z-10 w-full h-full object-cover filter saturate-[1.05] group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <img
+                      src={content.photoUrl}
+                      alt={content.authorName || 'Автор'}
+                      className="relative z-10 w-full h-full object-cover filter saturate-[1.05] group-hover:scale-105 transition-transform duration-700"
+                    />
+                  )
+                ) : (
+                  <div className="relative z-10 w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+                    <div className="text-slate-400 dark:text-slate-600 text-center">
+                      <ImageIcon className="h-16 w-16 mx-auto mb-2 opacity-40" />
+                      <span className="text-sm opacity-60">Нет фото</span>
                     </div>
-                    <div className="font-medium">{review.name}</div>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
+
+                <div className="absolute bottom-5 left-5 right-5 p-5 rounded-2xl bg-white/95 dark:bg-[#15131a]/95 backdrop-blur-xl border border-slate-200/80 dark:border-amber-500/20 text-slate-900 dark:text-white shadow-2xl">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-2xl font-black text-amber-600"
+                      style={{
+                        fontFamily: content.textStyles?.authorName?.fontFamily,
+                        color: content.textStyles?.authorName?.color
+                      }}>
+                      {hasData && content.authorName ? content.authorName : <span className="text-slate-400 text-lg font-normal italic">{NO_INFO}</span>}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400 text-[11px] font-extrabold border border-emerald-200 dark:border-emerald-500/20">PRO</span>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 font-medium"
+                    style={{
+                      fontFamily: content.textStyles?.authorTitle?.fontFamily,
+                      color: content.textStyles?.authorTitle?.color
+                    }}>
+                    {hasData && content.authorTitle ? content.authorTitle : <span className="italic">{NO_INFO}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Media Links Bar */}
+            {hasData && content.socialLinks && Object.values(content.socialLinks).some(link => link) && (
+              <div className="w-full max-w-md mt-8 p-4 rounded-2xl bg-white/85 dark:bg-[#15131a]/85 border border-slate-200/80 dark:border-amber-500/20 backdrop-blur-md shadow-lg shadow-slate-900/5 flex items-center justify-around gap-2">
+                {content.socialLinks.telegram && (
+                  <a href={content.socialLinks.telegram} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-cyan-500/10 transition-all duration-300">
+                    <div className="h-10 w-10 rounded-full bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 border border-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
+                      <Send className="h-5 w-5 ml-0.5" />
+                    </div>
+                  </a>
+                )}
+                {content.socialLinks.whatsapp && (
+                  <a href={content.socialLinks.whatsapp} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-emerald-500/10 transition-all duration-300">
+                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                  </a>
+                )}
+                {content.socialLinks.instagram && (
+                  <a href={content.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-pink-500/10 transition-all duration-300">
+                    <div className="h-10 w-10 rounded-full bg-pink-500/10 text-pink-500 dark:text-pink-400 border border-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
+                      <Instagram className="h-5 w-5" />
+                    </div>
+                  </a>
+                )}
+                {content.socialLinks.vk && (
+                  <a href={content.socialLinks.vk} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-blue-500/10 transition-all duration-300">
+                    <div className="h-10 w-10 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
+                      <Film className="h-5 w-5" />
+                    </div>
+                  </a>
+                )}
+                {content.socialLinks.mailru && (
+                  <a href={content.socialLinks.mailru.startsWith('mailto:') ? content.socialLinks.mailru : `mailto:${content.socialLinks.mailru}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-amber-500/10 transition-all duration-300">
+                    <div className="h-10 w-10 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Story — personal conversation with the visitor */}
+          <div className="sr sr-fade-left lg:col-span-7 flex flex-col justify-center space-y-10">
+            {/* Speech-bubble Quote */}
+            <div className="sr sr-blur relative" data-sr-delay="100">
+              <div className="relative bg-white dark:bg-[#15131a] rounded-3xl border border-slate-200/80 dark:border-amber-500/25 shadow-xl shadow-amber-900/5 p-7 sm:p-8">
+                <div className="hidden lg:block absolute -left-2.5 top-12 h-5 w-5 bg-white dark:bg-[#15131a] border-l border-b border-slate-200/80 dark:border-amber-500/25 rotate-45" />
+                <div className="absolute -top-5 left-8 h-10 w-10 rounded-full bg-amber-100 dark:bg-[#15131a] border border-amber-200 dark:border-amber-500/50 shadow-md flex items-center justify-center">
+                  <Quote className="h-5 w-5 text-amber-500" />
+                </div>
+                {hasData && content.quote ? (
+                  <p className="text-lg md:text-xl text-slate-700 dark:text-slate-300 italic leading-relaxed font-serif pt-2"
+                    style={{
+                      fontFamily: content.textStyles?.quote?.fontFamily,
+                      color: content.textStyles?.quote?.color
+                    }}>
+                    {content.quote}
+                  </p>
+                ) : (
+                  <p className="text-base text-slate-400 dark:text-slate-600 italic pt-2">
+                    {NO_INFO}
+                  </p>
+                )}
+                <div className="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
+                  {hasData && content.backgroundPhotoUrl ? (
+                    <img src={content.backgroundPhotoUrl} alt={content.authorName || 'Автор'} className="h-10 w-10 rounded-full object-cover border-2 border-amber-300 dark:border-amber-500 shadow-md" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 border-2 border-amber-300 dark:border-amber-500 shadow-md flex items-center justify-center">
+                      <span className="text-slate-400 text-xs">?</span>
+                    </div>
+                  )}
+                  <span className="text-sm font-black text-slate-900 dark:text-white"
+                    style={{
+                      fontFamily: content.textStyles?.authorName?.fontFamily,
+                      color: content.textStyles?.authorName?.color
+                    }}>
+                    {hasData && content.authorName ? content.authorName : <span className="italic font-normal text-slate-400">{NO_INFO}</span>}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Story Chapters Timeline */}
+            <div className="relative pl-9">
+              <div className="absolute left-[13px] top-2 bottom-2 w-[2px] rounded-full bg-gradient-to-b from-amber-400 via-amber-300 to-transparent" />
+              <div className="space-y-6">
+                {hasData && content.chapters && content.chapters.length > 0 ? (
+                  content.chapters.map((ch: any, idx: number) => (
+                    <div key={idx} className="sr sr-fade-up relative group" data-sr-delay={150 + idx * 100}>
+                      <div className="absolute -left-[33px] top-6 h-5 w-5 rounded-full bg-white dark:bg-[#15131a] border-[3px] border-amber-400 shadow-[0_0_0_5px_rgba(251,191,36,0.15)] group-hover:scale-125 transition-transform z-10">
+                        <span className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      </div>
+                      <div className="bg-white dark:bg-[#15131a] rounded-2xl border border-slate-200/70 dark:border-amber-500/20 shadow-md p-6 transition-all duration-300 group-hover:-translate-y-1">
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider mb-3"
+                          style={{
+                            fontFamily: content.textStyles?.[`chapter_${idx}_label`]?.fontFamily,
+                            color: content.textStyles?.[`chapter_${idx}_label`]?.color
+                          }}>
+                          {ch.label}
+                        </div>
+                        <h4 className="text-lg font-black text-amber-600 mb-1.5"
+                          style={{
+                            fontFamily: content.textStyles?.[`chapter_${idx}_heading`]?.fontFamily,
+                            color: content.textStyles?.[`chapter_${idx}_heading`]?.color
+                          }}>{ch.heading}</h4>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed"
+                          style={{
+                            fontFamily: content.textStyles?.[`chapter_${idx}_text`]?.fontFamily,
+                            color: content.textStyles?.[`chapter_${idx}_text`]?.color
+                          }}>{ch.text}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="relative group">
+                    <div className="absolute -left-[33px] top-6 h-5 w-5 rounded-full bg-white dark:bg-[#15131a] border-[3px] border-slate-300 dark:border-slate-600 z-10" />
+                    <div className="bg-white dark:bg-[#15131a] rounded-2xl border border-slate-200/70 dark:border-amber-500/20 shadow-md p-6">
+                      <p className="text-slate-400 dark:text-slate-600 text-sm italic">Главы истории не заполнены</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Skill pills */}
+            <div className="pt-1">
+              <div className="text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-3">Технологический стек:</div>
+              <div className="flex flex-wrap gap-2.5">
+                {hasData && content.skills && content.skills.length > 0 ? (
+                  content.skills.map((skill: string) => (
+                    <span key={skill} className="px-4 py-2 rounded-xl bg-white dark:bg-[#15131a] border border-slate-200 dark:border-amber-500/20 text-xs font-extrabold text-slate-600 dark:text-slate-300 hover:border-amber-400/70 shadow-sm cursor-default">
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <span className="px-4 py-2 rounded-xl bg-slate-50 dark:bg-[#15131a] border border-dashed border-slate-200 dark:border-slate-700 text-xs text-slate-400 italic">
+                    Навыки не указаны
+                  </span>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+
+
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// --- SECTION: Social Media Videos (YouTube & TikTok) ---
+function SocialVideosSection() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['site-settings', 'author_section'],
+    queryFn: async () => {
+      const res = await fetch('/api/site-settings/author_section');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const json = await res.json();
+      return json.value;
+    },
+    retry: false,
+  });
+
+  const videos: { url: string; platform: 'youtube' | 'tiktok'; title: string }[] =
+    (!isLoading && !isError && data?.entertainmentVideos?.length) ? data.entertainmentVideos : [];
+
+  // Even if no videos are configured, we render the section to show it exists (empty state handled inside)
+  // if (!isLoading && videos.length === 0) return null;
+  return (
+    <section className="py-24 bg-[#f6f7fb] dark:bg-[#0a0908] text-slate-900 dark:text-white relative overflow-hidden transition-colors duration-500">
+      {/* Ambient glows matching site style */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] bg-amber-200/40 dark:bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-200/30 dark:bg-indigo-500/10 rounded-full blur-[140px] pointer-events-none" />
+
+      <div className="container px-4 mx-auto relative z-10">
+        {/* Section Header */}
+        <div className="sr sr-fade-up text-center max-w-2xl mx-auto mb-14">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase tracking-widest mb-4 border border-amber-200 dark:border-amber-500/20 shadow-sm">
+            <Play className="h-4 w-4 text-amber-500 fill-amber-500" />
+            Мой контент
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tight mb-4">
+            Смотрите на YouTube&nbsp;&amp;&nbsp;TikTok
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
+            Развлекательные и обучающие ролики — нажмите на карточку, чтобы перейти на платформу.
+          </p>
+        </div>
+
+        {/* Loading skeleton */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-2xl overflow-hidden border border-slate-200/80 dark:border-amber-500/10 bg-white dark:bg-[#15131a] shadow-md animate-pulse">
+                <div className="aspect-video bg-slate-200 dark:bg-slate-800" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                  <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-1/3" />
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
-    </div>
+        )}
+
+        {/* Video Cards Grid */}
+        {!isLoading && videos.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {videos.map((video, idx) => {
+              // Extract YouTube video ID from various URL formats
+              let youtubeId = '';
+              if (video.platform === 'youtube') {
+                const ytMatch = video.url.match(
+                  /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
+                );
+                youtubeId = ytMatch ? ytMatch[1] : '';
+              }
+              const thumbUrl = youtubeId
+                ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`
+                : '';
+
+              return (
+                <a
+                  key={idx}
+                  href={video.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group relative flex flex-col rounded-2xl overflow-hidden border border-slate-200/80 dark:border-amber-500/10 bg-white dark:bg-[#15131a] shadow-md hover:-translate-y-2 hover:shadow-xl hover:shadow-amber-900/10 transition-all duration-300"
+                >
+                  {/* Thumbnail */}
+                  <div className="relative aspect-video w-full overflow-hidden bg-slate-950 shrink-0">
+                    {video.platform === 'tiktok' ? (
+                      <div className="absolute inset-0 bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 flex flex-col items-center justify-center gap-2">
+                        <div className="h-14 w-14 rounded-full bg-slate-900/60 border border-white/20 flex items-center justify-center shadow-lg">
+                          <svg className="h-7 w-7 text-cyan-400" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.63 4.18 1.05 1.15 2.5 1.83 4.02 2.05v3.83c-1.39-.08-2.74-.6-3.86-1.47-.84-.66-1.5-1.52-1.92-2.51-.07-.15-.12-.31-.22-.59v8.46c-.03 1.3-.39 2.62-1.07 3.73-.83 1.34-2.13 2.37-3.64 2.87-1.46.49-3.08.52-4.57.12-1.56-.41-2.99-1.36-3.95-2.69C1.94 16.27 1.48 14.54 1.6 12.8c.07-1.74.75-3.46 1.93-4.73 1.19-1.28 2.87-2.09 4.63-2.26v3.91c-.81.1-1.58.48-2.15 1.07-.63.66-.96 1.56-.93 2.47.01.8.31 1.6.86 2.19.53.59 1.28.94 2.07.99 1.08.05 2.13-.53 2.59-1.5.21-.49.27-1.03.26-1.56.02-2.82.01-5.64.01-8.46l.03-.93z" />
+                          </svg>
+                        </div>
+                        <span className="text-[11px] uppercase tracking-widest font-black text-rose-400">TikTok</span>
+                      </div>
+                    ) : thumbUrl ? (
+                      <img
+                        src={thumbUrl}
+                        alt={video.title}
+                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                        <Play className="h-10 w-10 text-slate-600" />
+                      </div>
+                    )}
+
+                    {/* Dark overlay */}
+                    <div className="absolute inset-0 bg-slate-900/25 group-hover:bg-slate-900/10 transition-colors duration-300" />
+
+                    {/* Play button */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="h-13 w-13 h-12 w-12 rounded-full bg-amber-400/90 dark:bg-amber-500/90 text-slate-950 border-2 border-white/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-xl">
+                        <Play className="h-5 w-5 fill-current ml-0.5" />
+                      </div>
+                    </div>
+
+                    {/* Platform badge */}
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-white/10 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                      {video.platform === 'youtube' ? (
+                        <svg className="h-3 w-3 fill-red-500" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
+                      ) : (
+                        <svg className="h-3 w-3 fill-cyan-400" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.63 4.18 1.05 1.15 2.5 1.83 4.02 2.05v3.83c-1.39-.08-2.74-.6-3.86-1.47-.84-.66-1.5-1.52-1.92-2.51-.07-.15-.12-.31-.22-.59v8.46c-.03 1.3-.39 2.62-1.07 3.73-.83 1.34-2.13 2.37-3.64 2.87-1.46.49-3.08.52-4.57.12-1.56-.41-2.99-1.36-3.95-2.69C1.94 16.27 1.48 14.54 1.6 12.8c.07-1.74.75-3.46 1.93-4.73 1.19-1.28 2.87-2.09 4.63-2.26v3.91c-.81.1-1.58.48-2.15 1.07-.63.66-.96 1.56-.93 2.47.01.8.31 1.6.86 2.19.53.59 1.28.94 2.07.99 1.08.05 2.13-.53 2.59-1.5.21-.49.27-1.03.26-1.56.02-2.82.01-5.64.01-8.46l.03-.93z" /></svg>
+                      )}
+                      {video.platform === 'youtube' ? 'YouTube' : 'TikTok'}
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                    <h4 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors duration-300">
+                      {video.title || 'Смотреть видео'}
+                    </h4>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                      Открыть на {video.platform === 'youtube' ? 'YouTube' : 'TikTok'} →
+                    </span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        ) : !isLoading && (
+          <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+            <Video className="h-12 w-12 mx-auto mb-4 text-slate-300 dark:text-slate-700" />
+            <h4 className="text-lg font-bold text-slate-500 dark:text-slate-400 mb-2">Видео пока не добавлены</h4>
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              Администратор может добавить ссылки на YouTube и TikTok в панели управления.
+            </p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ReviewsSection() {
+  const [ctaPointer, setCtaPointer] = useState({ x: 0, y: 0 });
+  const ctaCardRef = useRef<HTMLDivElement>(null);
+
+  const { data: reviewsData, isLoading, isError } = useQuery({
+    queryKey: ['site-settings', 'reviews_section'],
+    queryFn: async () => {
+      const res = await fetch('/api/site-settings/reviews_section');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const json = await res.json();
+      return json.value;
+    },
+    retry: false,
+  });
+
+  const hasData = !isLoading && !isError && reviewsData != null;
+  const sectionData = reviewsData ?? {};
+
+  const NO_INFO = 'Информация не заполнена';
+
+  const handleCtaPointerMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ctaCardRef.current) return;
+    const rect = ctaCardRef.current.getBoundingClientRect();
+    setCtaPointer({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  return (
+    <section className="py-20 bg-[#f6f7fb] dark:bg-[#08070a] text-slate-900 dark:text-white relative overflow-hidden transition-colors duration-500">
+      <div className="absolute top-0 left-1/4 w-[400px] h-[400px] bg-amber-200/50 dark:bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-indigo-200/50 dark:bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="container px-4 mx-auto relative z-10">
+        <div
+          ref={ctaCardRef}
+          onMouseMove={handleCtaPointerMove}
+          className="sr sr-blur relative rounded-3xl bg-[#fbfbfd] dark:bg-[#121017] p-10 md:p-16 border border-amber-200/90 dark:border-amber-500/20 shadow-2xl overflow-hidden transition-shadow duration-300"
+        >
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] opacity-90 transition-opacity duration-300"
+            style={{ background: `radial-gradient(circle 260px at ${ctaPointer.x}px ${ctaPointer.y}px, rgba(251,191,36,0.28), rgba(251,191,36,0.08) 45%, transparent 70%)` }}
+          />
+          <div className="absolute -top-24 -left-24 w-72 h-72 bg-amber-300/30 dark:bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-indigo-300/30 dark:bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10">
+            {/* Section header - updated texts */}
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 font-extrabold text-xs uppercase tracking-widest mb-4 border border-amber-200 dark:border-amber-500/20 shadow-sm">
+                <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
+                {hasData && sectionData.badgeText ? sectionData.badgeText : 'Отзывы'}
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3 leading-tight">
+                {hasData && sectionData.heading ? sectionData.heading : <span className="text-slate-400 italic font-normal text-2xl">{NO_INFO}</span>}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 text-base max-w-xl mx-auto">
+                {hasData && sectionData.subheading ? sectionData.subheading : 'Впечатления от уроков, фокусов и первых попыток удивить друзей.'}
+              </p>
+            </div>
+
+            {/* Reviews grid */}
+            {isLoading ? (
+              <div className="text-center py-8 text-slate-400">Загрузка отзывов...</div>
+            ) : hasData && sectionData.reviews && sectionData.reviews.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {sectionData.reviews.map((review: any) => (
+                  <div
+                    key={review.id}
+                    className="group relative bg-white dark:bg-[#0d0b14] rounded-2xl border border-slate-200/80 dark:border-amber-500/15 shadow-md hover:shadow-xl hover:shadow-amber-900/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                  >
+                    {review.imageUrl ? (
+                      <div className="w-full aspect-[4/5] overflow-hidden">
+                        <img
+                          src={review.imageUrl}
+                          alt={`Отзыв от ${review.authorName}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </div>
+                    ) : null}
+
+                    {/* Text content */}
+                    <div className="p-5">
+                      {/* Stars */}
+                      <div className="flex items-center gap-0.5 mb-3">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-700'}`}
+                          />
+                        ))}
+                      </div>
+
+                      {review.text && (
+                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4 line-clamp-4">
+                          {review.text}
+                        </p>
+                      )}
+
+                      {/* Author */}
+                      <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 font-black text-sm shrink-0">
+                          {review.authorName?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        <span className="font-bold text-sm text-slate-800 dark:text-white">{review.authorName || 'Аноним'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-400">
+                <Star className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                <p className="text-sm italic">{NO_INFO}</p>
+              </div>
+            )}
+
+             {/* CTA inside the same card - updated button text */}
+             <div className="mt-14 text-center border-t border-slate-200/60 dark:border-amber-500/15 pt-12">
+               <h3 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-2">Хочешь удивлять людей?</h3>
+               <p className="text-slate-500 dark:text-slate-400 text-base max-w-xl mx-auto mb-6">
+                 Начни с одного фокуса. Посмотри урок, повтори движения, потренируйся — и уже сегодня у тебя будет что показать друзьям.
+               </p>
+               <Button size="lg" className="btn-shine px-10 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:opacity-90 shadow-xl shadow-amber-500/25 transition-all text-base border-none" asChild>
+                 <Link href="/catalog">
+                   Выбрать фокус <ArrowRight className="inline h-4 w-4 ml-1.5 -mt-0.5" />
+                 </Link>
+               </Button>
+             </div>
+
+           </div>
+           
+         </div>
+       </div>
+       
+    </section>
   );
 }

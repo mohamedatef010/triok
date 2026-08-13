@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CreditCard, Smartphone, CheckCircle2 } from "lucide-react";
 import { LoadingSpinner, ErrorState } from "@/components/ui/states";
+import { useSEO } from "@/hooks/use-seo";
 
 export function PaymentPage({ params }: { params: { orderId: string } }) {
+  useSEO({ robots: "noindex, follow" });
   const orderId = Number(params.orderId);
   const [, setLocation] = useLocation();
   const { data: order, isLoading, error } = useGetOrder(orderId, { query: { enabled: !!orderId } });

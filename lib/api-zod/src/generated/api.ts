@@ -118,6 +118,7 @@ export const GetMyPurchasedVideosResponseItem = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -214,6 +215,7 @@ export const ListVideosResponse = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -246,6 +248,7 @@ export const CreateVideoBody = zod.object({
   "thumbnailUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "previewVideoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number().min(createVideoBodyPriceMin),
   "discountPrice": zod.number().nullish(),
@@ -260,6 +263,7 @@ export const CreateVideoResponse = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -283,6 +287,7 @@ export const GetFeaturedVideosResponseItem = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -328,6 +333,7 @@ export const GetVideoResponse = zod.object({
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
   "previewVideoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -356,6 +362,7 @@ export const UpdateVideoBody = zod.object({
   "thumbnailUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "previewVideoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number().optional(),
   "discountPrice": zod.number().nullish(),
@@ -370,6 +377,7 @@ export const UpdateVideoResponse = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -420,6 +428,7 @@ export const GetRelatedVideosResponseItem = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -448,6 +457,7 @@ export const GetSimilarVideosResponseItem = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -461,6 +471,59 @@ export const GetSimilarVideosResponseItem = zod.object({
   "createdAt": zod.coerce.date()
 })
 export const GetSimilarVideosResponse = zod.array(GetSimilarVideosResponseItem)
+
+
+/**
+ * @summary Get a presigned S3 upload URL (admin only)
+ */
+export const GetVideoUploadUrlParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetVideoUploadUrlResponse = zod.object({
+  "uploadUrl": zod.string(),
+  "key": zod.string()
+})
+
+
+/**
+ * @summary Start video processing to HLS (admin only)
+ */
+export const ProcessVideoParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const ProcessVideoResponse = zod.object({
+  "success": zod.boolean(),
+  "message": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get signed HLS playback URL depending on purchase status
+ */
+export const GetVideoPlaybackParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetVideoPlaybackResponse = zod.object({
+  "manifestUrl": zod.string(),
+  "type": zod.enum(['preview', 'full'])
+})
+
+
+/**
+ * @summary Get HLS manifest with presigned S3 segment URLs
+ */
+export const GetVideoManifestParams = zod.object({
+  "id": zod.coerce.number().int()
+})
+
+export const GetVideoManifestQueryParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetVideoManifestResponse = zod.unknown()
 
 
 /**
@@ -600,6 +663,7 @@ export const GetFavoritesResponseItem = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -844,6 +908,7 @@ export const AdminListVideosResponse = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
@@ -879,6 +944,7 @@ export const SetVideoDiscountResponse = zod.object({
   "description": zod.string().nullish(),
   "thumbnailUrl": zod.string(),
   "videoUrl": zod.string().nullish(),
+  "previewDurationSeconds": zod.int().nullish(),
   "durationSeconds": zod.int().nullish(),
   "price": zod.number(),
   "discountPrice": zod.number().nullish(),
