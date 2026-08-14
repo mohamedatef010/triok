@@ -105,25 +105,26 @@ async function convertImageToWebP(file: File, quality = 0.88): Promise<{ blob: B
   });
 }
 
-/** Upload WebP image directly to S3 via presigned upload URL */
+/** Upload WebP image via API server (server uploads to S3 internally — no browser→MinIO direct connection needed) */
 async function uploadWebPToStorage(file: File, token: string): Promise<{ publicUrl: string; savedPercent: number }> {
   const { blob, originalSize, newSize } = await convertImageToWebP(file);
   const savedPercent = Math.max(0, Math.round(((originalSize - newSize) / originalSize) * 100));
 
-  const presignRes = await fetch(`${API_BASE}/api/admin/upload-image-url`, {
+  const uploadRes = await fetch(`${API_BASE}/api/admin/upload-image`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!presignRes.ok) throw new Error('Не удалось получить ссылку для загрузки');
-  const { uploadUrl, url: publicUrl } = (await presignRes.json()) as { uploadUrl: string; url: string; key: string };
-
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'image/webp' },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'image/webp',
+    },
     body: blob,
   });
-  if (!uploadRes.ok) throw new Error('Ошибка при отправке файла в хранилище');
 
+  if (!uploadRes.ok) {
+    const err = await uploadRes.json().catch(() => ({ error: 'Upload failed' }));
+    throw new Error(err.error || 'Ошибка загрузки изображения');
+  }
+
+  const { url: publicUrl } = (await uploadRes.json()) as { url: string; key: string };
   return { publicUrl, savedPercent };
 }
 

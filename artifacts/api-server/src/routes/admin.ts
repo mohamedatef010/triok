@@ -243,16 +243,49 @@ router.post("/admin/process-author-video", requireAdmin, async (req, res): Promi
   }
 });
 
-/* ── Image Upload (WebP thumbnail) ── */
+/* ── Image Upload (WebP — server-side upload, no presigned URL needed) ── */
+router.post("/admin/upload-image", requireAdmin, async (req, res): Promise<void> => {
+  try {
+    const contentType = req.headers["content-type"] || "image/webp";
+    if (!contentType.startsWith("image/")) {
+      res.status(400).json({ error: "Only image uploads are accepted" });
+      return;
+    }
+
+    // Collect raw binary from request body
+    const chunks: Buffer[] = [];
+    await new Promise<void>((resolve, reject) => {
+      req.on("data", (chunk: Buffer) => chunks.push(chunk));
+      req.on("end", resolve);
+      req.on("error", reject);
+    });
+    const body = Buffer.concat(chunks);
+    if (body.length === 0) {
+      res.status(400).json({ error: "Empty image body" });
+      return;
+    }
+
+    const key = `images/${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
+    const bucket = process.env.S3_BUCKET || "video-courses";
+
+    // Upload directly from server to MinIO (avoids browser→MinIO connectivity issues)
+    const { uploadFile } = await import("@workspace/storage");
+    await uploadFile(key, body, "image/webp");
+
+    const publicUrl = `/api/thumbnails/${key.replace("images/", "")}`;
+    res.json({ url: publicUrl, key });
+  } catch (error) {
+    req.log.error(error);
+    res.status(500).json({ error: "Failed to upload image" });
+  }
+});
+
+/* ── Legacy presigned URL endpoint (kept for backward compatibility) ── */
 router.post("/admin/upload-image-url", requireAdmin, async (req, res): Promise<void> => {
   try {
-    // Always store as WebP for optimal web performance
     const key = `images/${Date.now()}-${Math.random().toString(36).substring(7)}.webp`;
     const uploadUrl = await generateUploadUrl(key, "image/webp");
-
-    // Construct public URL via our proxy endpoint (works regardless of S3 visibility)
     const publicUrl = `/api/thumbnails/${key.replace("images/", "")}`;
-
     res.json({ uploadUrl, url: publicUrl, key });
   } catch (error) {
     req.log.error(error);
