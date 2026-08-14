@@ -7,6 +7,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Trust the first proxy (Nginx) — required for express-rate-limit and IP detection behind reverse proxy
+app.set("trust proxy", 1);
+
 // Security Headers
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled to prevent breaking ReactPlayer/Vite/S3
