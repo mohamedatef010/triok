@@ -44,7 +44,7 @@ echo "🗄️ [5/8] Applying database schema migrations..."
 pnpm --filter @workspace/db run push
 
 echo "👤 [6/8] Ensuring default admin account exists..."
-pnpm --filter @workspace/scripts run seed-admin || true
+node --env-file=.env ./node_modules/tsx/dist/cli.mjs ./scripts/src/seed-admin.ts 2>/dev/null || pnpm --filter @workspace/scripts run seed-admin 2>/dev/null || true
 
 echo "🏗️ [7/8] Building Frontend and Backend applications..."
 pnpm --filter @workspace/api-server run build
@@ -56,8 +56,28 @@ if [ -f /etc/nginx/sites-available/video-courses.conf ]; then
   sudo nginx -t && sudo systemctl reload nginx || sudo systemctl restart nginx
 fi
 
-# Restart API server via PM2 ecosystem
-pm2 restart ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
+# Ensure ecosystem.config.cjs exists
+if [ ! -f ecosystem.config.cjs ]; then
+  cat > ecosystem.config.cjs << 'EOF'
+const path = require("path");
+module.exports = {
+  apps: [{
+    name: "video-courses-api",
+    script: "./artifacts/api-server/dist/index.mjs",
+    cwd: __dirname,
+    node_args: "--env-file=.env",
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: "500M",
+    env: { NODE_ENV: "production" }
+  }]
+};
+EOF
+fi
+
+# Restart API server via PM2 ecosystem or direct fallback
+pm2 restart ecosystem.config.cjs --update-env 2>/dev/null || pm2 start ecosystem.config.cjs || pm2 restart video-courses-api --update-env 2>/dev/null || pm2 start artifacts/api-server/dist/index.mjs --name "video-courses-api" --node-args="--env-file=.env" --update-env
 pm2 save
 
 echo ""
