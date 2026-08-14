@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { Card, CardContent } from "@/components/ui/card";
+import { EventsGallerySection } from "@/components/events-gallery-section";
 
 /* ── Visual assets ──
    n1.jpg is served from the public folder as /n1.jpg */
@@ -312,6 +313,33 @@ function CtaTrickIcon({ className }: { className?: string }) {
       <ellipse cx="12" cy="17.25" rx="7.25" ry="2.1" />
       <path d="M8.25 16.75V10a3.75 3.75 0 0 1 7.5 0v6.75" />
       <path d="M9.25 12.75h5.5" />
+    </svg>
+  );
+}
+
+/** Authentic Magician Top Hat & Magic Wand icon (not AI-like sparkle) */
+function MagicianHatWandIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* Top Hat Brim */}
+      <path d="M4 18h16" />
+      {/* Top Hat Crown */}
+      <path d="M7 18V9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v9" />
+      {/* Hat Ribbon */}
+      <path d="M7 14h10" />
+      {/* Magic Wand with tip glow */}
+      <path d="m17 3-4 4" />
+      <path d="M19 1.5v1.5" />
+      <path d="M21.5 4h-1.5" />
     </svg>
   );
 }
@@ -1079,6 +1107,9 @@ export function HomePage() {
       {/* ── NEW SECTION: Social Media Videos ── */}
       <SocialVideosSection />
 
+      {/* ── NEW SECTION: Event Photos Gallery (صور من المناسبات) ── */}
+      <EventsGallerySection />
+
       {/* ── Free Trial CTA Banner (Light, mouse-follow interactive) ── */}
       <ReviewsSection />
 
@@ -1765,17 +1796,34 @@ function ReviewsSection() {
               </div>
             )}
 
-             {/* CTA inside the same card - updated button text */}
-             <div className="mt-14 text-center border-t border-slate-200/60 dark:border-amber-500/15 pt-12">
-               <h3 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-2">Хочешь удивлять людей?</h3>
-               <p className="text-slate-500 dark:text-slate-400 text-base max-w-xl mx-auto mb-6">
-                 Начни с одного фокуса. Посмотри урок, повтори движения, потренируйся — и уже сегодня у тебя будет что показать друзьям.
-               </p>
-               <Button size="lg" className="btn-shine px-10 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:opacity-90 shadow-xl shadow-amber-500/25 transition-all text-base border-none" asChild>
-                 <Link href="/catalog">
-                   Выбрать фокус <ArrowRight className="inline h-4 w-4 ml-1.5 -mt-0.5" />
-                 </Link>
-               </Button>
+             {/* Marketing CTA Box at the bottom — Original rich golden banner design */}
+             <div className="mt-14 rounded-3xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-slate-950 p-8 sm:p-12 shadow-2xl shadow-amber-500/25 relative overflow-hidden text-left">
+               <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-white/15 rounded-full blur-3xl pointer-events-none" />
+               <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
+                 <div className="space-y-2.5 max-w-xl">
+                   <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-950/15 text-slate-950 text-xs font-black uppercase tracking-wider">
+                     <MagicianHatWandIcon className="h-4 w-4" />
+                     Эксклюзивное шоу для вашего праздника
+                   </div>
+                   <h3 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-slate-950">
+                     Хотите удивить гостей на своём мероприятии?
+                   </h3>
+                   <p className="text-sm sm:text-base font-semibold text-slate-900/85 leading-relaxed">
+                     Интерактивная магия, чтение мыслей, микромагия и сценическое шоу. Сделайте ваше событие незабываемым!
+                   </p>
+                 </div>
+
+                 <Button
+                   size="lg"
+                   className="bg-slate-950 hover:bg-slate-900 text-white font-black px-8 py-6 rounded-2xl shadow-xl hover:scale-105 transition-all text-base shrink-0 border border-white/10"
+                   asChild
+                 >
+                   <Link href="/catalog">
+                     Заказать выступление на праздник
+                     <ArrowRight className="ml-2 h-5 w-5" />
+                   </Link>
+                 </Button>
+               </div>
              </div>
 
            </div>

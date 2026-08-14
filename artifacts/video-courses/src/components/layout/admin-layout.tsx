@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Film, ShoppingCart, Users, ArrowLeft, Star, Menu, X } from "lucide-react";
+import { LogOut, LayoutDashboard, Film, ShoppingCart, Users, ArrowLeft, Star, Menu, X, Camera } from "lucide-react";
 
 const navItems = [
   { href: "/admm/dashboard", icon: LayoutDashboard, label: "Дашборд" },
@@ -10,6 +10,7 @@ const navItems = [
   { href: "/admm/orders", icon: ShoppingCart, label: "Заказы" },
   { href: "/admm/users", icon: Users, label: "Пользователи" },
   { href: "/admm/author-section", icon: Film, label: "Контент сайта" },
+  { href: "/admm/events-gallery", icon: Camera, label: "Фото с мероприятий" },
   { href: "/admm/reviews-section", icon: Star, label: "Отзывы" },
 ];
 

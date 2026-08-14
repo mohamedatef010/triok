@@ -163,6 +163,7 @@ export function Navbar() {
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Верхнее меню</h4>
                   <Link href="/catalog" className="text-base font-bold hover:text-amber-500 transition-colors">Каталог</Link>
                   <Link href="/#about" className="text-base font-bold hover:text-amber-500 transition-colors">Обо мне</Link>
+                  <Link href="/#events-gallery" className="text-base font-bold hover:text-amber-500 transition-colors">Мероприятия</Link>
                   
                   <div className="mt-2 flex flex-col gap-3 pl-4 border-l-2 border-border/40">
                     <span className="text-sm font-semibold text-muted-foreground">Личные данные</span>
