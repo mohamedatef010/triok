@@ -7,6 +7,13 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client, uploadFile, deleteObject } from "@workspace/storage";
 import { logger } from "./logger";
 
+if (process.env.FFMPEG_PATH) {
+  ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
+}
+if (process.env.FFPROBE_PATH) {
+  ffmpeg.setFfprobePath(process.env.FFPROBE_PATH);
+}
+
 const bucket = process.env.S3_BUCKET || "video-courses";
 
 export function getAuthorMediaPublicUrl(key: string): string {

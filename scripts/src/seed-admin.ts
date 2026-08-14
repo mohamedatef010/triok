@@ -1,3 +1,7 @@
+import { loadEnvFile } from "node:process";
+try { loadEnvFile(); } catch {}
+try { loadEnvFile("../../.env"); } catch {}
+
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";

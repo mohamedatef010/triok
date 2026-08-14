@@ -1,8 +1,16 @@
 {
   "CORSRules": [
     {
-      "AllowedOrigins": ["https://классный-фокус.рф", "http://localhost:5173", "http://localhost:3000"],
-      "AllowedMethods": ["GET", "PUT", "HEAD"],
+      "AllowedOrigins": [
+        "https://классный-фокус.рф",
+        "https://xn----7sb1acdcpkxafxk9g.xn--p1ai",
+        "http://xn----7sb1acdcpkxafxk9g.xn--p1ai",
+        "http://5.35.87.221",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://localhost:4173"
+      ],
+      "AllowedMethods": ["GET", "PUT", "POST", "HEAD", "DELETE"],
       "AllowedHeaders": ["*"],
       "ExposeHeaders": ["Content-Length", "ETag", "Accept-Ranges"]
     }

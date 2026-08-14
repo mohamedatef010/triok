@@ -77,41 +77,46 @@ sudo chmod -R 755 /var/www/video-courses
 
 ## 3. تكوين متغيرات البيئة (`.env`) للإنتاج
 
-في السيرفر، انتقل إلى مجلد المشروع وانشئ ملف `.env` رئيسي للإنتاج:
+في السيرفر، انتقل إلى مجلد المشروع واستخدم ملف الإعدادات الجاهز `.env.production.example`:
 ```bash
 cd /var/www/video-courses
-cp .env.example .env
+cp deployment/.env.production.example .env
 nano .env
 ```
 
-قم بتعديل القيم لتناسب الإنتاج كالتالي:
+القيم معدة مسبقاً وجاهزة لبيانات السيرفر والدومين كالتالي:
 
 ```ini
 NODE_ENV=production
 PORT=3000
-FRONTEND_URL=https://xn----7sb1acdcpkxafxk9g.xn--p1ai # Punycode للدومين классный-фокус.рф
+FRONTEND_URL=https://xn----7sb1acdcpkxafxk9g.xn--p1ai
 
-# رابط قاعدة البيانات PostgreSQL الحقيقية
-DATABASE_URL=postgresql://db_user:db_password@localhost:5432/video_courses
+# رابط قاعدة البيانات PostgreSQL (حاوية Docker على المنفذ 5034)
+DATABASE_URL=postgresql://video_user:video_password@localhost:5034/video_courses_db
 
-# مفاتيح الحماية والتوقيع لـ JWT (اختر كلمات مرور قوية جداً وعشوائية)
-JWT_SECRET=اكتب_هنا_رمز_سري_عشوائي_وقوي_جدا
-JWT_REFRESH_SECRET=اكتب_هنا_رمز_سري_عشوائي_اخر_للتنشيط
+# مفاتيح الحماية والتوقيع لـ JWT و الجلسات
+JWT_SECRET=super_secret_jwt_key_prod_beget_vps_2026_987654321
+JWT_REFRESH_SECRET=super_secret_refresh_key_prod_beget_vps_2026_123456789
+SESSION_SECRET=super_secret_session_key_prod_beget_vps_2026_abcdef123
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=7d
 
-# إعدادات تخزين الفيديوهات والصور (AWS S3 أو Cloudflare R2 أو أي مزود متوافق مع S3)
+# إعدادات تخزين الفيديوهات والصور عبر MinIO (يمر عبر Nginx بـ HTTPS لتفادي Mixed Content)
 S3_REGION=us-east-1
-S3_ENDPOINT=https://your-r2-or-s3-endpoint.com # اتركه فارغاً إذا كنت تستخدم AWS S3 الأصلي
-S3_ACCESS_KEY_ID=مفتاح_الوصول_الخاص_بك
-S3_SECRET_ACCESS_KEY=المفتاح_السري_الخاص_بك
-S3_BUCKET=اسم_الباكت_الإنتاجي_الخاص_بك
-S3_FORCE_PATH_STYLE=false # اجعلها true إذا كنت تستخدم MinIO أو مزوداً يتطلب ذلك
+S3_ENDPOINT=https://xn----7sb1acdcpkxafxk9g.xn--p1ai
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin123
+S3_BUCKET=videos-prod
+S3_FORCE_PATH_STYLE=true
 
 # مسارات FFmpeg و FFprobe على السيرفر
 FFMPEG_PATH=/usr/bin/ffmpeg
 FFPROBE_PATH=/usr/bin/ffprobe
 
-# مجلد مؤقت لمعالجة الفيديوهات (تأكد من وجود صلاحيات الكتابة فيه)
+# مجلد مؤقت لمعالجة الفيديوهات
 VIDEO_TEMP_DIR=/var/tmp/video-processing
+SEGMENT_URL_TTL_SECONDS=7200
+PLAYBACK_MANIFEST_TOKEN_TTL_SECONDS=600
 ```
 
 احفظ الملف بـ `Ctrl + O` ثم اضغط `Enter` ثم اخرج بـ `Ctrl + X`.

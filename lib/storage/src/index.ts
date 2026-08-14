@@ -6,6 +6,12 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+if (!process.env.S3_ENDPOINT) {
+  try {
+    process.loadEnvFile?.();
+  } catch {}
+}
+
 const s3Client = new S3Client({
   region: process.env.S3_REGION || "us-east-1",
   endpoint: process.env.S3_ENDPOINT,
