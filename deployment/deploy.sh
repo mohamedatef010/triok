@@ -13,12 +13,24 @@ cd /var/www/video-courses
 echo "📥 [2/8] Pulling latest changes from GitHub..."
 git pull origin main
 
-echo "📦 [3/8] Checking Docker containers..."
+echo "📦 [3/8] Checking Docker containers and MinIO buckets..."
 if command -v docker >/dev/null 2>&1; then
   if ! docker ps | grep -q "video-courses-postgres"; then
     echo "Starting Docker services..."
     docker-compose up -d || docker compose up -d
   fi
+
+  # Initialize MinIO buckets and public read download permissions
+  echo "Configuring MinIO buckets..."
+  docker exec video-courses-minio sh -c "
+    mc alias set local http://localhost:9000 minioadmin minioadmin123 &&
+    mc mb local/videos-prod --ignore-existing &&
+    mc mb local/videos-dev --ignore-existing &&
+    mc mb local/video-courses --ignore-existing &&
+    mc anonymous set download local/videos-prod &&
+    mc anonymous set download local/videos-dev &&
+    mc anonymous set download local/video-courses
+  " 2>/dev/null || true
 fi
 
 # Ensure temp directory for video processing exists
