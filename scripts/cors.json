@@ -1,7 +1,7 @@
 {
   "CORSRules": [
     {
-      "AllowedOrigins": ["http://localhost:5173", "http://localhost:3000"],
+      "AllowedOrigins": ["https://классный-фокус.рф", "http://localhost:5173", "http://localhost:3000"],
       "AllowedMethods": ["GET", "PUT", "HEAD"],
       "AllowedHeaders": ["*"],
       "ExposeHeaders": ["Content-Length", "ETag", "Accept-Ranges"]

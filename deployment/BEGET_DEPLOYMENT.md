@@ -173,9 +173,13 @@ VIDEO_TEMP_DIR=/var/tmp/video-processing
 
 الآن سنقوم بتشغيل خادم الـ Node.js (API) ليعمل باستمرار في الخلفية على المنفذ `3000`:
 
-1. ابدأ تشغيل الخادم باستخدام PM2:
+1. ابدأ تشغيل الخادم باستخدام PM2 (موصى به باستخدام ملف التكوين لتجنب أخطاء المتغيرات البيئية):
    ```bash
-   pm2 start artifacts/api-server/dist/index.mjs --name "video-courses-api" --update-env
+   pm2 start ecosystem.config.cjs
+   ```
+   *أو يمكنك تشغيله يدوياً عبر تمرير إعدادات منفصلة لـ Node لتشغيل ملفات البيئة:*
+   ```bash
+   pm2 start artifacts/api-server/dist/index.mjs --name "video-courses-api" --node-args="--env-file=.env" --update-env
    ```
 2. تأكد من تشغيل الخادم بنجاح وبدون أخطاء:
    ```bash
