@@ -40,7 +40,9 @@ export function AdminRequisites() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const token = typeof window !== "undefined"
+    ? (localStorage.getItem("admin_token") || localStorage.getItem("auth_token"))
+    : null;
 
   const loadData = async () => {
     setIsLoading(true);
