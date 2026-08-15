@@ -1,147 +1,148 @@
 import { useSEO } from "@/hooks/use-seo";
+import { Link } from "wouter";
+import { ShieldCheck, FileText, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function TermsPage() {
   useSEO({
-    title: "Публичная оферта и пользовательское соглашение",
-    description: "Условия предоставления доступа к цифровым образовательным материалам, оплаты и использования платформы Классный Фокус.",
+    title: "Публичная оферта и условия предоставления услуг",
+    description: "Договор публичной оферты на приобретение доступа к цифровым обучающим видеокурсам на платформе Классный Фокус.",
     canonical: "/terms",
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Публичная оферта — Классный Фокус",
+      "description": "Условия публичного договора-оферты на предоставление доступа к цифровым видеокурсам.",
+      "url": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai/terms"
+    }
   });
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12">
-      <div className="mb-10 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+    <div className="container mx-auto max-w-4xl px-4 py-12 flex-1">
+      <div className="mb-12 text-center">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/10 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider mb-4 border border-amber-400/20">
+          <FileText className="h-3.5 w-3.5" />
+          Юридический документ
+        </div>
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight text-foreground">
           Публичная оферта
         </h1>
-        <p className="mt-4 text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-          Условия предоставления доступа к цифровым образовательным материалам
-          на платформе Классный Фокус
+        <p className="mt-4 text-muted-foreground leading-relaxed max-w-2xl mx-auto text-sm sm:text-base">
+          Договор-оферта на предоставление электронного доступа к цифровым образовательным материалам и видеокурсам на платформе «Классный Фокус»
         </p>
       </div>
 
-      <div className="space-y-10 text-foreground/90 leading-relaxed">
-        <section>
-          <h2 className="text-xl font-bold mb-3">1. Общие положения</h2>
-          <p>
-            Настоящий документ является публичной офертой в соответствии с
-            законодательством Российской Федерации. Используя сайт, оформляя
-            заказ и производя оплату, пользователь подтверждает своё согласие со
-            всеми условиями, изложенными ниже.
+      <div className="space-y-10 text-foreground/90 leading-relaxed bg-card p-6 sm:p-10 rounded-3xl border shadow-sm">
+        <section className="space-y-3">
+          <h2 className="text-xl font-bold text-foreground">1. Общие положения</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            1.1. Настоящий документ в соответствии со статьей 437 Гражданского кодекса Российской Федерации (ГК РФ) является официальным публичным предложением (публичной офертой) самозанятого гражданина РФ <strong>Берестнева Максима Геннадьевича</strong> (ИНН 482506027919), именуемого в дальнейшем «Исполнитель», адресованным любому дееспособному физическому лицу, именуемому в дальнейшем «Пользователь» или «Заказчик».
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            1.2. Полным и безоговорочным принятием (акцептом) настоящей публичной оферты в соответствии со статьей 438 ГК РФ признается совершение Пользователем любого из действий: регистрация на сайте, оформление заказа или оплата выбранного видеокурса на сайте <strong>классный-фокус.рф</strong>.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            1.3. Осуществляя акцепт оферты, Пользователь подтверждает, что ознакомлен и полностью согласен со всеми условиями настоящего Договора, а также с Политикой обработки персональных данных.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">2. Предмет соглашения</h2>
-          <p>
-            Исполнитель предоставляет Пользователю доступ к цифровым
-            образовательным материалам — видеокурсам, урокам, методическим
-            руководствам и другим обучающим материалам — на условиях оплаты,
-            указанных на сайте. Доступ предоставляется исключительно в личных
-            некоммерческих целях.
+        <section className="space-y-3 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">2. Предмет оферты</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            2.1. Исполнитель обязуется предоставить Пользователю платный неисключительный электронный доступ к обучающим цифровым видеоматериалам (видеокурсам, видеоурокам и практическим разборам фокусов), размещённым на сайте, а Пользователь обязуется оплатить данный доступ в порядке и на условиях, установленных настоящей Офертой.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            2.2. Обучающие материалы являются 100% цифровым товаром. Физическая доставка материальных носителей не осуществляется.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            2.3. Доступ к приобретённым материалам предоставляется в Личном кабинете Пользователя на сайте для индивидуального просмотра в режиме онлайн.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">3. Права и обязанности сторон</h2>
-          <p className="mb-2 font-semibold">Пользователь обязуется:</p>
-          <ul className="list-disc list-inside space-y-2 mb-4">
-            <li>
-              использовать материалы только в личных целях и в объёме,
-              предусмотренном условиями покупки;
-            </li>
-            <li>
-              не копировать, не распространять, не передавать третьим лицам
-              и не использовать материалы для коммерческих целей без
-              отдельного согласия правообладателя;
-            </li>
-            <li>
-              не нарушать нормальное функционирование платформы и не
-              использовать доступные материалы способами, не
-              предусмотренными настоящим соглашением;
-            </li>
-            <li>
-              обеспечивать конфиденциальность данных учётной записи и
-              уведомить Исполнителя о любом несанкционированном доступе.
-            </li>
-          </ul>
-          <p className="mb-2 font-semibold">Исполнитель обязуется:</p>
-          <ul className="list-disc list-inside space-y-2">
-            <li>
-              предоставить оплаченный доступ в Личном кабинете после
-              подтверждения оплаты;
-            </li>
-            <li>
-              обеспечивать работоспособность платформы и оперативно
-              устранять технические проблемы;
-            </li>
-            <li>
-              обрабатывать персональные данные в соответствии с
-              действующим законодательством.
-            </li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-bold mb-3">4. Финансовые условия</h2>
-          <p>
-            Цены на курсы и материалы указаны на сайте и могут изменяться
-            Исполнителем в одностороннем порядке. Актуальная цена
-            отображается перед оформлением заказа. Оплата осуществляется
-            через защищённую платёжную систему. Доступ к материалам
-            активируется после успешного зачисления платежа.
+        <section className="space-y-3 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">3. Порядок оформления заказа и предоставления доступа</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            3.1. Пользователь самостоятельно знакомится с описанием, программой и стоимостью видеокурсов в каталоге сайта и оформляет заказ через интерфейс корзины / страницы курса.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            3.2. Доступ к видеоматериалам открывается автоматически в Личном кабинете Пользователя в течение <strong>1–5 минут</strong> после подтверждения успешного зачисления оплаты от платёжной системы.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            3.3. В случае задержки активации по техническим причинам Пользователь может обратиться в службу поддержки по адресу <a href="mailto:cool-trick@mail.ru" className="text-primary font-bold hover:underline">cool-trick@mail.ru</a>.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">5. Возврат и гарантии</h2>
-          <p>
-            В случаях, когда по техническим причинам доступ к оплаченным
-            материалам не был предоставлен или предоставлен с существенными
-            нарушениями, Пользователь вправе обратиться в поддержку для
-            рассмотрения вопроса о возврате. Каждое обращение рассматривается
-            индивидуально. Возврат средств возможен в соответствии с
-            применимым законодательством Российской Федерации.
+        <section className="space-y-3 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">4. Стоимость и порядок расчетов</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            4.1. Стоимость видеокурсов указывается в рублях РФ (₽) на соответствующих страницах каталога и включает все применимые налоги.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            4.2. Оплата производится в безналичном порядке через сервис интернет-эквайринга <strong>ЮKassa</strong>. Принимаются банковские карты (МИР, Visa, MasterCard), Система быстрых платежей (СБП) и иные способы, доступные в платёжном шлюзе.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            4.3. Исполнитель не собирает и не хранит полные реквизиты банковских карт Пользователя. Безопасность обработки платежей обеспечивается сертифицированным платёжным шлюзом ЮKassa по стандарту PCI DSS.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            4.4. Моментом оплаты считается момент поступления подтверждения от платёжной системы о совершении операции.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">6. Конфиденциальность и обработка данных</h2>
-          <p>
-            Исполнитель обрабатывает персональные данные Пользователя
-            исключительно для целей выполнения заказа, предоставления
-            доступа и информационной поддержки. Данные банковских карт не
-            передаются Исполнителю и обрабатываются платёжной системой.
+        <section className="space-y-3 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">5. Интеллектуальная собственность</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            5.1. Все видеокурсы, текстовые описания, методики, графика и дизайн сайта являются объектами интеллектуальной собственности Исполнителя и защищены законодательством РФ об авторском праве.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            5.2. Пользователю предоставляется право личного некоммерческого просмотра материалов. Запрещается копирование, запись экрана, распространение, передача логина и пароля третьим лицам, публичный показ или перепродажа курсов.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">7. Авторские права</h2>
-          <p>
-            Все материалы платформы защищены законодательством об
-            авторском праве и смежных правах. Любое копирование,
-            распространение, перепродажа или иное использование материалов
-            без письменного разрешения правообладателя запрещено.
+        <section className="space-y-3 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">6. Условия возврата и гарантии</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            6.1. В соответствии с законодательством РФ, приобретение доступа к цифровому контенту надлежащего качества не подлежит возврату после предоставления фактического доступа в Личном кабинете, если иное не установлено соглашением сторон.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            6.2. Если по технической вине Исполнителя доступ к оплаченному курсу не был предоставлен и проблема не была устранена в разумный срок, Пользователь вправе потребовать возврата денежных средств.
+          </p>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            6.3. Заявление о возврате направляется на email: <a href="mailto:cool-trick@mail.ru" className="text-primary font-bold hover:underline">cool-trick@mail.ru</a> с указанием номера заказа, даты оплаты и описания проблемы. Возврат осуществляется тем же способом, которым была произведена оплата.
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">8. Заключительные положения</h2>
-          <p>
-            Настоящее соглашение вступает в силу с момента оплаты
-            Пользователем заказа. Исполнитель оставляет за собой право
-            изменять условия настоящего соглашения, публикуя обновлённую
-            версию на сайте. К отношениям между сторонами применяется
-            законодательство Российской Федерации.
+        <section className="space-y-3 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">7. Конфиденциальность и персональные данные</h2>
+          <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
+            7.1. Обработка персональных данных Пользователя (ФИО, Email, телефон) осуществляется исключительно в целях исполнения настоящего Договора в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-bold mb-3">9. Реквизиты</h2>
-          <ul className="space-y-1">
-            <li>Платформа: Классный Фокус</li>
-            <li>Email для поддержки: cool-trick@mail.ru</li>
-          </ul>
+        <section className="space-y-4 border-t border-border/60 pt-8">
+          <h2 className="text-xl font-bold text-foreground">8. Реквизиты и контакты Исполнителя</h2>
+          <div className="p-6 rounded-2xl bg-muted/40 border text-sm space-y-2">
+            <div><strong>Исполнитель:</strong> Берестнев Максим Геннадьевич</div>
+            <div><strong>Статус:</strong> Плательщик налога на профессиональный доход (Самозанятый)</div>
+            <div><strong>ИНН:</strong> 482506027919</div>
+            <div><strong>Телефон:</strong> <a href="tel:+79787176674" className="hover:underline text-foreground font-bold">+7 978 717-66-74</a></div>
+            <div><strong>Email:</strong> <a href="mailto:cool-trick@mail.ru" className="hover:underline text-primary font-bold">cool-trick@mail.ru</a></div>
+            <div><strong>Сайт:</strong> классный-фокус.рф</div>
+            <div><strong>Служба поддержки:</strong> <a href="mailto:magik.777@mail.ru" className="hover:underline text-primary font-bold">magik.777@mail.ru</a></div>
+          </div>
         </section>
+      </div>
+
+      <div className="mt-8 flex justify-center gap-4">
+        <Button variant="outline" className="rounded-2xl font-bold px-6" asChild>
+          <Link href="/requisites">
+            Смотреть реквизиты
+          </Link>
+        </Button>
+        <Button variant="outline" className="rounded-2xl font-bold px-6" asChild>
+          <Link href="/delivery">
+            Получение цифрового товара
+          </Link>
+        </Button>
       </div>
     </div>
   );

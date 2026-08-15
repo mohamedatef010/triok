@@ -171,7 +171,7 @@ export function HelpPage() {
           className="border-b-0 bg-card rounded-2xl mb-4 px-6 shadow-sm"
         >
           <AccordionTrigger className="hover:no-underline text-lg font-semibold py-6">
-            Публичная оферта
+            Публичная оферта и договор
           </AccordionTrigger>
 
           <AccordionContent className="text-muted-foreground pb-6 leading-relaxed">
@@ -181,12 +181,10 @@ export function HelpPage() {
             <br />
             <br />
             Условия покупки, оплаты, предоставления доступа, использования
-            материалов и другие существенные условия изложены в публичной
-            оферте.
-            <br />
-            <br />
-            Полный текст публичной оферты доступен на отдельной странице
-            сайта.
+            материалов и другие существенные условия изложены в{" "}
+            <a href="/terms" className="text-primary font-bold hover:underline">
+              Публичной оферте
+            </a>.
           </AccordionContent>
         </AccordionItem>
 
@@ -196,7 +194,7 @@ export function HelpPage() {
           className="border-b-0 bg-card rounded-2xl mb-4 px-6 shadow-sm"
         >
           <AccordionTrigger className="hover:no-underline text-lg font-semibold py-6">
-            Пользовательское соглашение
+            Пользовательское соглашение и правила доступа
           </AccordionTrigger>
 
           <AccordionContent className="text-muted-foreground pb-6 leading-relaxed">
@@ -204,14 +202,10 @@ export function HelpPage() {
             образовательные материалы только в соответствии с их назначением.
             <br />
             <br />
-            Учебные материалы предназначены для личного использования
-            пользователем. Запрещается копирование, публикация, передача
-            третьим лицам, перепродажа или распространение материалов курса
-            без соответствующего разрешения правообладателя.
-            <br />
-            <br />
-            Используя сайт, пользователь подтверждает, что ознакомился с
-            условиями пользовательского соглашения.
+            Подробный порядок активации и предоставления доступа описан на странице{" "}
+            <a href="/delivery" className="text-primary font-bold hover:underline">
+              Получение цифрового товара
+            </a>.
           </AccordionContent>
         </AccordionItem>
 
@@ -226,21 +220,30 @@ export function HelpPage() {
 
           <AccordionContent className="text-muted-foreground pb-6 leading-relaxed">
             Если после оплаты вы не видите приобретённый курс в Личном
-            кабинете или столкнулись с технической проблемой, свяжитесь с
-            поддержкой по электронной почте:
+            кабинете или столкнулись с технической проблемой, свяжитесь со
+            службой поддержки:
             <br />
             <br />
-            <a
-              href="mailto:cool-trick@mail.ru"
-              className="font-medium text-foreground underline underline-offset-4"
-            >
-              cool-trick@mail.ru
-            </a>
+            <div className="flex flex-wrap gap-4 font-bold">
+              <a
+                href="mailto:cool-trick@mail.ru"
+                className="text-primary hover:underline"
+              >
+                Email: cool-trick@mail.ru
+              </a>
+              <a
+                href="tel:+79787176674"
+                className="text-foreground hover:text-primary hover:underline"
+              >
+                Тел: +7 978 717-66-74
+              </a>
+            </div>
             <br />
-            <br />
-            В обращении желательно указать имя, адрес электронной почты,
-            использованный на сайте, и информацию о покупке. Это поможет
-            быстрее найти заказ и решить проблему.
+            В обращении укажите ваш email при регистрации и номер заказа. 
+            Также вы можете ознакомиться с нашими юридическими данными на странице{" "}
+            <a href="/requisites" className="text-primary font-bold hover:underline">
+              Реквизиты
+            </a>.
           </AccordionContent>
         </AccordionItem>
 
@@ -250,19 +253,19 @@ export function HelpPage() {
           className="border-b-0 bg-card rounded-2xl mb-4 px-6 shadow-sm"
         >
           <AccordionTrigger className="hover:no-underline text-lg font-semibold py-6">
-            Использование учебных материалов
+            Использование учебных материалов и авторские права
           </AccordionTrigger>
 
           <AccordionContent className="text-muted-foreground pb-6 leading-relaxed">
             Все видеоуроки, изображения, тексты, методические материалы и
-            другие элементы курсов предназначены для личного обучения
+            другие элементы курсов предназначены исключительно для личного некоммерческого обучения
             пользователя.
             <br />
             <br />
             Запрещается размещать материалы в открытом доступе, копировать и
             распространять их, передавать доступ к аккаунту другим лицам или
             использовать приобретённый контент для коммерческого
-            распространения без разрешения правообладателя.
+            распространения.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -274,6 +277,13 @@ export function HelpPage() {
           className="font-medium text-foreground underline underline-offset-4"
         >
           cool-trick@mail.ru
+        </a>{" "}
+        или по телефону{" "}
+        <a
+          href="tel:+79787176674"
+          className="font-medium text-foreground underline underline-offset-4"
+        >
+          +7 978 717-66-74
         </a>
         .
       </div>

@@ -33,61 +33,12 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { VideoReviewModal } from "@/components/video-review-modal";
 
-// Demo mock data for guest preview mode
-const DEMO_PURCHASED_COURSES = [
-  {
-    id: 101,
-    title: "Полный курс по видеомонтажу в Premiere Pro",
-    thumbnailUrl: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80",
-    progress: 75,
-    categoryName: "Premiere Pro",
-    price: 2900
-  },
-  {
-    id: 102,
-    title: "Цветокоррекция и Грейдинг в DaVinci Resolve",
-    thumbnailUrl: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=800&auto=format&fit=crop&q=80",
-    progress: 40,
-    categoryName: "DaVinci Resolve",
-    price: 3900
-  }
-];
-
-const DEMO_ORDERS = [
-  {
-    id: 1084,
-    createdAt: new Date().toISOString(),
-    status: "paid",
-    total: 6800,
-    items: [
-      { title: "Полный курс по видеомонтажу в Premiere Pro", price: 2900 },
-      { title: "Цветокоррекция и Грейдинг в DaVinci Resolve", price: 3900 }
-    ]
-  }
-];
-
-const DEMO_REVIEWS = [
-  {
-    id: 1,
-    videoId: 101,
-    videoTitle: "Полный курс по видеомонтажу в Premiere Pro",
-    videoThumbnailUrl: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80",
-    rating: 5,
-    text: "Потрясающий курс! Все уроки понятные, сразу применил на практике для своего первого видео.",
-    createdAt: new Date().toISOString(),
-    userName: "Максим Берестнев"
-  }
-];
-
 export function ProfilePage() {
   useSEO({ title: "Личный кабинет | Профиль", robots: "noindex, follow" });
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading: authLoading, logout, refetch: refetchUser } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Guest Demo Mode toggle
-  const [demoMode, setDemoMode] = useState(false);
 
   // Review Modal state
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
@@ -137,17 +88,10 @@ export function ProfilePage() {
 
   if (authLoading) return <LoadingSpinner />;
 
-  // Display user details (real or demo)
-  const activeUser = isAuthenticated && user ? user : (demoMode ? {
-    id: 999,
-    name: "Максим Берестнев (Демо)",
-    email: "magik.777@mail.ru",
-    phone: "+7 (978) 717-66-74"
-  } : null);
-
-  const activeVideos = isAuthenticated ? videoList : (demoMode ? DEMO_PURCHASED_COURSES : []);
-  const activeOrders = isAuthenticated ? orderList : (demoMode ? DEMO_ORDERS : []);
-  const activeReviews = isAuthenticated ? myReviewsList : (demoMode ? DEMO_REVIEWS : []);
+  const activeUser = isAuthenticated && user ? user : null;
+  const activeVideos = videoList;
+  const activeOrders = orderList;
+  const activeReviews = myReviewsList;
 
   // Map videoId to user's existing review
   const reviewsByVideoId = new Map<number, any>();
@@ -156,11 +100,6 @@ export function ProfilePage() {
   });
 
   const handleSaveProfile = async () => {
-    if (demoMode) {
-      setIsEditing(false);
-      toast({ title: "Демо-профиль сохранен" });
-      return;
-    }
     try {
       await updateMe.mutateAsync({ data: editData });
       await refetchUser();
@@ -226,7 +165,7 @@ export function ProfilePage() {
             Войдите в аккаунт, чтобы просматривать купленные видеокурсы, оставлять отзывы, отслеживать прогресс и управлять заказами.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 max-w-md mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
             <Button size="lg" className="btn-glow font-bold h-14 px-8 rounded-2xl w-full" asChild>
               <Link href="/auth/login">
                 Войти в аккаунт <ArrowRight className="ml-2 h-5 w-5" />
@@ -236,21 +175,6 @@ export function ProfilePage() {
               <Link href="/auth/register">
                 Регистрация
               </Link>
-            </Button>
-          </div>
-
-          {/* Demo Cabinet Option */}
-          <div className="pt-8 border-t border-border/60 flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-500 uppercase tracking-widest mb-3">
-              <Sparkles className="h-4 w-4 text-amber-400" /> Просмотр без авторизации
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full border-amber-400/40 text-amber-500 hover:bg-amber-400 hover:text-slate-950 font-bold px-6 h-11 transition-all duration-300 shadow-sm"
-              onClick={() => setDemoMode(true)}
-            >
-              Включить интерактивный Демо-кабинет
             </Button>
           </div>
 
@@ -266,19 +190,6 @@ export function ProfilePage() {
       <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
 
       <div className="container mx-auto px-4 max-w-5xl relative z-10 space-y-8">
-        
-        {/* Demo Notice Banner */}
-        {demoMode && !isAuthenticated && (
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in">
-            <div className="flex items-center gap-2.5 font-bold text-sm">
-              <Sparkles className="h-5 w-5 text-amber-400 shrink-0" />
-              <span>Вы просматриваете Личный кабинет в интерактивном Демо-режиме</span>
-            </div>
-            <Button size="sm" variant="outline" className="rounded-full border-amber-400 text-amber-500 hover:bg-amber-400 hover:text-slate-950 font-bold shrink-0" asChild>
-              <Link href="/auth/login">Войти в реальный аккаунт</Link>
-            </Button>
-          </div>
-        )}
 
         {/* ── 1. Hero User Profile Card (Rich Glassmorphic Design) ── */}
         <div className="bg-card/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-border/80 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

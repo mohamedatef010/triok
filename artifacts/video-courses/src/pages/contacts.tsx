@@ -219,15 +219,47 @@ export function ContactsPage() {
               </div>
             )}
 
+            {/* Direct Contact Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <a
+                href="tel:+79787176674"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 transition-all"
+              >
+                <div className="h-12 w-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-lg shrink-0">
+                  📞
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">Телефон</div>
+                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400">+7 978 717-66-74</div>
+                </div>
+              </a>
+
+              <a
+                href="mailto:cool-trick@mail.ru"
+                className="flex items-center gap-4 p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/15 transition-all"
+              >
+                <div className="h-12 w-12 rounded-xl bg-cyan-500/20 text-cyan-500 flex items-center justify-center font-bold text-lg shrink-0">
+                  ✉️
+                </div>
+                <div>
+                  <div className="font-bold text-slate-900 dark:text-white text-sm">Email</div>
+                  <div className="text-xs font-bold text-cyan-600 dark:text-cyan-400">cool-trick@mail.ru</div>
+                </div>
+              </a>
+            </div>
+
             {/* Location */}
             <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800">
               <div className="h-12 w-12 rounded-xl bg-indigo-100 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                 <MapPin className="h-5 w-5" />
               </div>
-              <div>
+              <div className="flex-1">
                 <div className="font-bold text-slate-900 dark:text-white">Локация</div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">Россия (онлайн по всему миру)</div>
               </div>
+              <Link href="/requisites" className="text-xs font-bold text-primary hover:underline">
+                Реквизиты &rarr;
+              </Link>
             </div>
 
             

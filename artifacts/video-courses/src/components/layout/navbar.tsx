@@ -177,9 +177,9 @@ export function Navbar() {
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Помощь и информация</h4>
                   <Link href="/contacts" className="text-base font-bold hover:text-amber-500 transition-colors">Контакты</Link>
-                  <Link href="/help" className="text-base font-bold hover:text-amber-500 transition-colors">Как проходит обучение</Link>
-                  <Link href="/help" className="text-base font-bold hover:text-amber-500 transition-colors">Возврат и оплата</Link>
-                  <Link href="/terms" className="text-base font-bold hover:text-amber-500 transition-colors">Пользовательское соглашение</Link>
+                  <Link href="/delivery" className="text-base font-bold hover:text-amber-500 transition-colors">Получение цифрового товара</Link>
+                  <Link href="/help" className="text-base font-bold hover:text-amber-500 transition-colors">Возврат и помощь</Link>
+                  <Link href="/terms" className="text-base font-bold hover:text-amber-500 transition-colors">Публичная оферта</Link>
                   <Link href="/requisites" className="text-base font-bold hover:text-amber-500 transition-colors">Реквизиты</Link>
                 </div>
 

@@ -1,9 +1,9 @@
 import { Link } from "wouter";
-import { Phone, Mail, Send, MessageCircle } from "lucide-react";
+import { Phone, Mail, Send, MessageCircle, ShieldCheck } from "lucide-react";
 import { LogoWordmark } from "@/components/logo";
 import { useQuery } from "@tanstack/react-query";
 
-// Fetch author section settings (same key used in home.tsx SocialVideosSection)
+// Fetch author section settings
 function useSocialLinks() {
   return useQuery({
     queryKey: ["site-settings", "author_section"],
@@ -21,7 +21,7 @@ export function Footer() {
   const { data, isLoading } = useSocialLinks();
   const socialLinks = (!isLoading && data?.socialLinks) ? data.socialLinks : {};
   
-  // استخراج معلومات الاتصال من البيانات المتاحة
+  // Real contact information
   const phone = (!isLoading && data?.phone) ? data.phone : "+7 978 717-66-74";
   const phoneHref = (!isLoading && data?.phone) 
     ? `tel:${data.phone.replace(/\s+/g, '')}` 
@@ -31,12 +31,12 @@ export function Footer() {
     ? data.email 
     : (!isLoading && socialLinks.mailru)
       ? socialLinks.mailru.replace('mailto:', '')
-      : "magik.777@mail.ru";
+      : "cool-trick@mail.ru";
   const emailHref = (!isLoading && data?.email)
     ? `mailto:${data.email}`
     : (!isLoading && socialLinks.mailru)
       ? socialLinks.mailru
-      : "mailto:magik.777@mail.ru";
+      : "mailto:cool-trick@mail.ru";
 
   return (
     <footer className="bg-slate-950 text-slate-200 pt-16 pb-12 border-t border-slate-800">
@@ -48,8 +48,12 @@ export function Footer() {
             <LogoWordmark className="text-white" />
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed pt-2">
-            Профессиональные онлайн-курсы по фокусам и иллюзионному искусству. Учитесь удивлять — пошаговые уроки от профессионального фокусника Максима Берестнева.
+            Профессиональные онлайн-курсы по фокусам и иллюзионному искусству. Учитесь удивлять — пошаговые видеоуроки от профессионального фокусника Максима Берестнева.
           </p>
+          <div className="pt-2 flex items-center gap-2 text-xs text-slate-400">
+            <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>Безопасная оплата через ЮKassa</span>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -57,19 +61,20 @@ export function Footer() {
           <h4 className="font-extrabold text-white text-base tracking-tight">Навигация</h4>
           <nav className="flex flex-col gap-2.5 text-sm text-slate-400 font-medium">
             <Link href="/catalog" className="hover:text-amber-400 transition-colors">Каталог курсов</Link>
-            <Link href="/compare" className="hover:text-amber-400 transition-colors">Сравнение курсов</Link>
             <Link href="/contacts" className="hover:text-amber-400 transition-colors">Контакты</Link>
+            <Link href="/compare" className="hover:text-amber-400 transition-colors">Сравнение курсов</Link>
+            <Link href="/favorites" className="hover:text-amber-400 transition-colors">Избранное</Link>
           </nav>
         </div>
 
-        {/* Support */}
+        {/* Legal & Info */}
         <div className="space-y-4">
           <h4 className="font-extrabold text-white text-base tracking-tight">Информация</h4>
           <nav className="flex flex-col gap-2.5 text-sm text-slate-400 font-medium">
-            <Link href="/help" className="hover:text-amber-400 transition-colors">Как проходит обучение</Link>
-            <Link href="/help" className="hover:text-amber-400 transition-colors">Возврат и оплата</Link>
-            <Link href="/help" className="hover:text-amber-400 transition-colors">Пользовательское соглашение</Link>
+            <Link href="/terms" className="hover:text-amber-400 transition-colors">Публичная оферта</Link>
+            <Link href="/delivery" className="hover:text-amber-400 transition-colors">Получение цифрового товара</Link>
             <Link href="/requisites" className="hover:text-amber-400 transition-colors">Реквизиты</Link>
+            <Link href="/help" className="hover:text-amber-400 transition-colors">Помощь и возврат</Link>
           </nav>
         </div>
 
@@ -164,8 +169,10 @@ export function Footer() {
           &copy; {new Date().getFullYear()} Максим Берестнев. Все права защищены.
         </div>
         <div className="flex flex-wrap justify-center gap-6 text-slate-400">
-          <Link href="/help" className="hover:text-amber-400 transition-colors">Политика конфиденциальности</Link>
+          <Link href="/terms" className="hover:text-amber-400 transition-colors">Публичная оферта</Link>
+          <Link href="/delivery" className="hover:text-amber-400 transition-colors">Получение цифрового товара</Link>
           <Link href="/requisites" className="hover:text-amber-400 transition-colors">Реквизиты</Link>
+          <Link href="/help" className="hover:text-amber-400 transition-colors">Помощь</Link>
         </div>
       </div>
     </footer>

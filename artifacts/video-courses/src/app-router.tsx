@@ -31,6 +31,8 @@ const AdminEventsGallery = lazy(() => import('@/pages/admin/events-gallery').the
 const AdminReviewsSection = lazy(() => import('@/pages/admin/reviews-section').then(m => ({ default: m.AdminReviewsSection })));
 const AdminPromocodes = lazy(() => import('@/pages/admin/promocodes').then(m => ({ default: m.AdminPromocodes })));
 const RequisitesPage = lazy(() => import('@/pages/requisites').then(m => ({ default: m.RequisitesPage })));
+const DeliveryPage = lazy(() => import('@/pages/delivery').then(m => ({ default: m.DeliveryPage })));
+const AdminRequisites = lazy(() => import('@/pages/admin/requisites').then(m => ({ default: m.AdminRequisites })));
 
 const AdminLayout = lazy(() => import('@/components/layout/admin-layout').then(m => ({ default: m.AdminLayout })));
 import NotFound from '@/pages/not-found';
@@ -62,7 +64,9 @@ function MainRouter() {
         <Route path="/help" component={HelpPage} />
         <Route path="/contacts" component={ContactsPage} />
         <Route path="/terms" component={TermsPage} />
+        <Route path="/offer" component={TermsPage} />
         <Route path="/requisites" component={RequisitesPage} />
+        <Route path="/delivery" component={DeliveryPage} />
         <Route path="/profile" component={ProfilePage} />
         <Route path="/payment/:orderId" component={PaymentPage} />
 
@@ -79,6 +83,7 @@ function MainRouter() {
                 <Route path="/admm/orders" component={AdminOrders} />
                 <Route path="/admm/users" component={AdminUsers} />
                 <Route path="/admm/promocodes" component={AdminPromocodes} />
+                <Route path="/admm/requisites" component={AdminRequisites} />
                 <Route path="/admm/author-section" component={AdminAuthorSection} />
                 <Route path="/admm/events-gallery" component={AdminEventsGallery} />
                 <Route path="/admm/reviews-section" component={AdminReviewsSection} />

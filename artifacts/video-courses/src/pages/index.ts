@@ -22,4 +22,5 @@ export { AdminUsers } from './admin/users';
 export { AdminAuthorSection } from './admin/author-section';
 export { AdminReviewsSection } from './admin/reviews-section';
 export { RequisitesPage } from './requisites';
+export { DeliveryPage } from './delivery';
 

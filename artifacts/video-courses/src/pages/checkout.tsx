@@ -123,6 +123,16 @@ export function CheckoutPage() {
           </div>
         </div>
 
+        {/* Digital Delivery Notice */}
+        <div className="text-xs text-muted-foreground bg-muted/30 p-3.5 rounded-xl border border-border/60 text-left space-y-1">
+          <div className="font-semibold text-foreground flex items-center gap-1.5">
+            <span className="text-amber-500 font-bold">●</span> Электронная доставка:
+          </div>
+          <div>
+            Доступ к видеокурсам открывается в вашем Личном кабинете сразу после подтверждения успешной оплаты.
+          </div>
+        </div>
+
         <Button 
           size="lg" 
           onClick={handleCheckout} 
@@ -132,6 +142,19 @@ export function CheckoutPage() {
           {isProcessing ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
           Оплатить {finalTotal} ₽
         </Button>
+
+        {/* Legal Consent */}
+        <p className="text-[11px] text-muted-foreground leading-relaxed text-center px-2">
+          Нажимая кнопку «Оплатить», вы соглашаетесь с условиями{" "}
+          <Link href="/terms" className="underline hover:text-amber-500 font-semibold">
+            Публичной оферты
+          </Link>{" "}
+          и{" "}
+          <Link href="/help" className="underline hover:text-amber-500 font-semibold">
+            Политикой обработки персональных данных
+          </Link>
+          .
+        </p>
       </div>
     </div>
   );

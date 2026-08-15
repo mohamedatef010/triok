@@ -23,121 +23,6 @@ import { VideoReviewModal } from "@/components/video-review-modal";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactPlayer from "react-player";
 
-const DEMO_VIDEOS_MAP: Record<number, any> = {
-  101: {
-    id: 101,
-    title: "Полный курс по видеомонтажу в Premiere Pro",
-    description: "Пошаговый практический курс по монтажу видео от нуля до уровня профессионала. Вы научитесь работать со сложными таймлайнами, горячими клавишами, мультикамом, цветокоррекцией и саунд-дизайном.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    price: 4900,
-    discountPrice: 2900,
-    averageRating: 4.9,
-    reviewCount: 42,
-    categoryName: "Premiere Pro",
-    duration: "14ч 30мин",
-    isPurchased: false
-  },
-  102: {
-    id: 102,
-    title: "Цветокоррекция и Грейдинг в DaVinci Resolve",
-    description: "Профессиональный курс по цветокоррекции: работа с 노дами, параллейными структурами, балансом белого, скинтонами и созданием оригинальных кинематографичных Look'ов.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    price: 5900,
-    discountPrice: 3900,
-    averageRating: 5.0,
-    reviewCount: 38,
-    categoryName: "DaVinci Resolve",
-    duration: "10ч 15мин",
-    isPurchased: false
-  },
-  103: {
-    id: 103,
-    title: "Динамичный монтаж Reels, Shorts & TikTok",
-    description: "Секреты создания вирусных коротких роликов: динамичный темп, правильная нарезка, субтитры, трендовая музыка и эффекты удерживающие внимание с первых секунд.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    price: 3500,
-    discountPrice: 1990,
-    averageRating: 4.8,
-    reviewCount: 65,
-    categoryName: "Shorts & Reels",
-    duration: "8ч 45мин",
-    isPurchased: false
-  },
-  104: {
-    id: 104,
-    title: "After Effects: Анимация & Motion Graphics",
-    description: "Создание эффектной моушн-графики, плавной анимации элементов, кинематографичных интро, титров и работы с 3D протранством в After Effects.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    price: 6500,
-    discountPrice: 4200,
-    averageRating: 4.9,
-    reviewCount: 51,
-    categoryName: "After Effects",
-    duration: "18ч 00мин",
-    isPurchased: false
-  },
-  105: {
-    id: 105,
-    title: "Мастерство Саунд-дизайна & Сведение аудио",
-    description: "Как вдохнуть жизнь в ролик с помощью звука: работа с фолеями, очистка шумов, создание объема, пространственный аудиодизайн и эквализация.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    price: 3900,
-    discountPrice: 2490,
-    averageRating: 4.9,
-    reviewCount: 29,
-    categoryName: "Саунд-дизайн",
-    duration: "6ч 20мин",
-    isPurchased: false
-  },
-  106: {
-    id: 106,
-    title: "Создание Промо-роликов и Кинотрейлеров",
-    description: "Мастер-класс по экшен-монтажу, созданию трейлеров и рекламных промо с высокой конверсией.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    price: 7200,
-    discountPrice: 4900,
-    averageRating: 5.0,
-    reviewCount: 44,
-    categoryName: "Промо & Трейлеры",
-    duration: "12ч 10мин",
-    isPurchased: false
-  },
-  107: {
-    id: 107,
-    title: "Монтаж YouTube Влогов & Интервью",
-    description: "Многокамерный монтаж (Multicam), динамичные перебивки, цветокоррекция и темпоритм для блогеров.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    price: 4200,
-    discountPrice: 2500,
-    averageRating: 4.8,
-    reviewCount: 37,
-    categoryName: "YouTube & Vlogs",
-    duration: "9ч 30мин",
-    isPurchased: false
-  },
-  108: {
-    id: 108,
-    title: "Кинематографичные переходы & SFX Паки",
-    description: "Все секреты плавных переходов, Whip Pan, кубических трюков и синхронизации эффектов со звуком.",
-    thumbnailUrl: "https://images.unsplash.com/photo-1535016120720-40c646be5580?w=800&auto=format&fit=crop&q=80",
-    videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    price: 2900,
-    discountPrice: 1790,
-    averageRating: 4.9,
-    reviewCount: 88,
-    categoryName: "Эффекты & SFX",
-    duration: "5ч 45мин",
-    isPurchased: false
-  }
-};
-
 function formatDuration(seconds?: number | null): string | null {
   if (!seconds) return null;
   const h = Math.floor(seconds / 3600);
@@ -156,7 +41,7 @@ export function VideoDetailPage() {
   const { toast } = useToast();
   
   const { data: apiVideo, isLoading, error } = useGetVideo(id, {
-    query: { enabled: !!id && !DEMO_VIDEOS_MAP[id] }
+    query: { enabled: !!id }
   });
 
   const { data: playbackData } = useGetVideoPlayback(id, {
@@ -201,8 +86,7 @@ export function VideoDetailPage() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const myExistingReview = reviewsList.find((r: any) => r.userId === user?.id);
 
-  // Use API video if returned, otherwise use DEMO_VIDEOS_MAP fallback
-  const video = apiVideo || DEMO_VIDEOS_MAP[id];
+  const video = apiVideo;
 
   // Dynamic rating calculated from real reviews if available
   const avgRatingNumber = reviewsList.length > 0
@@ -210,8 +94,8 @@ export function VideoDetailPage() {
     : (video?.averageRating ? Number(video.averageRating) : 0);
   const reviewCountNumber = reviewsList.length > 0 ? reviewsList.length : (video?.reviewCount ?? 0);
 
-  // Use real ratings only from API data; demo videos show no fake reviews
-  const displayVideo = apiVideo ? { ...video, averageRating: avgRatingNumber, reviewCount: reviewCountNumber } : { ...video, averageRating: avgRatingNumber, reviewCount: reviewCountNumber };
+  // Use real ratings only from API data
+  const displayVideo = video ? { ...video, averageRating: avgRatingNumber, reviewCount: reviewCountNumber } : null;
 
   // Dynamic SEO based on loaded video data
   const seoTitle = video?.title || "Курс по фокусам";
@@ -461,7 +345,7 @@ export function VideoDetailPage() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs border border-amber-400/20">
-                  {video.categoryName || "Видеомонтаж"}
+                  {video.categoryName || "Фокусы"}
                 </span>
                 {(video.duration || video.durationSeconds) && (
                   <span className="text-xs text-muted-foreground font-semibold">
@@ -475,9 +359,9 @@ export function VideoDetailPage() {
               <div className="flex items-center gap-3 mb-6">
               <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-2.5 py-1 rounded-lg border border-amber-400/20 text-sm">
                 <Star className="h-4 w-4 fill-current mr-1 text-amber-400" />
-                <span>{displayVideo.averageRating ? Number(displayVideo.averageRating).toFixed(1) : "0.0"}</span>
+                <span>{displayVideo?.averageRating ? Number(displayVideo.averageRating).toFixed(1) : "0.0"}</span>
               </div>
-              <span className="text-sm text-muted-foreground font-medium">({displayVideo.reviewCount ?? 0} отзывов)</span>
+              <span className="text-sm text-muted-foreground font-medium">({displayVideo?.reviewCount ?? 0} отзывов)</span>
               </div>
 
               <div className="p-4 rounded-2xl bg-muted/40 border mb-6 flex items-baseline justify-between">
@@ -521,6 +405,16 @@ export function VideoDetailPage() {
                 </div>
               )}
 
+              {/* Digital Goods Delivery Notice */}
+              <div className="text-xs text-muted-foreground bg-muted/30 p-3.5 rounded-2xl border border-border/60 text-left space-y-1">
+                <div className="font-semibold text-foreground flex items-center gap-1.5">
+                  <span className="text-amber-500 font-bold">●</span> Доступ к материалам:
+                </div>
+                <div>
+                  Цифровой обучающий видеокурс. Доступ открывается в вашем Личном кабинете сразу после подтверждения успешной онлайн-оплаты.
+                </div>
+              </div>
+
               <div className="flex items-center gap-2 pt-2">
                 <Button 
                   variant="ghost" 
@@ -559,7 +453,7 @@ export function VideoDetailPage() {
           <Info className="h-6 w-6 text-amber-400" /> Описание курса
         </h2>
         <div className="bg-card p-8 rounded-3xl border shadow-sm text-foreground/90 text-lg leading-relaxed">
-          <p>{video.description || "В данном курсе вы изучите все практические особенности работы с проектом, цветокоррекцией и эффектами."}</p>
+          <p>{video.description || "Подробный пошаговый обучающий видеокурс от профессионального иллюзиониста."}</p>
         </div>
       </div>
 

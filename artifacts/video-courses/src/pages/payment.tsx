@@ -133,6 +133,18 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
               </p>
             </div>
           )}
+
+          {/* Security and delivery reassurance */}
+          <div className="mt-6 pt-4 border-t text-center space-y-1.5 text-xs text-muted-foreground">
+            <p>Платежи безопасно обрабатываются через сервис <strong>ЮKassa</strong>.</p>
+            <p>
+              Оформляя заказ, вы соглашаетесь с{" "}
+              <a href="/terms" className="underline hover:text-foreground font-semibold">
+                Публичной офертой
+              </a>
+              .
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
