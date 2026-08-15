@@ -180,6 +180,10 @@ export function VideoDetailPage() {
     ? relatedVideos 
     : allRealVideos;
 
+  const similarList = (similarVideos && similarVideos.length > 0)
+    ? similarVideos
+    : allRealVideos;
+
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: realReviews, refetch: refetchReviews } = useListReviews(id, {
