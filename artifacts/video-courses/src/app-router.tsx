@@ -29,6 +29,7 @@ const AdminUsers = lazy(() => import('@/pages/admin/users').then(m => ({ default
 const AdminAuthorSection = lazy(() => import('@/pages/admin/author-section').then(m => ({ default: m.AdminAuthorSection })));
 const AdminEventsGallery = lazy(() => import('@/pages/admin/events-gallery').then(m => ({ default: m.AdminEventsGallery })));
 const AdminReviewsSection = lazy(() => import('@/pages/admin/reviews-section').then(m => ({ default: m.AdminReviewsSection })));
+const AdminPromocodes = lazy(() => import('@/pages/admin/promocodes').then(m => ({ default: m.AdminPromocodes })));
 const RequisitesPage = lazy(() => import('@/pages/requisites').then(m => ({ default: m.RequisitesPage })));
 
 const AdminLayout = lazy(() => import('@/components/layout/admin-layout').then(m => ({ default: m.AdminLayout })));
@@ -77,6 +78,7 @@ function MainRouter() {
                 <Route path="/admm/videos" component={AdminVideos} />
                 <Route path="/admm/orders" component={AdminOrders} />
                 <Route path="/admm/users" component={AdminUsers} />
+                <Route path="/admm/promocodes" component={AdminPromocodes} />
                 <Route path="/admm/author-section" component={AdminAuthorSection} />
                 <Route path="/admm/events-gallery" component={AdminEventsGallery} />
                 <Route path="/admm/reviews-section" component={AdminReviewsSection} />

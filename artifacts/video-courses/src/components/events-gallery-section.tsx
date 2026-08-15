@@ -169,6 +169,7 @@ export function EventsGallerySection() {
               <div
                 key={photo.id || idx}
                 onClick={() => setLightboxIndex(idx)}
+                data-sr-delay={String([0, 100, 200, 100, 200, 300][idx % 6])}
                 className="sr sr-fade-up group relative rounded-3xl overflow-hidden bg-white dark:bg-[#14121c] border border-slate-200/90 dark:border-amber-500/15 shadow-md hover:shadow-2xl hover:shadow-amber-900/15 hover:-translate-y-2 transition-all duration-400 cursor-pointer"
               >
                 {/* Photo Image with WebP format */}

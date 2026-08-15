@@ -6,8 +6,8 @@ import {
   useUpdateMe, 
   useGetMyPurchasedVideos, 
   useListOrders,
-  Order
 } from "@workspace/api-client-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,30 +21,35 @@ import {
   CheckCircle2, 
   Award, 
   Sparkles, 
-  Lock, 
   ArrowRight, 
-  Download, 
   ShieldCheck, 
   Star,
-  ExternalLink
+  MessageSquare,
+  Trash2,
+  BookOpen,
+  TrendingUp,
+  Clock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { VideoReviewModal } from "@/components/video-review-modal";
 
-// Demo mock data for guest mode
+// Demo mock data for guest preview mode
 const DEMO_PURCHASED_COURSES = [
   {
     id: 101,
     title: "Полный курс по видеомонтажу в Premiere Pro",
     thumbnailUrl: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80",
     progress: 75,
-    categoryName: "Premiere Pro"
+    categoryName: "Premiere Pro",
+    price: 2900
   },
   {
     id: 102,
     title: "Цветокоррекция и Грейдинг в DaVinci Resolve",
     thumbnailUrl: "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?w=800&auto=format&fit=crop&q=80",
     progress: 40,
-    categoryName: "DaVinci Resolve"
+    categoryName: "DaVinci Resolve",
+    price: 3900
   }
 ];
 
@@ -61,24 +66,69 @@ const DEMO_ORDERS = [
   }
 ];
 
+const DEMO_REVIEWS = [
+  {
+    id: 1,
+    videoId: 101,
+    videoTitle: "Полный курс по видеомонтажу в Premiere Pro",
+    videoThumbnailUrl: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80",
+    rating: 5,
+    text: "Потрясающий курс! Все уроки понятные, сразу применил на практике для своего первого видео.",
+    createdAt: new Date().toISOString(),
+    userName: "Максим Берестнев"
+  }
+];
+
 export function ProfilePage() {
-  useSEO({ robots: "noindex, follow" });
+  useSEO({ title: "Личный кабинет | Профиль", robots: "noindex, follow" });
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated, isLoading: authLoading, logout, refetch } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout, refetch: refetchUser } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Guest Demo Mode toggle
   const [demoMode, setDemoMode] = useState(false);
 
-  const { data: videos, isLoading: videosLoading } = useGetMyPurchasedVideos({
+  // Review Modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedVideoForReview, setSelectedVideoForReview] = useState<{
+    id: number;
+    title: string;
+    thumbnailUrl?: string | null;
+  } | null>(null);
+  const [selectedExistingReview, setSelectedExistingReview] = useState<{
+    id?: number;
+    rating: number;
+    text?: string | null;
+  } | null>(null);
+
+  // Fetch real purchased videos
+  const { data: videos, isLoading: videosLoading, refetch: refetchVideos } = useGetMyPurchasedVideos({
     query: { enabled: isAuthenticated }
   });
   const videoList = Array.isArray(videos) ? videos : [];
 
+  // Fetch real orders
   const { data: orders, isLoading: ordersLoading } = useListOrders({
     query: { enabled: isAuthenticated }
   });
   const orderList = Array.isArray(orders) ? orders : [];
+
+  // Fetch my reviews
+  const { data: myReviewsData, refetch: refetchMyReviews } = useQuery({
+    queryKey: ["my-reviews"],
+    queryFn: async () => {
+      const token = localStorage.getItem("auth_token");
+      if (!token) return [];
+      const res = await fetch("/api/reviews/my", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isAuthenticated
+  });
+  const myReviewsList = Array.isArray(myReviewsData) ? myReviewsData : [];
 
   const updateMe = useUpdateMe();
   
@@ -97,6 +147,13 @@ export function ProfilePage() {
 
   const activeVideos = isAuthenticated ? videoList : (demoMode ? DEMO_PURCHASED_COURSES : []);
   const activeOrders = isAuthenticated ? orderList : (demoMode ? DEMO_ORDERS : []);
+  const activeReviews = isAuthenticated ? myReviewsList : (demoMode ? DEMO_REVIEWS : []);
+
+  // Map videoId to user's existing review
+  const reviewsByVideoId = new Map<number, any>();
+  activeReviews.forEach((rev: any) => {
+    reviewsByVideoId.set(rev.videoId, rev);
+  });
 
   const handleSaveProfile = async () => {
     if (demoMode) {
@@ -106,11 +163,41 @@ export function ProfilePage() {
     }
     try {
       await updateMe.mutateAsync({ data: editData });
-      await refetch();
+      await refetchUser();
       setIsEditing(false);
-      toast({ title: "Профиль обновлен" });
+      toast({ title: "Профиль успешно обновлен" });
     } catch (err) {
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: "Ошибка обновления", variant: "destructive" });
+    }
+  };
+
+  const handleOpenReview = (video: { id: number; title: string; thumbnailUrl?: string | null }) => {
+    const existing = reviewsByVideoId.get(video.id);
+    setSelectedVideoForReview(video);
+    setSelectedExistingReview(existing ? { id: existing.id, rating: existing.rating, text: existing.text } : null);
+    setReviewModalOpen(true);
+  };
+
+  const handleDeleteReview = async (reviewId: number) => {
+    if (demoMode) {
+      toast({ title: "Отзыв удален (Демо)" });
+      return;
+    }
+    try {
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`/api/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (!res.ok) throw new Error("Не удалось удалить отзыв");
+      toast({ title: "Отзыв удален" });
+      refetchMyReviews();
+      refetchVideos();
+      queryClient.invalidateQueries({ queryKey: ["site-settings", "reviews_section"] });
+    } catch (err: any) {
+      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
     }
   };
 
@@ -124,26 +211,28 @@ export function ProfilePage() {
   // If user is guest and demo mode is OFF, render sleek login prompt / demo mode launcher
   if (!activeUser) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-4xl">
-        <div className="bg-card border rounded-3xl p-8 md:p-12 shadow-xl text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="min-h-[80vh] flex items-center justify-center container mx-auto px-4 py-16 max-w-4xl relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[140px] pointer-events-none" />
 
-          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-400/10 text-amber-500 mb-6 border border-amber-400/30 shadow-lg">
+        <div className="w-full bg-card/90 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-8 md:p-14 shadow-2xl text-center relative overflow-hidden">
+          <div className="inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-tr from-amber-400/20 to-amber-500/10 text-amber-500 mb-6 border border-amber-400/30 shadow-lg animate-pulse">
             <User className="h-10 w-10" />
           </div>
 
-          <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight">Личный кабинет</h1>
-          <p className="text-muted-foreground text-lg mb-8 max-w-lg mx-auto">
-            Войдите в аккаунт, чтобы просматривать купленные курсы, историю заказов и индивидуальные настройки.
+          <h1 className="text-3xl md:text-5xl font-black mb-4 tracking-tight text-foreground">
+            Личный кабинет
+          </h1>
+          <p className="text-muted-foreground text-base sm:text-lg mb-8 max-w-lg mx-auto leading-relaxed">
+            Войдите в аккаунт, чтобы просматривать купленные видеокурсы, оставлять отзывы, отслеживать прогресс и управлять заказами.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Button size="lg" className="btn-glow font-bold h-14 px-8 rounded-2xl w-full sm:w-auto" asChild>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 max-w-md mx-auto">
+            <Button size="lg" className="btn-glow font-bold h-14 px-8 rounded-2xl w-full" asChild>
               <Link href="/auth/login">
                 Войти в аккаунт <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="font-semibold h-14 px-8 rounded-2xl w-full sm:w-auto" asChild>
+            <Button size="lg" variant="outline" className="font-semibold h-14 px-8 rounded-2xl w-full border-border/80" asChild>
               <Link href="/auth/register">
                 Регистрация
               </Link>
@@ -153,12 +242,12 @@ export function ProfilePage() {
           {/* Demo Cabinet Option */}
           <div className="pt-8 border-t border-border/60 flex flex-col items-center">
             <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-500 uppercase tracking-widest mb-3">
-              <Sparkles className="h-4 w-4 text-amber-400" /> Просмотр без регистрации
+              <Sparkles className="h-4 w-4 text-amber-400" /> Просмотр без авторизации
             </div>
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full border-amber-400/40 text-amber-500 hover:bg-amber-400 hover:text-slate-950 font-bold px-6 h-11 transition-all duration-300"
+              className="rounded-full border-amber-400/40 text-amber-500 hover:bg-amber-400 hover:text-slate-950 font-bold px-6 h-11 transition-all duration-300 shadow-sm"
               onClick={() => setDemoMode(true)}
             >
               Включить интерактивный Демо-кабинет
@@ -171,259 +260,538 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-5xl">
-      
-      {/* Demo Notice Banner */}
-      {demoMode && !isAuthenticated && (
-        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <Sparkles className="h-5 w-5 text-amber-400 shrink-0" />
-            <span>Вы просматриваете Личный кабинет в интерактивном Демо-режиме</span>
-          </div>
-          <Button size="sm" variant="outline" className="rounded-full border-amber-400 text-amber-500 hover:bg-amber-400 hover:text-slate-950 font-bold shrink-0" asChild>
-            <Link href="/auth/login">Войти в реальный аккаунт</Link>
-          </Button>
-        </div>
-      )}
+    <div className="min-h-screen bg-background py-10 relative overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Header Card */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-10 bg-card p-8 rounded-3xl border shadow-md relative overflow-hidden">
-        <div className="flex items-center gap-6">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-500 to-primary text-slate-950 flex items-center justify-center text-3xl font-black shadow-lg">
-            {(activeUser.name ?? "U").charAt(0)}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl sm:text-3xl font-black">{activeUser.name ?? "Пользователь"}</h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-bold">
-                <ShieldCheck className="h-3.5 w-3.5" /> Премиум
-              </span>
+      <div className="container mx-auto px-4 max-w-5xl relative z-10 space-y-8">
+        
+        {/* Demo Notice Banner */}
+        {demoMode && !isAuthenticated && (
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in">
+            <div className="flex items-center gap-2.5 font-bold text-sm">
+              <Sparkles className="h-5 w-5 text-amber-400 shrink-0" />
+              <span>Вы просматриваете Личный кабинет в интерактивном Демо-режиме</span>
             </div>
-            <p className="text-muted-foreground text-sm">{activeUser.email}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {!isEditing && (
-            <Button variant="outline" className="rounded-xl font-semibold" onClick={() => {
-              setEditData({ name: activeUser.name, phone: activeUser.phone || "" });
-              setIsEditing(true);
-            }}>
-              <Edit3 className="mr-2 h-4 w-4" /> Редактировать
+            <Button size="sm" variant="outline" className="rounded-full border-amber-400 text-amber-500 hover:bg-amber-400 hover:text-slate-950 font-bold shrink-0" asChild>
+              <Link href="/auth/login">Войти в реальный аккаунт</Link>
             </Button>
-          )}
+          </div>
+        )}
 
-          {isAuthenticated && (
-            <Button variant="ghost" className="rounded-xl text-destructive hover:bg-destructive/10" onClick={() => logout()}>
-              Выйти
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Edit Form */}
-      {isEditing && (
-        <div className="bg-card p-6 rounded-3xl border shadow-md mb-10 animate-in fade-in duration-300">
-          <h3 className="font-bold text-lg mb-4">Редактирование профиля</h3>
-          <div className="grid gap-4 max-w-md mb-6">
-            <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1 block uppercase">Имя</label>
-              <Input value={editData.name} onChange={e => setEditData({...editData, name: e.target.value})} className="rounded-xl h-11 bg-background" />
+        {/* ── 1. Hero User Profile Card (Rich Glassmorphic Design) ── */}
+        <div className="bg-card/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border border-border/80 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5 sm:gap-6">
+            <div className="relative">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-3xl bg-gradient-to-tr from-amber-400 via-amber-500 to-primary text-slate-950 flex items-center justify-center text-3xl sm:text-4xl font-black shadow-xl shadow-amber-500/20 border-2 border-white/20">
+                {(activeUser.name ?? "U").charAt(0).toUpperCase()}
+              </div>
+              <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-md border-2 border-card">
+                <CheckCircle2 className="h-4 w-4" />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold text-muted-foreground mb-1 block uppercase">Телефон</label>
-              <Input value={editData.phone} onChange={e => setEditData({...editData, phone: e.target.value})} placeholder="+7 (999) 000-00-00" className="rounded-xl h-11 bg-background" />
+
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
+                  {activeUser.name ?? "Пользователь"}
+                </h1>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-black">
+                  <ShieldCheck className="h-3.5 w-3.5" /> PRO Ученик
+                </span>
+              </div>
+              <p className="text-muted-foreground text-sm font-medium">{activeUser.email}</p>
+              {activeUser.phone && (
+                <p className="text-xs text-muted-foreground font-mono">{activeUser.phone}</p>
+              )}
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button onClick={handleSaveProfile} disabled={updateMe.isPending} className="btn-glow font-bold rounded-xl px-6">Сохранить</Button>
-            <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl">Отмена</Button>
+
+          {/* Quick Actions */}
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end pt-4 md:pt-0 border-t md:border-t-0 border-border/60">
+            {!isEditing && (
+              <Button 
+                variant="outline" 
+                className="rounded-2xl font-bold h-11 px-5 border-border/80 hover:border-amber-400/50" 
+                onClick={() => {
+                  setEditData({ name: activeUser.name || "", phone: activeUser.phone || "" });
+                  setIsEditing(true);
+                }}
+              >
+                <Edit3 className="mr-2 h-4 w-4 text-amber-500" /> Редактировать
+              </Button>
+            )}
+
+            {isAuthenticated && (
+              <Button 
+                variant="ghost" 
+                className="rounded-2xl text-destructive hover:bg-destructive/10 font-bold h-11 px-5" 
+                onClick={() => logout()}
+              >
+                Выйти
+              </Button>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Stats counter */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
-        <div className="p-5 rounded-2xl bg-card border shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-amber-400/10 text-amber-500 flex items-center justify-center font-bold border border-amber-400/20">
-            <Play className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black">{activeVideos.length}</div>
-            <div className="text-xs text-muted-foreground font-semibold">Доступных курсов</div>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-card border shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold border border-emerald-500/20">
-            <ShoppingBag className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black">{activeOrders.length}</div>
-            <div className="text-xs text-muted-foreground font-semibold">Оформленных заказов</div>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-card border shadow-sm flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold border border-primary/20">
-            <Award className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="text-2xl font-black">100%</div>
-            <div className="text-xs text-muted-foreground font-semibold">Доступ к материалам</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Cabinet Tabs */}
-      <Tabs defaultValue="videos" className="w-full">
-        <TabsList className="mb-8 p-1.5 bg-muted/60 w-full sm:w-auto flex flex-col sm:flex-row h-auto rounded-2xl border">
-          <TabsTrigger value="videos" className="w-full sm:w-auto py-3 px-6 text-sm font-bold rounded-xl">
-            <Play className="mr-2 h-4 w-4 text-amber-400" /> Мои курсы ({activeVideos.length})
-          </TabsTrigger>
-          <TabsTrigger value="orders" className="w-full sm:w-auto py-3 px-6 text-sm font-bold rounded-xl">
-            <ShoppingBag className="mr-2 h-4 w-4 text-primary" /> История заказов ({activeOrders.length})
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="w-full sm:w-auto py-3 px-6 text-sm font-bold rounded-xl">
-            <Settings className="mr-2 h-4 w-4" /> Настройки
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Tab 1: My Courses */}
-        <TabsContent value="videos" className="min-h-[350px]">
-          {videosLoading && isAuthenticated ? (
-            <LoadingSpinner />
-          ) : activeVideos.length === 0 ? (
-            <div className="text-center py-20 bg-card border border-dashed rounded-3xl p-8">
-              <Play className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">У вас пока нет купленных курсов</h3>
-              <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-6">
-                Выберите понравившийся курс из каталога и начните обучение прямо сейчас.
-              </p>
-              <Button asChild className="btn-glow font-bold rounded-full px-8 h-12">
-                <Link href="/catalog">Перейти в каталог курсов</Link>
+        {/* ── Edit Profile Form ── */}
+        {isEditing && (
+          <div className="bg-card p-6 sm:p-8 rounded-3xl border border-amber-500/30 shadow-xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="font-extrabold text-lg mb-4 flex items-center gap-2">
+              <Edit3 className="h-5 w-5 text-amber-500" /> Редактирование личных данных
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="text-xs font-bold text-muted-foreground mb-1.5 block uppercase">Ваше Имя (отображается в отзывах)</label>
+                <Input 
+                  value={editData.name} 
+                  onChange={e => setEditData({...editData, name: e.target.value})} 
+                  placeholder="Иван Иванов"
+                  className="rounded-xl h-12 bg-background border-border/80 font-medium" 
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-muted-foreground mb-1.5 block uppercase">Телефон</label>
+                <Input 
+                  value={editData.phone} 
+                  onChange={e => setEditData({...editData, phone: e.target.value})} 
+                  placeholder="+7 (999) 000-00-00" 
+                  className="rounded-xl h-12 bg-background border-border/80 font-medium" 
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={handleSaveProfile} disabled={updateMe.isPending} className="btn-glow font-bold rounded-xl px-6 h-11">
+                Сохранить данные
+              </Button>
+              <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl h-11">
+                Отмена
               </Button>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {activeVideos.map((video: any) => (
-                <div key={video.id} className="group flex flex-col bg-card rounded-2xl border overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-                  <div className="relative aspect-video bg-slate-950">
-                    <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center opacity-80 group-hover:opacity-100 transition-opacity">
-                      <Link href={`/video/${video.id}`}>
-                        <div className="h-12 w-12 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                          <Play className="h-5 w-5 fill-current ml-0.5" />
+          </div>
+        )}
+
+        {/* ── 2. Sleek Metrics Dashboard (4 Cards) ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex items-center gap-4 hover:border-amber-400/30 transition-colors">
+            <div className="h-12 w-12 rounded-2xl bg-amber-400/10 text-amber-500 flex items-center justify-center font-bold border border-amber-400/20 shrink-0">
+              <Play className="h-6 w-6 fill-current" />
+            </div>
+            <div>
+              <div className="text-2xl font-black leading-none mb-1">{activeVideos.length}</div>
+              <div className="text-xs text-muted-foreground font-semibold">Куплено курсов</div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex items-center gap-4 hover:border-amber-400/30 transition-colors">
+            <div className="h-12 w-12 rounded-2xl bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold border border-amber-500/20 shrink-0">
+              <Star className="h-6 w-6 fill-current" />
+            </div>
+            <div>
+              <div className="text-2xl font-black leading-none mb-1">{activeReviews.length}</div>
+              <div className="text-xs text-muted-foreground font-semibold">Оставлено отзывов</div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex items-center gap-4 hover:border-amber-400/30 transition-colors">
+            <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold border border-emerald-500/20 shrink-0">
+              <ShoppingBag className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black leading-none mb-1">{activeOrders.length}</div>
+              <div className="text-xs text-muted-foreground font-semibold">Всего заказов</div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-card border border-border/80 shadow-sm flex items-center gap-4 hover:border-amber-400/30 transition-colors">
+            <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold border border-primary/20 shrink-0">
+              <Award className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="text-2xl font-black leading-none mb-1">100%</div>
+              <div className="text-xs text-muted-foreground font-semibold">Доступ навсегда</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 3. Main Cabinet Tabs ── */}
+        <Tabs defaultValue="videos" className="w-full">
+          <TabsList className="mb-8 p-1.5 bg-muted/60 w-full sm:w-auto flex flex-wrap h-auto rounded-2xl border border-border/80 gap-1">
+            <TabsTrigger value="videos" className="flex-1 sm:flex-none py-3 px-6 text-sm font-bold rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Play className="mr-2 h-4 w-4 text-amber-400 fill-current" /> Мои курсы ({activeVideos.length})
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="flex-1 sm:flex-none py-3 px-6 text-sm font-bold rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Star className="mr-2 h-4 w-4 text-amber-400 fill-current" /> Мои отзывы ({activeReviews.length})
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex-1 sm:flex-none py-3 px-6 text-sm font-bold rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <ShoppingBag className="mr-2 h-4 w-4 text-primary" /> История заказов ({activeOrders.length})
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 sm:flex-none py-3 px-6 text-sm font-bold rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md">
+              <Settings className="mr-2 h-4 w-4" /> Настройки
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ──────── TAB 1: MY PURCHASED COURSES ──────── */}
+          <TabsContent value="videos" className="min-h-[350px]">
+            {videosLoading && isAuthenticated ? (
+              <LoadingSpinner />
+            ) : activeVideos.length === 0 ? (
+              <div className="text-center py-20 bg-card border border-dashed rounded-3xl p-8 max-w-lg mx-auto">
+                <div className="h-16 w-16 rounded-3xl bg-amber-400/10 text-amber-500 flex items-center justify-center mx-auto mb-4 border border-amber-400/20">
+                  <Play className="h-8 w-8 text-amber-400" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">У вас пока нет купленных курсов</h3>
+                <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
+                  Выберите интересующий курс по фокусам или видеомонтажу и начните обучение прямо сейчас!
+                </p>
+                <Button asChild className="btn-glow font-bold rounded-2xl px-8 h-12">
+                  <Link href="/catalog">Перейти в каталог курсов</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {activeVideos.map((video: any) => {
+                  const existingReview = reviewsByVideoId.get(video.id);
+
+                  return (
+                    <div 
+                      key={video.id} 
+                      className="group flex flex-col bg-card rounded-3xl border border-border/80 overflow-hidden shadow-sm hover:shadow-xl hover:border-amber-400/40 transition-all duration-300"
+                    >
+                      {/* Video Thumbnail */}
+                      <div className="relative aspect-video bg-slate-950 overflow-hidden">
+                        <img 
+                          src={video.thumbnailUrl || "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800"} 
+                          alt={video.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
+                        <div className="absolute inset-0 bg-slate-950/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Link href={`/video/${video.id}`}>
+                            <div className="h-14 w-14 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                              <Play className="h-6 w-6 fill-current ml-0.5" />
+                            </div>
+                          </Link>
                         </div>
-                      </Link>
+                        {video.categoryName && (
+                          <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-amber-400 text-[10px] font-extrabold border border-amber-400/30">
+                            {video.categoryName}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Video Content */}
+                      <div className="p-5 sm:p-6 flex flex-col flex-1 justify-between space-y-4">
+                        <div>
+                          <Link href={`/video/${video.id}`}>
+                            <h4 className="font-extrabold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors cursor-pointer mb-2">
+                              {video.title}
+                            </h4>
+                          </Link>
+
+                          {/* Existing Review Badge on Course Card */}
+                          {existingReview ? (
+                            <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-semibold text-amber-500 mb-2">
+                              <span className="flex items-center gap-1">
+                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                <span>Ваша оценка: {existingReview.rating}/5</span>
+                              </span>
+                              <span className="text-[10px] opacity-75">Опубликовано</span>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Вы можете оставить отзыв и поставить оценку этому курсу.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Card Action Buttons */}
+                        <div className="space-y-2 pt-2 border-t border-border/60">
+                          <Button size="sm" className="w-full font-bold rounded-xl h-11 btn-glow" asChild>
+                            <Link href={`/video/${video.id}`}>
+                              <Play className="h-4 w-4 mr-2 fill-current" /> Смотреть курс
+                            </Link>
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleOpenReview(video)}
+                            className="w-full font-bold rounded-xl h-10 border-border/80 hover:border-amber-400 hover:text-amber-500 transition-colors"
+                          >
+                            <Star className={`h-4 w-4 mr-1.5 ${existingReview ? "fill-amber-400 text-amber-400" : "text-amber-400"}`} />
+                            {existingReview ? "Редактировать мой отзыв" : "Оставить отзыв о курсе"}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-5 flex flex-col flex-1 justify-between">
-                    <div>
-                      <h4 className="font-bold line-clamp-2 leading-snug group-hover:text-primary transition-colors mb-3">
-                        {video.title}
-                      </h4>
-                      {video.progress !== undefined && (
-                        <div className="mb-4">
-                          <div className="flex justify-between text-xs text-muted-foreground font-semibold mb-1">
-                            <span>Прогресс</span>
-                            <span className="text-amber-500 font-bold">{video.progress}%</span>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ──────── TAB 2: MY REVIEWS (Customer Reviews & Ratings) ──────── */}
+          <TabsContent value="reviews" className="min-h-[350px]">
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-card border shadow-sm">
+                <div>
+                  <h3 className="text-lg font-black flex items-center gap-2">
+                    <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+                    Мои опубликованные отзывы ({activeReviews.length})
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Ваши отзывы и оценки отображаются публично на страницах курсов с вашим именем.
+                  </p>
+                </div>
+
+                {activeVideos.length > 0 && (
+                  <Button
+                    size="sm"
+                    className="rounded-xl font-bold btn-glow shrink-0"
+                    onClick={() => {
+                      // Find first video without review, or first video
+                      const unreviewed = activeVideos.find(v => !reviewsByVideoId.has(v.id)) || activeVideos[0];
+                      handleOpenReview(unreviewed);
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1.5" /> Написать новый отзыв
+                  </Button>
+                )}
+              </div>
+
+              {activeReviews.length === 0 ? (
+                <div className="text-center py-16 bg-card border border-dashed rounded-3xl p-8 max-w-lg mx-auto">
+                  <Star className="h-12 w-12 text-amber-400/40 mx-auto mb-3" />
+                  <h4 className="text-lg font-bold mb-1">Вы пока не оставили ни одного отзыва</h4>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-6">
+                    Поделитесь вашими впечатлениями от купленных курсов, чтобы помочь другим ученикам!
+                  </p>
+                  {activeVideos.length > 0 ? (
+                    <Button 
+                      className="rounded-full px-6 font-bold btn-glow"
+                      onClick={() => handleOpenReview(activeVideos[0])}
+                    >
+                      Оставить первый отзыв
+                    </Button>
+                  ) : (
+                    <Button asChild className="rounded-full px-6 font-bold btn-glow">
+                      <Link href="/catalog">Выбрать курс в каталоге</Link>
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeReviews.map((review: any) => (
+                    <div 
+                      key={review.id} 
+                      className="p-6 rounded-3xl bg-card border border-border/80 shadow-sm flex flex-col sm:flex-row items-start justify-between gap-5 hover:border-amber-400/30 transition-colors"
+                    >
+                      <div className="flex items-start gap-4 flex-1">
+                        {review.videoThumbnailUrl && (
+                          <img 
+                            src={review.videoThumbnailUrl} 
+                            alt={review.videoTitle} 
+                            className="w-20 h-14 object-cover rounded-xl border shrink-0 bg-slate-950" 
+                          />
+                        )}
+                        <div className="space-y-2 flex-1">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <Link href={`/video/${review.videoId}`}>
+                              <h4 className="font-extrabold text-base hover:text-primary transition-colors cursor-pointer">
+                                {review.videoTitle || "Курс"}
+                              </h4>
+                            </Link>
+                            <span className="text-xs text-muted-foreground">
+                              {review.createdAt ? new Date(review.createdAt).toLocaleDateString("ru-RU") : "Недавно"}
+                            </span>
                           </div>
-                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                            <div className="bg-gradient-to-r from-amber-400 to-amber-500 h-full rounded-full" style={{ width: `${video.progress}%` }} />
+
+                          {/* Star Rating Display */}
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star 
+                                key={i} 
+                                className={`h-4 w-4 ${
+                                  i < review.rating 
+                                    ? "fill-amber-400 text-amber-400" 
+                                    : "text-slate-300 dark:text-slate-700"
+                                }`} 
+                              />
+                            ))}
+                            <span className="text-xs font-bold ml-1.5 text-amber-500">{review.rating} / 5</span>
                           </div>
+
+                          {/* Review Text */}
+                          {review.text && (
+                            <p className="text-sm text-foreground/90 leading-relaxed bg-muted/30 p-3.5 rounded-2xl border border-border/40 italic">
+                              «{review.text}»
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex sm:flex-col items-center gap-2 shrink-0 self-end sm:self-start">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-xl font-semibold text-xs h-9"
+                          onClick={() => {
+                            setSelectedVideoForReview({
+                              id: review.videoId,
+                              title: review.videoTitle || "Курс",
+                              thumbnailUrl: review.videoThumbnailUrl
+                            });
+                            setSelectedExistingReview({
+                              id: review.id,
+                              rating: review.rating,
+                              text: review.text
+                            });
+                            setReviewModalOpen(true);
+                          }}
+                        >
+                          <Edit3 className="h-3.5 w-3.5 mr-1 text-amber-500" /> Изменить
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-xl text-xs h-9 text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteReview(review.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Удалить
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* ──────── TAB 3: ORDERS HISTORY ──────── */}
+          <TabsContent value="orders" className="min-h-[350px]">
+            {ordersLoading && isAuthenticated ? (
+              <LoadingSpinner />
+            ) : activeOrders.length === 0 ? (
+              <div className="text-center py-20 text-muted-foreground bg-card border rounded-3xl p-8 max-w-lg mx-auto">
+                <ShoppingBag className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                <h4 className="text-lg font-bold mb-1">Заказов пока нет</h4>
+                <p className="text-xs text-muted-foreground mb-4">История ваших покупок будет отображаться здесь.</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {activeOrders.map((order: any) => {
+                  const statusInfo = statusMap[order.status] || { label: order.status, color: "text-slate-500 bg-slate-500/10 border-slate-500/20" };
+                  const itemsList = Array.isArray(order.items) ? order.items : [];
+                  return (
+                    <div key={order.id} className="bg-card border border-border/80 rounded-3xl p-6 md:p-8 shadow-sm hover:border-amber-400/30 transition-colors">
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div>
+                          <div className="font-black text-lg">Заказ #{order.id}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {order.createdAt ? new Date(order.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) : ""}
+                          </div>
+                        </div>
+                        <div className={`px-4 py-1.5 rounded-full text-xs font-black border uppercase tracking-wider ${statusInfo.color}`}>
+                          {statusInfo.label}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 mb-6 bg-muted/30 p-4 sm:p-5 rounded-2xl border border-border/50">
+                        {itemsList.map((item: any, idx: number) => (
+                          <div key={idx} className="flex justify-between items-center text-sm font-semibold">
+                            <span className="line-clamp-1 flex-1 pr-4 text-foreground">{item.title}</span>
+                            <span className="shrink-0 text-primary font-bold">{item.price} ₽</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-4 border-t flex items-center justify-between">
+                        <span className="font-bold text-muted-foreground text-sm">Сумма заказа:</span>
+                        <span className="font-black text-2xl text-primary">{order.total} ₽</span>
+                      </div>
+
+                      {order.status === 'pending' && (
+                        <div className="mt-4 pt-4 border-t flex justify-end">
+                          <Button className="btn-glow font-bold rounded-xl px-6" asChild>
+                            <Link href={`/payment/${order.id}`}>Перейти к оплате</Link>
+                          </Button>
                         </div>
                       )}
                     </div>
-                    <Button size="sm" className="w-full font-bold rounded-xl mt-2" asChild>
-                      <Link href={`/video/${video.id}`}>Смотреть курс</Link>
-                    </Button>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ──────── TAB 4: SETTINGS ──────── */}
+          <TabsContent value="settings">
+            <div className="bg-card border border-border/80 rounded-3xl p-6 sm:p-8 max-w-xl shadow-sm space-y-6">
+              <div>
+                <h3 className="font-black text-xl mb-1">Настройки аккаунта</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Управление учетными данными и персональной информацией.
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-muted/40 border flex items-center justify-between text-sm font-semibold">
+                  <span className="text-muted-foreground">Имя пользователя</span>
+                  <span className="font-bold text-foreground">{activeUser.name || "Не указано"}</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Tab 2: Orders History */}
-        <TabsContent value="orders" className="min-h-[350px]">
-          {ordersLoading && isAuthenticated ? (
-            <LoadingSpinner />
-          ) : activeOrders.length === 0 ? (
-            <div className="text-center py-20 text-muted-foreground bg-card border rounded-3xl p-8">
-              Заказов пока нет.
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {activeOrders.map((order: any) => {
-                const statusInfo = statusMap[order.status] || { label: order.status, color: "text-slate-500 bg-slate-500/10 border-slate-500/20" };
-                const itemsList = Array.isArray(order.items) ? order.items : [];
-                return (
-                  <div key={order.id} className="bg-card border rounded-3xl p-6 md:p-8 shadow-sm">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                      <div>
-                        <div className="font-extrabold text-lg">Заказ #{order.id}</div>
-                        <div className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString("ru-RU")}</div>
-                      </div>
-                      <div className={`px-4 py-1.5 rounded-full text-xs font-black border uppercase tracking-wider ${statusInfo.color}`}>
-                        {statusInfo.label}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 mb-6 bg-muted/30 p-4 rounded-2xl border">
-                      {itemsList.map((item: any, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center text-sm font-semibold">
-                          <span className="line-clamp-1 flex-1 pr-4">{item.title}</span>
-                          <span className="shrink-0 text-primary font-bold">{item.price} ₽</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="pt-4 border-t flex items-center justify-between">
-                      <span className="font-bold text-muted-foreground">Итого:</span>
-                      <span className="font-black text-xl text-primary">{order.total} ₽</span>
-                    </div>
-
-                    {order.status === 'pending' && (
-                      <div className="mt-4 pt-4 border-t flex justify-end">
-                        <Button className="btn-glow font-bold rounded-xl px-6" asChild>
-                          <Link href={`/payment/${order.id}`}>Перейти к оплате</Link>
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Tab 3: Settings */}
-        <TabsContent value="settings">
-          <div className="bg-card border rounded-3xl p-8 max-w-lg shadow-sm">
-            <h3 className="font-bold text-lg mb-2">Настройки аккаунта</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Вы можете обновить личные данные или обратиться в поддержку для настройки доступов.
-            </p>
-            
-            <div className="space-y-4 mb-8">
-              <div className="p-4 rounded-2xl bg-muted/40 border flex items-center justify-between text-sm font-semibold">
-                <span>Электронная почта</span>
-                <span className="text-muted-foreground">{activeUser.email}</span>
+                <div className="p-4 rounded-2xl bg-muted/40 border flex items-center justify-between text-sm font-semibold">
+                  <span className="text-muted-foreground">Электронная почта</span>
+                  <span className="font-bold text-foreground">{activeUser.email}</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-muted/40 border flex items-center justify-between text-sm font-semibold">
+                  <span className="text-muted-foreground">Телефон</span>
+                  <span className="font-bold text-foreground">{activeUser.phone || "Не указан"}</span>
+                </div>
               </div>
-              <div className="p-4 rounded-2xl bg-muted/40 border flex items-center justify-between text-sm font-semibold">
-                <span>Телефон</span>
-                <span className="text-muted-foreground">{activeUser.phone || "Не указан"}</span>
+
+              <div className="pt-4 border-t flex items-center justify-between">
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl font-bold text-xs"
+                  onClick={() => {
+                    setEditData({ name: activeUser.name || "", phone: activeUser.phone || "" });
+                    setIsEditing(true);
+                  }}
+                >
+                  <Edit3 className="h-3.5 w-3.5 mr-1.5 text-amber-500" /> Изменить профиль
+                </Button>
+
+                {isAuthenticated && (
+                  <Button 
+                    variant="ghost" 
+                    className="text-xs text-destructive hover:bg-destructive/10 font-bold rounded-xl"
+                    onClick={() => logout()}
+                  >
+                    Выйти из аккаунта
+                  </Button>
+                )}
               </div>
             </div>
+          </TabsContent>
 
-            <Button variant="outline" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl">
-              Запросить удаление данных
-            </Button>
-          </div>
-        </TabsContent>
+        </Tabs>
+      </div>
 
-      </Tabs>
+      {/* ── Video Review Modal ── */}
+      <VideoReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        video={selectedVideoForReview}
+        existingReview={selectedExistingReview}
+        onSuccess={() => {
+          refetchMyReviews();
+          refetchVideos();
+          queryClient.invalidateQueries({ queryKey: ["site-settings", "reviews_section"] });
+        }}
+      />
     </div>
   );
 }

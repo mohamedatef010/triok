@@ -7,44 +7,48 @@ import {
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, CreditCard, Smartphone, CheckCircle2 } from "lucide-react";
+import { Loader2, CreditCard, Smartphone, CheckCircle2, ArrowRight } from "lucide-react";
 import { LoadingSpinner, ErrorState } from "@/components/ui/states";
 import { useSEO } from "@/hooks/use-seo";
+import { useToast } from "@/hooks/use-toast";
 
 export function PaymentPage({ params }: { params: { orderId: string } }) {
   useSEO({ robots: "noindex, follow" });
   const orderId = Number(params.orderId);
   const [, setLocation] = useLocation();
-  const { data: order, isLoading, error } = useGetOrder(orderId, { query: { enabled: !!orderId } });
+  const { toast } = useToast();
+  const { data: order, isLoading, error } = useGetOrder(orderId, { query: { enabled: !!orderId } as any });
   
   const initPayment = useInitiatePayment();
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
 
-  // Poll status
+  const isPaid = order?.status === 'paid';
+
+  // Poll payment status if order is pending or payment initiated
   const { data: paymentStatus } = useGetPaymentStatus(orderId, {
     query: {
-      enabled: !!paymentUrl, // only poll after initiated
-      refetchInterval: 3000, // 3 seconds
-    }
+      enabled: !isPaid && (!!paymentUrl || (!!order && order.status === 'pending')),
+      refetchInterval: 3000,
+    } as any
   });
 
+  const isComplete = isPaid || paymentStatus?.status === 'paid';
+
   useEffect(() => {
-    if (paymentStatus?.status === 'paid' || order?.status === 'paid') {
+    if (isComplete) {
       // Redirect to profile after a brief success message
       const timer = setTimeout(() => {
         setLocation("/profile");
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [paymentStatus, order?.status, setLocation]);
+  }, [isComplete, setLocation]);
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorState error={error} />;
   if (!order) return null;
 
-  const isPaid = order.status === 'paid' || paymentStatus?.status === 'paid';
-
-  if (isPaid) {
+  if (isComplete) {
     return (
       <div className="container mx-auto px-4 py-24 flex flex-col items-center justify-center text-center">
         <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-6">
@@ -63,9 +67,18 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
       const res = await initPayment.mutateAsync({
         data: { orderId, method }
       });
-      setPaymentUrl(res.confirmationUrl);
-    } catch (err) {
+      if (res.confirmationUrl) {
+        setPaymentUrl(res.confirmationUrl);
+        // Automatically redirect to YooKassa payment checkout
+        window.location.href = res.confirmationUrl;
+      }
+    } catch (err: any) {
       console.error(err);
+      toast({
+        title: "Ошибка оплаты",
+        description: err.message || "Не удалось инициализировать оплату",
+        variant: "destructive"
+      });
     }
   };
 
@@ -94,7 +107,7 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
                 disabled={initPayment.isPending}
               >
                 {initPayment.isPending ? <Loader2 className="mr-3 h-5 w-5 animate-spin" /> : <CreditCard className="mr-3 h-5 w-5" />}
-                Оплатить через ЮKassa
+                Оплатить картой / ЮKassa
               </Button>
               <Button 
                 size="lg" 
@@ -109,14 +122,14 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
             </div>
           ) : (
             <div className="space-y-6 text-center">
-              <p className="text-sm text-muted-foreground">Ссылка для оплаты создана.</p>
+              <p className="text-sm text-muted-foreground">Перенаправление на страницу оплаты...</p>
               <Button size="lg" className="w-full h-14 animate-pulse" asChild>
-                <a href={paymentUrl} target="_blank" rel="noreferrer">
-                  Перейти к оплате
+                <a href={paymentUrl} rel="noreferrer">
+                  Перейти к оплате <ArrowRight className="ml-2 h-5 w-5" />
                 </a>
               </Button>
               <p className="text-xs text-muted-foreground mt-4">
-                Ожидаем подтверждения платежа... Страница обновится автоматически.
+                Ожидаем подтверждения платежа... Страница обновится автоматически после завершения.
               </p>
             </div>
           )}

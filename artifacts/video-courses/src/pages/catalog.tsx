@@ -133,8 +133,13 @@ export function CatalogPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
-            {videoList.map((video) => (
-              <Link key={video.id} href={`/video/${video.id}`} className="group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-sm hover:shadow-xl overflow-hidden transition-all duration-300">
+            {videoList.map((video, vIdx) => (
+              <Link 
+                key={video.id} 
+                href={`/video/${video.id}`} 
+                data-sr-delay={String([0, 80, 160, 240][vIdx % 4])}
+                className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-sm hover:shadow-xl overflow-hidden transition-all duration-300"
+              >
                 <div className="relative aspect-video overflow-hidden bg-slate-950">
                   <img 
                     src={video.thumbnailUrl || undefined} 

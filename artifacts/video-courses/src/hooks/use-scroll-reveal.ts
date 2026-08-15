@@ -38,17 +38,23 @@ export function useScrollReveal() {
     // Observe all current .sr elements
     const attachObserver = () => {
       document.querySelectorAll(".sr:not(.sr-visible)").forEach((el) => {
-        observer.observe(el);
+        const rect = el.getBoundingClientRect();
+        // If element is already in viewport on mount, reveal it gracefully
+        if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
+          el.classList.add("sr-visible");
+        } else {
+          observer.observe(el);
+        }
       });
     };
 
     attachObserver();
 
-    // Re-run after short delay to catch dynamically rendered elements
-    const timer = setTimeout(attachObserver, 400);
+    // Re-run after short delays to catch async data loads & image layout shifts
+    const t1 = setTimeout(attachObserver, 150);
+    const t2 = setTimeout(attachObserver, 500);
 
     // Watch for new .sr elements added to DOM by async API sections
-    // This fixes sections that only appear after API data loads
     const mutationObserver = new MutationObserver(() => {
       attachObserver();
     });
@@ -61,7 +67,8 @@ export function useScrollReveal() {
     return () => {
       observer.disconnect();
       mutationObserver.disconnect();
-      clearTimeout(timer);
+      clearTimeout(t1);
+      clearTimeout(t2);
     };
   }, [location]);
 }

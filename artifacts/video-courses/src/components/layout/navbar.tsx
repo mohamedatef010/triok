@@ -4,9 +4,9 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Menu, Search, Heart, ShoppingCart, User,
-  Sun, Moon, LogOut, Settings, Clapperboard, Sparkles, X, Film, MoreHorizontal,
-  Send, MessageCircle, Instagram, Mail
+  Sun, Moon, LogOut, Settings, Clapperboard, Sparkles, X, MoreHorizontal,
 } from "lucide-react";
+import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -191,31 +191,17 @@ export function Navbar() {
 
                    {!siteLoading && siteData?.socialLinks && (
                      <div className="flex flex-wrap gap-2 pt-2">
-                       {siteData.socialLinks.telegram && (
-                         <a href={siteData.socialLinks.telegram} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 hover:border-sky-500/40 transition-colors">
-                           <Send className="h-4 w-4 text-sky-400" />
-                         </a>
-                       )}
-                       {siteData.socialLinks.whatsapp && (
-                         <a href={siteData.socialLinks.whatsapp} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-colors">
-                           <MessageCircle className="h-4 w-4 text-emerald-400" />
-                         </a>
-                       )}
-                       {siteData.socialLinks.instagram && (
-                         <a href={siteData.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center hover:bg-pink-500/20 hover:border-pink-500/40 transition-colors">
-                           <Instagram className="h-4 w-4 text-pink-400" />
-                         </a>
-                       )}
-                       {siteData.socialLinks.vk && (
-                         <a href={siteData.socialLinks.vk} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center hover:bg-blue-500/20 hover:border-blue-500/40 transition-colors">
-                           <Film className="h-4 w-4 text-blue-400" />
-                         </a>
-                       )}
-                       {siteData.socialLinks.mailru && (
-                         <a href={siteData.socialLinks.mailru} target="_blank" rel="noopener noreferrer" className="h-9 w-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center hover:bg-orange-500/20 hover:border-orange-500/40 transition-colors">
-                           <Mail className="h-4 w-4 text-orange-400" />
-                         </a>
-                       )}
+                       {SOCIAL_PLATFORMS.map(({ key, label, Icon, color, bg, border, hoverBg, hoverBorder }) => {
+                         const url = (siteData.socialLinks as Record<string, string>)[key];
+                         if (!url) return null;
+                         return (
+                           <button key={key} type="button" aria-label={label} title={label}
+                             onClick={(e) => { e.stopPropagation(); openSocialLink(url, key); }}
+                             className={`h-9 w-9 rounded-xl ${bg} border ${border} flex items-center justify-center ${hoverBg} ${hoverBorder} transition-colors`}>
+                             <Icon className={`h-4 w-4 ${color}`} />
+                           </button>
+                         );
+                       })}
                      </div>
                    )}
                  </div>

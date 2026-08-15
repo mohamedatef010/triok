@@ -1,4 +1,5 @@
-import { Mail, MapPin, Send, MessageCircle, Instagram, Film, Star, Wand2, Users, GraduationCap } from "lucide-react";
+import { Mail, MapPin, Star, Wand2, Users, GraduationCap } from "lucide-react";
+import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -90,64 +91,14 @@ export function ContactsPage() {
   const hasData = !isLoading && !isError && data != null;
   const content = data ?? {};
 
-  // بناء قائمة وسائل التواصل المتاحة فقط
-  const socialLinks: { key: string; icon: any; label: string; href: string; color: string; bg: string; border: string }[] = [];
-
-  if (content.socialLinks?.telegram) {
-    socialLinks.push({
-      key: 'telegram',
-      icon: Send,
-      label: 'Telegram',
-      href: content.socialLinks.telegram,
-      color: 'text-cyan-600 dark:text-cyan-400',
-      bg: 'bg-cyan-50 dark:bg-cyan-500/10',
-      border: 'border-cyan-200 dark:border-cyan-500/20 hover:border-cyan-400 dark:hover:border-cyan-500/40',
-    });
-  }
-  if (content.socialLinks?.whatsapp) {
-    socialLinks.push({
-      key: 'whatsapp',
-      icon: MessageCircle,
-      label: 'WhatsApp',
-      href: content.socialLinks.whatsapp,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-50 dark:bg-emerald-500/10',
-      border: 'border-emerald-200 dark:border-emerald-500/20 hover:border-emerald-400 dark:hover:border-emerald-500/40',
-    });
-  }
-  if (content.socialLinks?.instagram) {
-    socialLinks.push({
-      key: 'instagram',
-      icon: Instagram,
-      label: 'Instagram',
-      href: content.socialLinks.instagram,
-      color: 'text-pink-600 dark:text-pink-400',
-      bg: 'bg-pink-50 dark:bg-pink-500/10',
-      border: 'border-pink-200 dark:border-pink-500/20 hover:border-pink-400 dark:hover:border-pink-500/40',
-    });
-  }
-  if (content.socialLinks?.vk) {
-    socialLinks.push({
-      key: 'vk',
-      icon: Film,
-      label: 'ВКонтакте',
-      href: content.socialLinks.vk,
-      color: 'text-blue-600 dark:text-blue-400',
-      bg: 'bg-blue-50 dark:bg-blue-500/10',
-      border: 'border-blue-200 dark:border-blue-500/20 hover:border-blue-400 dark:hover:border-blue-500/40',
-    });
-  }
-  if (content.socialLinks?.mailru) {
-    socialLinks.push({
-      key: 'mailru',
-      icon: Mail,
-      label: 'E-mail',
-      href: content.socialLinks.mailru.startsWith('mailto:') ? content.socialLinks.mailru : `mailto:${content.socialLinks.mailru}`,
-      color: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-50 dark:bg-amber-500/10',
-      border: 'border-amber-200 dark:border-amber-500/20 hover:border-amber-400 dark:hover:border-amber-500/40',
-    });
-  }
+  // Build social links list dynamically from all supported platforms
+  const socialLinks = SOCIAL_PLATFORMS
+    .map(({ key, label, Icon, color, bg, border, hoverBg }) => {
+      const raw = (content.socialLinks as Record<string, string> | undefined)?.[key];
+      if (!raw) return null;
+      return { key, label, Icon, color, bg, border, hoverBg, raw };
+    })
+    .filter(Boolean) as { key: string; label: string; Icon: any; color: string; bg: string; border: string; hoverBg: string; raw: string }[];
 
   return (
     <div className="min-h-screen bg-[#faf8f3] dark:bg-[#0d0b14] text-slate-900 dark:text-white py-12 lg:py-20">
@@ -237,33 +188,32 @@ export function ContactsPage() {
               يظهر ثانياً في الموبايل (order-2)، وعلى اليسار في الديسكتوب (lg:order-1) */}
           <div className="order-2 lg:order-1 space-y-8">
             
-            {/* Social Media Cards */}
+            {/* Social Media Cards — all platforms */}
             {socialLinks.length > 0 && (
               <div>
                 <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                   <Wand2 className="h-5 w-5 text-amber-500" />
-                  Социальные сети
+                  Социальные сети и профили
                 </h2>
                 <div className="space-y-3">
                   {socialLinks.map((social) => (
-                    <a
+                    <button
                       key={social.key}
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`flex items-center gap-4 p-4 rounded-2xl border ${social.bg} ${social.border} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group`}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); openSocialLink(social.raw, social.key); }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border ${social.bg} ${social.border} transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg group text-left`}
                     >
-                      <div className={`h-12 w-12 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 flex items-center justify-center ${social.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                        <social.icon className="h-5 w-5" />
+                      <div className={`h-12 w-12 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 flex items-center justify-center ${social.color} shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0`}>
+                        <social.Icon className="h-5 w-5" />
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="font-bold text-slate-900 dark:text-white">{social.label}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">Написать сообщение</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{social.raw}</div>
                       </div>
-                      <svg className="h-5 w-5 text-slate-400 dark:text-slate-500 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-5 w-5 text-slate-400 dark:text-slate-500 group-hover:translate-x-1 transition-transform duration-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    </a>
+                    </button>
                   ))}
                 </div>
               </div>

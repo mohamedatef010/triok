@@ -7,16 +7,20 @@ import {
   useGetVideoPlayback,
   useGetRelatedVideos,
   useGetSimilarVideos,
-  useGetFeaturedVideos
+  useGetFeaturedVideos,
+  useListReviews,
+  useGetMyPurchasedVideos,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useCompareStore } from "@/hooks/use-compare";
 import { Button } from "@/components/ui/button";
-import { Star, Heart, ShoppingCart, Info, PlayCircle, Scale, Lock, ShieldCheck, Play, Package, Layers, Sparkles, Clock, ArrowRight } from "lucide-react";
+import { Star, Heart, ShoppingCart, Info, PlayCircle, Scale, Lock, ShieldCheck, Play, Package, Layers, Sparkles, Clock, ArrowRight, MessageSquare } from "lucide-react";
 import { LoadingSpinner, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/hooks/use-toast";
+import { VideoReviewModal } from "@/components/video-review-modal";
+import { useQueryClient } from "@tanstack/react-query";
 import ReactPlayer from "react-player";
 
 const DEMO_VIDEOS_MAP: Record<number, any> = {
@@ -176,15 +180,34 @@ export function VideoDetailPage() {
     ? relatedVideos 
     : allRealVideos;
 
-  const similarList = (similarVideos && similarVideos.length > 0) 
-    ? similarVideos 
-    : allRealVideos;
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { data: realReviews, refetch: refetchReviews } = useListReviews(id, {
+    query: { enabled: !!id }
+  });
+  const reviewsList = Array.isArray(realReviews) ? realReviews : [];
+
+  const { data: myPurchasedVideos } = useGetMyPurchasedVideos({
+    query: { enabled: isAuthenticated }
+  });
+  const isPurchasedByUser = Array.isArray(myPurchasedVideos) 
+    ? myPurchasedVideos.some((v: any) => v.id === id) 
+    : false;
+
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const myExistingReview = reviewsList.find((r: any) => r.userId === user?.id);
 
   // Use API video if returned, otherwise use DEMO_VIDEOS_MAP fallback
   const video = apiVideo || DEMO_VIDEOS_MAP[id];
 
+  // Dynamic rating calculated from real reviews if available
+  const avgRatingNumber = reviewsList.length > 0
+    ? (reviewsList.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewsList.length)
+    : (video?.averageRating ? Number(video.averageRating) : 0);
+  const reviewCountNumber = reviewsList.length > 0 ? reviewsList.length : (video?.reviewCount ?? 0);
+
   // Use real ratings only from API data; demo videos show no fake reviews
-  const displayVideo = apiVideo ? video : { ...video, averageRating: 0, reviewCount: 0 };
+  const displayVideo = apiVideo ? { ...video, averageRating: avgRatingNumber, reviewCount: reviewCountNumber } : { ...video, averageRating: avgRatingNumber, reviewCount: reviewCountNumber };
 
   // Dynamic SEO based on loaded video data
   const seoTitle = video?.title || "Курс по фокусам";
@@ -300,12 +323,40 @@ export function VideoDetailPage() {
       return;
     }
     try {
-      const order = await createOrder.mutateAsync({ data: { videoId: id, fromCart: false } });
+      let promoCode: string | undefined = undefined;
+      try {
+        const stored = localStorage.getItem("applied_promocode");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          promoCode = parsed?.code;
+        }
+      } catch {}
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({
+          videoId: id,
+          fromCart: false,
+          promoCode,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Не удалось создать заказ");
+      }
+
+      const order = await res.json();
       setLocation(`/payment/${order.id}`);
     } catch (err: any) {
       toast({
-        title: "Заказ оформлен",
-        description: "Переходим на страницу оплаты...",
+        title: "Ошибка оформления",
+        description: err.message || "Переходим в корзину...",
+        variant: "destructive"
       });
       setLocation(`/cart`);
     }
@@ -499,13 +550,111 @@ export function VideoDetailPage() {
       </div>
 
       {/* Description Block */}
-      <div className="max-w-4xl mb-16">
+      <div className="max-w-4xl mb-12">
         <h2 className="text-2xl font-black mb-6 flex items-center gap-2.5">
           <Info className="h-6 w-6 text-amber-400" /> Описание курса
         </h2>
         <div className="bg-card p-8 rounded-3xl border shadow-sm text-foreground/90 text-lg leading-relaxed">
           <p>{video.description || "В данном курсе вы изучите все практические особенности работы с проектом, цветокоррекцией и эффектами."}</p>
         </div>
+      </div>
+
+      {/* ── Student Reviews Section (Отзывы учеников) ── */}
+      <div className="max-w-4xl mb-16 pt-8 border-t border-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs uppercase tracking-wider mb-2 border border-amber-400/20">
+              <Star className="h-3.5 w-3.5 fill-amber-400" /> Реальные отзывы
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3">
+              Отзывы учеников
+              {reviewsList.length > 0 && (
+                <span className="text-sm font-bold text-muted-foreground bg-muted px-3 py-0.5 rounded-full border">
+                  {reviewsList.length}
+                </span>
+              )}
+            </h2>
+          </div>
+
+          {(isPurchasedByUser || video.isPurchased) && (
+            <Button
+              className="btn-glow font-bold rounded-2xl h-11 px-6 self-start sm:self-auto"
+              onClick={() => setReviewModalOpen(true)}
+            >
+              <Star className={`h-4 w-4 mr-2 ${myExistingReview ? "fill-amber-400" : ""}`} />
+              {myExistingReview ? "Редактировать мой отзыв" : "Оставить отзыв о курсе"}
+            </Button>
+          )}
+        </div>
+
+        {reviewsList.length === 0 ? (
+          <div className="bg-card p-8 sm:p-10 rounded-3xl border border-dashed text-center space-y-3">
+            <Star className="h-10 w-10 text-amber-400/40 mx-auto mb-2" />
+            <h4 className="font-bold text-lg">Пока нет отзывов</h4>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+              {isPurchasedByUser 
+                ? "Вы прошли этот курс? Поделитесь вашим мнением и помогите другим сделать выбор!" 
+                : "Отзывы появятся после того, как первые ученики пройдут данный курс."}
+            </p>
+            {isPurchasedByUser && (
+              <Button 
+                className="mt-2 btn-glow font-bold rounded-xl px-6"
+                onClick={() => setReviewModalOpen(true)}
+              >
+                Написать первый отзыв
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviewsList.map((review: any) => (
+              <div 
+                key={review.id}
+                className="bg-card p-6 rounded-3xl border border-border/80 shadow-sm space-y-3 hover:border-amber-400/30 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-md shrink-0">
+                      {(review.userName || "U").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-extrabold text-sm text-foreground flex items-center gap-2">
+                        <span>{review.userName || "Пользователь"}</span>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-500 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                          <ShieldCheck className="h-3 w-3" /> Покупатель
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {review.createdAt ? new Date(review.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }) : "Недавно"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stars */}
+                  <div className="flex items-center gap-0.5 bg-amber-400/10 px-2.5 py-1 rounded-xl border border-amber-400/20">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-3.5 w-3.5 ${
+                          i < review.rating 
+                            ? "fill-amber-400 text-amber-400" 
+                            : "text-slate-300 dark:text-slate-700"
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs font-black text-amber-500 ml-1.5">{review.rating}.0</span>
+                  </div>
+                </div>
+
+                {review.text && (
+                  <p className="text-sm text-foreground/90 leading-relaxed bg-muted/25 p-4 rounded-2xl border border-border/40 italic">
+                    «{review.text}»
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── 1. Сопутствующие товары — Real related videos from API ── */}
@@ -650,6 +799,22 @@ export function VideoDetailPage() {
           <p className="text-sm text-muted-foreground text-center py-8">Похожие курсы пока не добавлены.</p>
         )}
       </div>
+
+      {/* Review Modal for Purchasers */}
+      <VideoReviewModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        video={{
+          id: video.id,
+          title: video.title,
+          thumbnailUrl: video.thumbnailUrl,
+        }}
+        existingReview={myExistingReview ? { id: myExistingReview.id, rating: myExistingReview.rating, text: myExistingReview.text } : null}
+        onSuccess={() => {
+          refetchReviews();
+          queryClient.invalidateQueries({ queryKey: ["video", id] });
+        }}
+      />
 
     </div>
   );

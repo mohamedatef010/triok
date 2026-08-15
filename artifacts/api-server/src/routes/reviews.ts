@@ -1,11 +1,12 @@
 import { Router, IRouter } from "express";
-import { db, reviewsTable, usersTable, ordersTable, orderItemsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, reviewsTable, usersTable, ordersTable, orderItemsTable, videosTable } from "@workspace/db";
+import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { ListReviewsParams, CreateReviewParams, CreateReviewBody, DeleteReviewParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
+// Get reviews for a specific video (Public)
 router.get("/videos/:id/reviews", async (req, res): Promise<void> => {
   const params = ListReviewsParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
@@ -13,7 +14,7 @@ router.get("/videos/:id/reviews", async (req, res): Promise<void> => {
     .select()
     .from(reviewsTable)
     .where(eq(reviewsTable.videoId, params.data.id))
-    .orderBy(reviewsTable.createdAt);
+    .orderBy(desc(reviewsTable.createdAt));
   const users = await db.select().from(usersTable);
   const userMap = new Map(users.map((u) => [u.id, u]));
   res.json(
@@ -33,6 +34,36 @@ router.get("/videos/:id/reviews", async (req, res): Promise<void> => {
   );
 });
 
+// Get all reviews written by current user
+router.get("/reviews/my", requireAuth, async (req, res): Promise<void> => {
+  const reviews = await db
+    .select({
+      id: reviewsTable.id,
+      videoId: reviewsTable.videoId,
+      videoTitle: videosTable.title,
+      videoThumbnailUrl: videosTable.thumbnailUrl,
+      userId: reviewsTable.userId,
+      rating: reviewsTable.rating,
+      text: reviewsTable.text,
+      createdAt: reviewsTable.createdAt,
+    })
+    .from(reviewsTable)
+    .innerJoin(videosTable, eq(reviewsTable.videoId, videosTable.id))
+    .where(eq(reviewsTable.userId, req.user!.userId))
+    .orderBy(desc(reviewsTable.createdAt));
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId));
+
+  res.json(
+    reviews.map((r) => ({
+      ...r,
+      userName: user?.name ?? "Пользователь",
+      userAvatarUrl: user?.avatarUrl ?? null,
+    }))
+  );
+});
+
+// Create or update review for a video (requires purchase)
 router.post("/videos/:id/reviews", requireAuth, async (req, res): Promise<void> => {
   const params = CreateReviewParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
@@ -53,16 +84,44 @@ router.post("/videos/:id/reviews", requireAuth, async (req, res): Promise<void> 
     )
     .limit(1);
   if (!order) {
-    res.status(403).json({ error: "Вы можете оставить отзыв только после покупки" });
+    res.status(403).json({ error: "Вы можете оставить отзыв только после покупки курса" });
     return;
   }
 
-  const [review] = await db
-    .insert(reviewsTable)
-    .values({ videoId: params.data.id, userId: req.user!.userId, rating: parsed.data.rating, text: parsed.data.text ?? null })
-    .returning();
+  // Check if review already exists from this user for this video -> update it
+  const [existing] = await db
+    .select()
+    .from(reviewsTable)
+    .where(
+      and(
+        eq(reviewsTable.videoId, params.data.id),
+        eq(reviewsTable.userId, req.user!.userId)
+      )
+    )
+    .limit(1);
+
+  let review;
+  if (existing) {
+    const [updated] = await db
+      .update(reviewsTable)
+      .set({
+        rating: parsed.data.rating,
+        text: parsed.data.text ?? null,
+        createdAt: new Date(),
+      })
+      .where(eq(reviewsTable.id, existing.id))
+      .returning();
+    review = updated;
+  } else {
+    const [inserted] = await db
+      .insert(reviewsTable)
+      .values({ videoId: params.data.id, userId: req.user!.userId, rating: parsed.data.rating, text: parsed.data.text ?? null })
+      .returning();
+    review = inserted;
+  }
+
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId));
-  res.status(201).json({
+  res.status(existing ? 200 : 201).json({
     id: review.id,
     videoId: review.videoId,
     userId: review.userId,
@@ -74,6 +133,7 @@ router.post("/videos/:id/reviews", requireAuth, async (req, res): Promise<void> 
   });
 });
 
+// Delete review
 router.delete("/reviews/:id", requireAuth, async (req, res): Promise<void> => {
   const params = DeleteReviewParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }

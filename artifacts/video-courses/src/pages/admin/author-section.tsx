@@ -40,8 +40,14 @@ interface AuthorSectionData {
     telegram?: string;
     whatsapp?: string;
     instagram?: string;
-    mailru?: string;
     vk?: string;
+    youtube?: string;
+    rutube?: string;
+    dzen?: string;
+    boosty?: string;
+    profi?: string;
+    gorko?: string;
+    mailru?: string;
   };
   entertainmentVideos?: {
     url: string;
@@ -71,8 +77,14 @@ const DEFAULT_DATA: AuthorSectionData = {
     telegram: "",
     whatsapp: "",
     instagram: "",
-    mailru: "",
     vk: "",
+    youtube: "",
+    rutube: "",
+    dzen: "",
+    boosty: "",
+    profi: "",
+    gorko: "",
+    mailru: "",
   },
   entertainmentVideos: [
     {
@@ -781,7 +793,7 @@ export function AdminAuthorSection() {
 
       {/* Social Links */}
       <Card className="border-none shadow-sm">
-        <CardHeader><CardTitle className="text-lg">Социальные сети</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-lg">Социальные сети и профили</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <p className="text-xs text-muted-foreground mb-4">
             Вставьте ссылки на ваши профили. Если поле пустое, иконка не будет отображаться на сайте.
@@ -812,7 +824,7 @@ export function AdminAuthorSection() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-1 block">VKontakte (ВК)</label>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">ВКонтакте (ВК)</label>
               <Input
                 placeholder="https://vk.com/username"
                 value={data.socialLinks?.vk ?? ""}
@@ -820,9 +832,57 @@ export function AdminAuthorSection() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground mb-1 block">Mail.ru / Email</label>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">YouTube</label>
               <Input
-                placeholder="mailto:example@mail.ru"
+                placeholder="https://youtube.com/@channel"
+                value={data.socialLinks?.youtube ?? ""}
+                onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, youtube: e.target.value } }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">RuTube</label>
+              <Input
+                placeholder="https://rutube.ru/channel/..."
+                value={data.socialLinks?.rutube ?? ""}
+                onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, rutube: e.target.value } }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">Дзен</label>
+              <Input
+                placeholder="https://dzen.ru/username"
+                value={data.socialLinks?.dzen ?? ""}
+                onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, dzen: e.target.value } }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">Boosty</label>
+              <Input
+                placeholder="https://boosty.to/username"
+                value={data.socialLinks?.boosty ?? ""}
+                onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, boosty: e.target.value } }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">Профи.ру</label>
+              <Input
+                placeholder="https://profi.ru/profile/..."
+                value={data.socialLinks?.profi ?? ""}
+                onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, profi: e.target.value } }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">Gorko.ru</label>
+              <Input
+                placeholder="https://gorko.ru/..."
+                value={data.socialLinks?.gorko ?? ""}
+                onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, gorko: e.target.value } }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-muted-foreground mb-1 block">Email / Mail.ru</label>
+              <Input
+                placeholder="example@mail.ru"
                 value={data.socialLinks?.mailru ?? ""}
                 onChange={(e) => setData((p) => ({ ...p, socialLinks: { ...p.socialLinks, mailru: e.target.value } }))}
               />

@@ -18,21 +18,18 @@ import {
   Flame,
   Zap,
   Quote,
-  Send,
   Youtube,
   MessageSquare,
-  Film,
   BookOpen,
   Users,
   Compass,
   ImageIcon,
-  Instagram,
-  Mail,
-  MessageCircle
 } from "lucide-react";
+import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventsGallerySection } from "@/components/events-gallery-section";
+import { InteractiveMagicSurpriseModal } from "@/components/interactive-magic-surprise-modal";
 
 /* ── Visual assets ──
    n1.jpg is served from the public folder as /n1.jpg */
@@ -378,6 +375,7 @@ export function HomePage() {
 
   // Active Video Modal State
   const [activePreviewVideo, setActivePreviewVideo] = useState<any | null>(null);
+  const [showMagicSurprise, setShowMagicSurprise] = useState(false);
 
   /* ── Hero poster image: n1.jpg from public folder ── */
   const heroImgSrc = HERO_IMAGE_SRC;
@@ -569,27 +567,27 @@ export function HomePage() {
             </div>
           </div>
 
-        <div className="pt-3 border-t border-border/60 flex items-center justify-between mt-auto">
-          <div className="flex items-baseline gap-2">
-            {video.discountPrice ? (
-              <>
-                <span className="font-black text-lg text-primary">{video.discountPrice} ₽</span>
-                <span className="text-xs text-muted-foreground line-through">{video.price} ₽</span>
-              </>
-            ) : (
-              <span className="font-black text-lg text-primary">{video.price} ₽</span>
-            )}
-          </div>
+          <div className="pt-3 border-t border-border/60 flex items-center justify-between mt-auto">
+            <div className="flex items-baseline gap-2">
+              {video.discountPrice ? (
+                <>
+                  <span className="font-black text-lg text-primary">{video.discountPrice} ₽</span>
+                  <span className="text-xs text-muted-foreground line-through">{video.price} ₽</span>
+                </>
+              ) : (
+                <span className="font-black text-lg text-primary">{video.price} ₽</span>
+              )}
+            </div>
 
-          <Link href={`/video/${video.id}`}>
-            <Button size="sm" variant="ghost" className="text-xs font-bold text-amber-500 hover:text-amber-400 hover:bg-amber-400/10 rounded-full">
-              Подробнее &rarr;
-            </Button>
-          </Link>
+            <Link href={`/video/${video.id}`}>
+              <Button size="sm" variant="ghost" className="text-xs font-bold text-amber-500 hover:text-amber-400 hover:bg-amber-400/10 rounded-full">
+                Подробнее &rarr;
+              </Button>
+            </Link>
+          </div>
         </div>
-      </div>
-    </>
-  );
+      </>
+    );
   };
 
   return (
@@ -597,11 +595,30 @@ export function HomePage() {
 
       {/* ── Global decorative keyframes (Enhanced) ── */}
       <style>{`
-        @keyframes heroFadeUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes heroFadeLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes heroFadeRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes heroFadeDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes heroZoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes heroFadeUp {
+          0% { opacity: 0; transform: translate3d(0, 36px, 0) scale(0.97); filter: blur(8px); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0px); }
+        }
+        @keyframes heroFadeLeft {
+          0% { opacity: 0; transform: translate3d(-48px, 0, 0) scale(0.98); filter: blur(8px); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0px); }
+        }
+        @keyframes heroFadeRight {
+          0% { opacity: 0; transform: translate3d(48px, 0, 0) scale(0.98); filter: blur(8px); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0px); }
+        }
+        @keyframes heroFadeDown {
+          0% { opacity: 0; transform: translate3d(0, -32px, 0) scale(0.97); filter: blur(8px); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0px); }
+        }
+        @keyframes heroZoomIn {
+          0% { opacity: 0; transform: translate3d(0, 24px, 0) scale(0.94); filter: blur(12px); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0px); }
+        }
+        @keyframes heroChipEntrance {
+          0% { opacity: 0; transform: translate3d(32px, 16px, 0) scale(0.88); filter: blur(8px); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0px); }
+        }
         @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes waveBarAnim { 0%,100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
         @keyframes floatYAnim { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -654,11 +671,24 @@ export function HomePage() {
           90% { transform: translate(-1px, -1px); }
           100% { transform: translate(0, 0); }
         }
-        .hero-anim { opacity: 0; animation: heroFadeUp .9s cubic-bezier(.22,1,.36,1) forwards; }
-        .hero-anim-left { opacity: 0; animation: heroFadeLeft .9s cubic-bezier(.22,1,.36,1) forwards; }
-        .hero-anim-right { opacity: 0; animation: heroFadeRight .9s cubic-bezier(.22,1,.36,1) forwards; }
-        .hero-anim-down { opacity: 0; animation: heroFadeDown .9s cubic-bezier(.22,1,.36,1) forwards; }
-        .hero-anim-zoom { opacity: 0; animation: heroZoomIn .9s cubic-bezier(.22,1,.36,1) forwards; }
+        .hero-anim { opacity: 0; animation: heroFadeUp 1s cubic-bezier(.16,1,.3,1) forwards; will-change: opacity, transform, filter; }
+        .hero-anim-up { opacity: 0; animation: heroFadeUp 1s cubic-bezier(.16,1,.3,1) forwards; will-change: opacity, transform, filter; }
+        .hero-anim-left { opacity: 0; animation: heroFadeLeft 1s cubic-bezier(.16,1,.3,1) forwards; will-change: opacity, transform, filter; }
+        .hero-anim-right { opacity: 0; animation: heroFadeRight 1.05s cubic-bezier(.16,1,.3,1) forwards; will-change: opacity, transform, filter; }
+        .hero-anim-down { opacity: 0; animation: heroFadeDown 0.9s cubic-bezier(.16,1,.3,1) forwards; will-change: opacity, transform, filter; }
+        .hero-anim-zoom { opacity: 0; animation: heroZoomIn 1.1s cubic-bezier(.16,1,.3,1) forwards; will-change: opacity, transform, filter; }
+        /* Chip entrance: slides in + blur away, then float loop kicks in */
+        .hero-chip-entry {
+          opacity: 0;
+          animation: heroChipEntrance 0.95s cubic-bezier(.16,1,.3,1) forwards;
+          will-change: opacity, transform, filter;
+        }
+        /* When float-chip is combined with hero-chip-entry, override to sequence both animations:
+           first the entrance (0.95s), then the float loop starts after that */
+        .float-chip.hero-chip-entry {
+          animation: heroChipEntrance 0.95s cubic-bezier(.16,1,.3,1) forwards,
+                     floatYAnim 5s ease-in-out 1.5s infinite;
+        }
         .marquee-track { animation: marqueeScroll 32s linear infinite; }
         .wave-bar { animation: waveBarAnim 1.1s ease-in-out infinite; transform-origin: bottom; }
         .float-chip { animation: floatYAnim 5s ease-in-out infinite; }
@@ -869,12 +899,10 @@ export function HomePage() {
                 </Button>
                 <Button
                   size="lg" variant="outline"
-                  className="h-14 px-8 rounded-xl bg-white/60 text-slate-900 border-slate-300/80 hover:bg-amber-400/15 hover:border-amber-500/50 dark:bg-transparent dark:text-white dark:border-white/25 dark:hover:bg-amber-400/10 dark:hover:border-amber-400/60 shadow-sm transition-all text-base font-bold backdrop-blur-sm"
-                  asChild
+                  className="h-14 px-8 rounded-xl bg-white/60 text-slate-900 border-slate-300/80 hover:bg-amber-400/15 hover:border-amber-500/50 dark:bg-transparent dark:text-white dark:border-white/25 dark:hover:bg-amber-400/10 dark:hover:border-amber-400/60 shadow-sm transition-all text-base font-bold backdrop-blur-sm cursor-pointer"
+                  onClick={() => setShowMagicSurprise(true)}
                 >
-                  <Link href="/#about">
-                    <Play className="h-4 w-4 mr-2 text-amber-400 fill-current" /> Хочешь удивить друзей?
-                  </Link>
+                  <Play className="h-4 w-4 mr-2 text-amber-400 fill-current" /> Хочешь удивить друзей?
                 </Button>
               </div>
 
@@ -918,7 +946,10 @@ export function HomePage() {
                 {/* ── 5 BALANCED FLOATING ORBIT CARDS (updated texts) ── */}
 
                 {/* 1. Bottom-Center on mobile / Top-Right on desktop: "10+" */}
-                <div className="float-chip absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6" style={{ animationDelay: "0.5s" }}>
+                <div
+                  className="float-chip hero-chip-entry absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
+                  style={{ animation: `heroChipEntrance 0.95s 0.5s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2s ease-in-out infinite` }}
+                >
                   <Star className="h-3.5 w-3.5 xs:h-5 w-5 text-amber-400 fill-current" />
                   <div className="leading-tight">
                     <div className="text-xs xs:text-sm font-black text-white">10+</div>
@@ -927,28 +958,40 @@ export function HomePage() {
                 </div>
 
                 {/* 2. Mid-Right: Experience → changed to "Видеоуроки" and "понятно и пошагово" + updated subtitle */}
-                <div className="float-chip absolute top-[100px] right-[-12px] xs:right-[0px] z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6" style={{ animationDelay: "0.8s" }}>
+                <div
+                  className="float-chip hero-chip-entry absolute top-[100px] right-[-12px] xs:right-[0px] z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
+                  style={{ animation: `heroChipEntrance 0.95s 0.8s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.4s ease-in-out infinite` }}
+                >
                   <div className="text-xs xs:text-sm sm:text-base font-black text-amber-400 leading-none mb-0.5 xs:mb-1">Видеоуроки</div>
                   <div className="text-[10px] xs:text-xs font-black text-white leading-tight">понятно и пошагово</div>
                   <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1">Практический опыт выступлений и обучения</div>
                 </div>
 
                 {/* 3. Bottom-Right: Quick Start → changed to "✨ Первый фокус" and new subtitle */}
-                <div className="float-chip absolute top-[260px] right-[-8px] xs:right-[15px] z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]" style={{ animationDelay: "1.1s" }}>
+                <div
+                  className="float-chip hero-chip-entry absolute top-[260px] right-[-8px] xs:right-[15px] z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
+                  style={{ animation: `heroChipEntrance 0.95s 1.05s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.7s ease-in-out infinite` }}
+                >
                   <div className="text-xs xs:text-sm mb-0.5 xs:mb-1">✨</div>
                   <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Первый фокус</div>
                   <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1">Научись своему первому эффектному фокусу</div>
                 </div>
 
                 {/* 4. Bottom-Left: Free Trial → changed to "Бесплатно" and "Попробуй первый урок" */}
-                <div className="float-chip absolute top-[270px] left-[-8px] xs:left-[15px] z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]" style={{ animationDelay: "1.9s" }}>
+                <div
+                  className="float-chip hero-chip-entry absolute top-[270px] left-[-8px] xs:left-[15px] z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
+                  style={{ animation: `heroChipEntrance 0.95s 1.35s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 3s ease-in-out infinite` }}
+                >
                   <div className="text-xs xs:text-sm sm:text-base font-black text-emerald-400 leading-none mb-0.5 xs:mb-1">Бесплатно</div>
                   <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Попробуй первый урок</div>
                   {/* third line removed as per new design */}
                 </div>
 
                 {/* 5. Mid-Left: Community → changed to "Для всех" and "от новичков до увлечённых магией" */}
-                <div className="float-chip absolute top-[110px] left-[-12px] xs:left-[0px] z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]" style={{ animationDelay: "1.4s" }}>
+                <div
+                  className="float-chip hero-chip-entry absolute top-[110px] left-[-12px] xs:left-[0px] z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
+                  style={{ animation: `heroChipEntrance 0.95s 1.2s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.85s ease-in-out infinite` }}
+                >
                   <div className="h-6 w-6 xs:h-7 w-7 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mb-1 xs:mb-2 shrink-0">
                     <Users className="h-3.5 w-3.5 xs:h-4 w-4" />
                   </div>
@@ -1066,7 +1109,7 @@ export function HomePage() {
                 ))}
               </div>
 
-                {/* ── Desktop: standard grid layout with fixed columns ── */}
+              {/* ── Desktop: standard grid layout with fixed columns ── */}
               <div ref={spiralRef} className="hidden lg:block">
 
                 {/* Spiral start marker */}
@@ -1159,6 +1202,12 @@ export function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ── Interactive Magic Surprise Modal (Mind reading & surprise discount) ── */}
+      <InteractiveMagicSurpriseModal
+        isOpen={showMagicSurprise}
+        onClose={() => setShowMagicSurprise(false)}
+      />
 
     </div>
   );
@@ -1274,7 +1323,7 @@ function AboutSection() {
     return (
       <section id="about" className="py-28 bg-[#faf8f3] dark:bg-[#0c0a12] text-slate-900 dark:text-white relative overflow-hidden border-y border-amber-100/80 dark:border-amber-500/10">
         <div className="container px-4 mx-auto text-center">Загрузка...</div>
-    </section>
+      </section>
     );
   }
 
@@ -1328,12 +1377,12 @@ function AboutSection() {
             </div>
 
             {/* Layered photo composition */}
-            <div className="relative w-full max-w-[320px] sm:max-w-md mx-auto group/stack">
+            <div className="relative w-full max-w-xs xs:max-w-sm sm:max-w-md mx-auto group/stack">
               <div className="absolute -inset-2.5 rotate-[9deg] rounded-[2.4rem] bg-gradient-to-br from-indigo-200/80 to-cyan-100/80 dark:from-indigo-500/20 dark:to-cyan-500/20 shadow-lg shadow-indigo-900/10 transition-transform duration-500 ease-out group-hover/stack:rotate-[11deg]" />
               <div className="absolute -inset-2.5 -rotate-[5deg] rounded-[2.4rem] bg-gradient-to-br from-amber-300/90 via-amber-200 to-amber-100 dark:from-amber-500/30 dark:via-amber-500/20 dark:to-amber-500/10 shadow-lg shadow-amber-900/15 transition-transform duration-500 ease-out group-hover/stack:-rotate-[7deg]" />
               <div className="absolute -inset-2.5 rotate-[2.5deg] rounded-[2.4rem] border-2 border-dashed border-amber-400/60 dark:border-amber-500/30 transition-transform duration-500 ease-out group-hover/stack:rotate-[4deg]" />
 
-              <div className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl shadow-amber-900/20 border-[6px] border-white dark:border-slate-800 group z-10 transition-transform duration-500 ease-out group-hover/stack:-translate-y-1.5">
+              <div className="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl shadow-amber-900/20 border-[4px] sm:border-[6px] border-white dark:border-slate-800 group z-10 transition-transform duration-500 ease-out group-hover/stack:-translate-y-1.5">
                 {hasData && content.photoUrl ? (
                   isAuthorVideoMedia(content.photoUrl, content.photoMediaType) ? (
                     <LazyAutoplayVideo
@@ -1357,18 +1406,18 @@ function AboutSection() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
 
-                <div className="absolute bottom-5 left-5 right-5 p-5 rounded-2xl bg-white/95 dark:bg-[#15131a]/95 backdrop-blur-xl border border-slate-200/80 dark:border-amber-500/20 text-slate-900 dark:text-white shadow-2xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-2xl font-black text-amber-600"
+                <div className="absolute bottom-3 left-3 right-3 sm:bottom-5 sm:left-5 sm:right-5 p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-white/95 dark:bg-[#15131a]/95 backdrop-blur-xl border border-slate-200/80 dark:border-amber-500/20 text-slate-900 dark:text-white shadow-2xl">
+                  <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                    <span className="text-base xs:text-lg sm:text-2xl font-black text-amber-600 truncate mr-2"
                       style={{
                         fontFamily: content.textStyles?.authorName?.fontFamily,
                         color: content.textStyles?.authorName?.color
                       }}>
                       {hasData && content.authorName ? content.authorName : <span className="text-slate-400 text-lg font-normal italic">{NO_INFO}</span>}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400 text-[11px] font-extrabold border border-emerald-200 dark:border-emerald-500/20">PRO</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] sm:text-[11px] font-extrabold border border-emerald-200 dark:border-emerald-500/20 shrink-0">PRO</span>
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-medium"
+                  <div className="text-[10px] xs:text-xs text-slate-500 dark:text-slate-400 font-medium line-clamp-2"
                     style={{
                       fontFamily: content.textStyles?.authorTitle?.fontFamily,
                       color: content.textStyles?.authorTitle?.color
@@ -1379,44 +1428,30 @@ function AboutSection() {
               </div>
             </div>
 
-            {/* Social Media Links Bar */}
-            {hasData && content.socialLinks && Object.values(content.socialLinks).some(link => link) && (
-              <div className="w-full max-w-md mt-8 p-4 rounded-2xl bg-white/85 dark:bg-[#15131a]/85 border border-slate-200/80 dark:border-amber-500/20 backdrop-blur-md shadow-lg shadow-slate-900/5 flex items-center justify-around gap-2">
-                {content.socialLinks.telegram && (
-                  <a href={content.socialLinks.telegram} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-cyan-500/10 transition-all duration-300">
-                    <div className="h-10 w-10 rounded-full bg-cyan-500/10 text-cyan-500 dark:text-cyan-400 border border-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
-                      <Send className="h-5 w-5 ml-0.5" />
-                    </div>
-                  </a>
-                )}
-                {content.socialLinks.whatsapp && (
-                  <a href={content.socialLinks.whatsapp} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-emerald-500/10 transition-all duration-300">
-                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
-                      <MessageCircle className="h-5 w-5" />
-                    </div>
-                  </a>
-                )}
-                {content.socialLinks.instagram && (
-                  <a href={content.socialLinks.instagram} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-pink-500/10 transition-all duration-300">
-                    <div className="h-10 w-10 rounded-full bg-pink-500/10 text-pink-500 dark:text-pink-400 border border-pink-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
-                      <Instagram className="h-5 w-5" />
-                    </div>
-                  </a>
-                )}
-                {content.socialLinks.vk && (
-                  <a href={content.socialLinks.vk} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-blue-500/10 transition-all duration-300">
-                    <div className="h-10 w-10 rounded-full bg-blue-500/10 text-blue-500 dark:text-blue-400 border border-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
-                      <Film className="h-5 w-5" />
-                    </div>
-                  </a>
-                )}
-                {content.socialLinks.mailru && (
-                  <a href={content.socialLinks.mailru.startsWith('mailto:') ? content.socialLinks.mailru : `mailto:${content.socialLinks.mailru}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 group p-2.5 rounded-xl hover:bg-amber-500/10 transition-all duration-300">
-                    <div className="h-10 w-10 rounded-full bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-md">
-                      <Mail className="h-5 w-5" />
-                    </div>
-                  </a>
-                )}
+            {/* Social Media Links Bar — dynamic, all platforms */}
+            {hasData && content.socialLinks && Object.values(content.socialLinks).some(Boolean) && (
+              <div className="w-full max-w-2xl mt-8 p-4 rounded-2xl bg-white/85 dark:bg-[#15131a]/85 border border-slate-200/80 dark:border-amber-500/20 backdrop-blur-md shadow-lg shadow-slate-900/5">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {SOCIAL_PLATFORMS.map(({ key, label, Icon, color, bg, border, hoverBg }) => {
+                    const url = (content.socialLinks as Record<string, string>)[key];
+                    if (!url) return null;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); openSocialLink(url, key); }}
+                        title={label}
+                        aria-label={label}
+                        className={`flex flex-col items-center gap-1 group p-2 rounded-xl ${hoverBg} transition-all duration-200`}
+                      >
+                        <div className={`h-11 w-11 rounded-2xl ${bg} ${color} border ${border} flex items-center justify-center group-hover:scale-110 group-hover:shadow-lg transition-all duration-200`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <span className={`text-[9px] font-semibold ${color} opacity-70 group-hover:opacity-100 transition-opacity duration-200 leading-none`}>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -1608,7 +1643,8 @@ function SocialVideosSection() {
                   href={video.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative flex flex-col rounded-2xl overflow-hidden border border-slate-200/80 dark:border-amber-500/10 bg-white dark:bg-[#15131a] shadow-md hover:-translate-y-2 hover:shadow-xl hover:shadow-amber-900/10 transition-all duration-300"
+                  data-sr-delay={String([0, 100, 200, 300][idx % 4])}
+                  className="sr sr-fade-up group relative flex flex-col rounded-2xl overflow-hidden border border-slate-200/80 dark:border-amber-500/10 bg-white dark:bg-[#15131a] shadow-md hover:-translate-y-2 hover:shadow-xl hover:shadow-amber-900/10 transition-all duration-300"
                 >
                   {/* Thumbnail */}
                   <div className="relative aspect-video w-full overflow-hidden bg-slate-950 shrink-0">
@@ -1684,6 +1720,7 @@ function SocialVideosSection() {
 function ReviewsSection() {
   const [ctaPointer, setCtaPointer] = useState({ x: 0, y: 0 });
   const ctaCardRef = useRef<HTMLDivElement>(null);
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
 
   const { data: reviewsData, isLoading, isError } = useQuery({
     queryKey: ['site-settings', 'reviews_section'],
@@ -1745,18 +1782,29 @@ function ReviewsSection() {
               <div className="text-center py-8 text-slate-400">Загрузка отзывов...</div>
             ) : hasData && sectionData.reviews && sectionData.reviews.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {sectionData.reviews.map((review: any) => (
+                {sectionData.reviews.map((review: any, rIdx: number) => (
                   <div
-                    key={review.id}
-                    className="group relative bg-white dark:bg-[#0d0b14] rounded-2xl border border-slate-200/80 dark:border-amber-500/15 shadow-md hover:shadow-xl hover:shadow-amber-900/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+                    key={review.id || rIdx}
+                    data-sr-delay={String([0, 100, 200, 100, 200, 300][rIdx % 6])}
+                    className="sr sr-fade-up group relative bg-white dark:bg-[#0d0b14] rounded-2xl border border-slate-200/80 dark:border-amber-500/15 shadow-md hover:shadow-xl hover:shadow-amber-900/10 transition-all duration-300 hover:-translate-y-1 overflow-hidden"
                   >
                     {review.imageUrl ? (
-                      <div className="w-full aspect-[4/5] overflow-hidden">
+                      <div
+                        className="w-full bg-slate-50 dark:bg-slate-900/60 overflow-hidden cursor-zoom-in relative"
+                        onClick={() => setLightboxImg(review.imageUrl)}
+                        title="Нажмите для просмотра"
+                      >
                         <img
                           src={review.imageUrl}
                           alt={`Отзыв от ${review.authorName}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-auto object-contain max-h-[480px] group-hover:scale-[1.02] transition-transform duration-500"
                         />
+                        {/* Zoom hint */}
+                        <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <svg className="h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0zm-6-3v6m-3-3h6" />
+                          </svg>
+                        </div>
                       </div>
                     ) : null}
 
@@ -1796,41 +1844,62 @@ function ReviewsSection() {
               </div>
             )}
 
-             {/* Marketing CTA Box at the bottom — Original rich golden banner design */}
-             <div className="mt-14 rounded-3xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-slate-950 p-8 sm:p-12 shadow-2xl shadow-amber-500/25 relative overflow-hidden text-left">
-               <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-white/15 rounded-full blur-3xl pointer-events-none" />
-               <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
-                 <div className="space-y-2.5 max-w-xl">
-                   <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-950/15 text-slate-950 text-xs font-black uppercase tracking-wider">
-                     <MagicianHatWandIcon className="h-4 w-4" />
-                     Эксклюзивное шоу для вашего праздника
-                   </div>
-                   <h3 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight text-slate-950">
-                     Хотите удивить гостей на своём мероприятии?
-                   </h3>
-                   <p className="text-sm sm:text-base font-semibold text-slate-900/85 leading-relaxed">
-                     Интерактивная магия, чтение мыслей, микромагия и сценическое шоу. Сделайте ваше событие незабываемым!
-                   </p>
-                 </div>
+            {/* Marketing CTA Box at the bottom — Original rich golden banner design */}
+            <div className="mt-14 rounded-3xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-slate-950 p-6 sm:p-8 lg:p-12 shadow-2xl shadow-amber-500/25 relative overflow-hidden text-left">
+              <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-white/15 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6 text-center lg:text-left">
+                <div className="space-y-3 max-w-xl w-full">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/15 text-slate-950 text-[10px] xs:text-xs font-black uppercase tracking-wider max-w-full">
+                    <MagicianHatWandIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span className="leading-tight">Эксклюзивное шоу для вашего праздника</span>
+                  </div>
+                  <h3 className="text-xl xs:text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-slate-950">
+                    Хотите удивить гостей на своём мероприятии?
+                  </h3>
+                  <p className="text-xs xs:text-sm sm:text-base font-semibold text-slate-900/85 leading-relaxed">
+                    Интерактивная магия, чтение мыслей, микромагия и сценическое шоу. Сделайте ваше событие незабываемым!
+                  </p>
+                </div>
 
-                 <Button
-                   size="lg"
-                   className="bg-slate-950 hover:bg-slate-900 text-white font-black px-8 py-6 rounded-2xl shadow-xl hover:scale-105 transition-all text-base shrink-0 border border-white/10"
-                   asChild
-                 >
-                   <Link href="/catalog">
-                     Заказать выступление на праздник
-                     <ArrowRight className="ml-2 h-5 w-5" />
-                   </Link>
-                 </Button>
-               </div>
-             </div>
+                <Button
+                  size="lg"
+                  className="bg-slate-950 hover:bg-slate-900 text-white font-black px-5 sm:px-8 py-4 sm:py-6 rounded-2xl shadow-xl hover:scale-105 transition-all text-xs xs:text-sm sm:text-base shrink-0 border border-white/10 w-full lg:w-auto whitespace-normal text-center leading-snug min-h-[52px]"
+                  asChild
+                >
+                  <Link href="/catalog" className="flex items-center justify-center gap-2 flex-wrap">
+                    <span>Заказать выступление на праздник</span>
+                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
 
-           </div>
-           
-         </div>
-       </div>
-       
+          </div>
+
+        </div>
+      </div>
+
+      {/* Image Lightbox */}
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+          onClick={() => setLightboxImg(null)}
+        >
+          <button
+            className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-colors"
+            onClick={(e) => { e.stopPropagation(); setLightboxImg(null); }}
+            aria-label="Закрыть"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img
+            src={lightboxImg}
+            alt="Просмотр отзыва"
+            className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </section>
   );
 }
