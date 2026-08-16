@@ -1227,7 +1227,7 @@ function PreviewVideoPlayer({ video }: { video: any }) {
     );
   }
 
-  const url = playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO;
+  const url = video.previewVideoUrl || playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO;
 
   return (
     <ReactPlayer

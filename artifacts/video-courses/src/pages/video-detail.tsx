@@ -189,6 +189,9 @@ export function VideoDetailPage() {
        return;
     }
 
+    // Full demo file/URL for visitors — do not clip
+    if (video.previewVideoUrl) return;
+
     // Fallback for demo videos
     if (video.isPurchased) return;
     const duration = playerRef.current.getDuration();
@@ -257,6 +260,9 @@ export function VideoDetailPage() {
   const isFav = favs.isFavorite(video.id);
   const inCart = cart.isInCart(video.id);
   const inCompare = !!compare.videos.find(v => v.id === video.id);
+  const playerUrl = (isPurchasedByUser || video.isPurchased)
+    ? (playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO)
+    : (video.previewVideoUrl || playbackData?.manifestUrl || FALLBACK_VIDEO);
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -289,10 +295,6 @@ export function VideoDetailPage() {
                   ) : (
                     <button 
                       onClick={() => {
-                        if (!isAuthenticated) {
-                          setLocation(`/auth/login?redirect=/video/${id}`);
-                          return;
-                        }
                         setIsPlaying(true);
                       }}
                       className="group/play flex flex-col items-center gap-3 focus:outline-none"
@@ -301,7 +303,7 @@ export function VideoDetailPage() {
                         <Play className="h-9 w-9 fill-current ml-1" />
                       </div>
                       <span className="text-white font-bold text-base bg-slate-950/80 px-4 py-1.5 rounded-full border border-white/20 backdrop-blur-md">
-                        Смотреть превью (20% бесплатно)
+                        {isPurchasedByUser || video.isPurchased ? "Смотреть курс" : "Смотреть превью (бесплатно)"}
                       </span>
                     </button>
                   )}
@@ -323,7 +325,7 @@ export function VideoDetailPage() {
             ) : (
               <ReactPlayer
                 ref={playerRef}
-                url={playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO}
+                url={playerUrl}
                 playing={isPlaying}
                 controls
                 width="100%"
@@ -332,7 +334,7 @@ export function VideoDetailPage() {
                 onProgress={handleTimeUpdate}
                 onEnded={handleEnded}
                 onError={() => setVideoError(true)}
-                config={{ file: { forceHLS: true, attributes: { controlsList: 'nodownload', preload: 'metadata' } } }}
+                config={{ file: { forceHLS: playerUrl.includes(".m3u8"), attributes: { controlsList: 'nodownload', preload: 'metadata' } } }}
                 onContextMenu={(e: any) => e.preventDefault()}
               />
             )}

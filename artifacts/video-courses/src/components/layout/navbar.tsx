@@ -4,7 +4,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Menu, Search, Heart, ShoppingCart, User,
-  Sun, Moon, LogOut, Settings, Clapperboard, Sparkles, X, MoreHorizontal,
+  Sun, Moon, LogOut, Settings, Sparkles, X, MoreHorizontal,
 } from "lucide-react";
 import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { Button } from "@/components/ui/button";
@@ -57,7 +57,7 @@ interface VideoResult {
 
 export function Navbar() {
   const { theme, toggleTheme } = useTheme();
-  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const cart = useCart();
   const favs = useFavorites();
   const [scrolled, setScrolled] = useState(false);
@@ -398,13 +398,6 @@ export function Navbar() {
                         <Settings className="mr-2.5 h-4 w-4" /> Личный кабинет
                       </Link>
                     </DropdownMenuItem>
-                    {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link href="/admm/dashboard" className="w-full flex items-center cursor-pointer text-amber-500 font-bold rounded-lg">
-                          <Clapperboard className="mr-2.5 h-4 w-4" /> Админ-панель
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive cursor-pointer font-semibold rounded-lg"
@@ -420,10 +413,6 @@ export function Navbar() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/auth/register" className="w-full cursor-pointer font-semibold rounded-lg py-2.5">Регистрация</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/admm" className="w-full text-muted-foreground cursor-pointer text-xs rounded-lg py-2">Вход для администратора</Link>
                     </DropdownMenuItem>
                   </>
                 )}
@@ -498,13 +487,6 @@ export function Navbar() {
                         <Settings className="h-4 w-4" /> Личный кабинет
                       </div>
                     </Link>
-                    {isAdmin && (
-                      <Link href="/admm/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors text-sm font-bold text-amber-500">
-                          <Clapperboard className="h-4 w-4" /> Админ-панель
-                        </div>
-                      </Link>
-                    )}
                     <button
                       className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-sm font-semibold text-destructive w-full text-left"
                       onClick={() => { logout(); setMobileMenuOpen(false); }}

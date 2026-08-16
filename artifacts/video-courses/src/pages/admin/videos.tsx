@@ -45,6 +45,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 type ThumbnailSource = "url" | "file";
+type PreviewVideoSource = "url" | "file";
 
 /** Конвертация любого изображения в WebP с помощью Canvas API в браузере */
 async function convertImageToWebP(file: File, quality = 0.88): Promise<Blob> {
@@ -105,6 +106,12 @@ export function AdminVideos() {
   const [thumbnailDragOver, setThumbnailDragOver] = useState(false);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
 
+  // --- Demo/preview video (URL or file from device) ---
+  const [previewVideoSource, setPreviewVideoSource] = useState<PreviewVideoSource>("url");
+  const [previewVideoFile, setPreviewVideoFile] = useState<File | null>(null);
+  const [previewVideoDragOver, setPreviewVideoDragOver] = useState(false);
+  const previewVideoInputRef = useRef<HTMLInputElement>(null);
+
   // --- Category state ---
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("none");
   const [newCategoryName, setNewCategoryName] = useState<string>("");
@@ -117,6 +124,7 @@ export function AdminVideos() {
     description: "",
     previewDurationSeconds: "",
     videoUrl: "",
+    previewVideoUrl: "",
   });
 
   const [uploadStep, setUploadStep] = useState<UploadStep>("idle");
@@ -124,12 +132,14 @@ export function AdminVideos() {
 
   // --- Handlers ---
   const resetDialog = () => {
-    setFormData({ title: "", price: "", discountPrice: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "" });
+    setFormData({ title: "", price: "", discountPrice: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "" });
     setSelectedFile(null);
     setThumbnailFile(null);
     if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
     setThumbnailPreview(null);
     setThumbnailSource("url");
+    setPreviewVideoSource("url");
+    setPreviewVideoFile(null);
     setSelectedCategoryId("none");
     setNewCategoryName("");
     setUploadStep("idle");
@@ -258,10 +268,44 @@ export function AdminVideos() {
           categoryId: resolvedCategoryId,
           isPublished: true,
           isFeatured: true,
-          // If URL-based, set directly
+          // Full course video URL (shown only to buyers in their profile)
           videoUrl: videoSource === "url" ? formData.videoUrl : undefined,
+          // Preview/demo video URL (shown to all visitors for free)
+          previewVideoUrl: formData.previewVideoUrl || undefined,
         }
       });
+
+      if (previewVideoSource === "file" && previewVideoFile) {
+        setUploadStep("uploading");
+        const token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token");
+        const previewRes = await fetch(`/api/videos/${video.id}/preview-upload-url`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ contentType: previewVideoFile.type || "video/mp4" }),
+        });
+        if (!previewRes.ok) throw new Error("Не удалось получить ссылку для загрузки демо-видео");
+        const { uploadUrl: previewUploadUrl, publicUrl: previewPublicUrl } = await previewRes.json() as { uploadUrl: string; publicUrl: string };
+
+        const putPreview = await fetch(previewUploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": previewVideoFile.type || "video/mp4" },
+          body: previewVideoFile,
+        });
+        if (!putPreview.ok) throw new Error("Ошибка загрузки демо-видео");
+
+        const completeRes = await fetch(`/api/videos/${video.id}/preview-complete`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ previewVideoUrl: previewPublicUrl }),
+        });
+        if (!completeRes.ok) throw new Error("Не удалось сохранить демо-видео");
+      }
 
       if (videoSource === "url") {
         // URL source: no upload needed, just save and done
@@ -608,9 +652,110 @@ export function AdminVideos() {
               )}
             </div>
 
-            {/* Video source selector */}
+            {/* Preview Video URL — visible to all visitors for free */}
             <div className="grid gap-3">
-              <label className="text-sm font-semibold">Видеофайл <span className="text-red-500">*</span></label>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-semibold">🎬 Ссылка на демо-видео (превью для всех посетителей)</label>
+                <span className="text-xs text-amber-600 font-semibold bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full">Бесплатный просмотр</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewVideoSource("url")}
+                  disabled={isWorking}
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${previewVideoSource === "url"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                    }`}
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  Ссылка
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewVideoSource("file")}
+                  disabled={isWorking}
+                  className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${previewVideoSource === "file"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                    }`}
+                >
+                  <Upload className="h-4 w-4" />
+                  Загрузить файл
+                </button>
+              </div>
+              {previewVideoSource === "url" ? (
+                <Input
+                  value={formData.previewVideoUrl}
+                  onChange={(e) => setFormData({ ...formData, previewVideoUrl: e.target.value })}
+                  placeholder="https://vimeo.com/... (ссылка на демо-видео)"
+                  disabled={isWorking}
+                />
+              ) : (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setPreviewVideoDragOver(true); }}
+                  onDragLeave={() => setPreviewVideoDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setPreviewVideoDragOver(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith("video/")) {
+                      setPreviewVideoFile(file);
+                    } else {
+                      toast({ title: "Только видеофайлы", variant: "destructive" });
+                    }
+                  }}
+                  onClick={() => !isWorking && previewVideoInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${previewVideoDragOver ? "border-amber-400 bg-amber-400/10" :
+                      previewVideoFile ? "border-emerald-400 bg-emerald-400/10" :
+                        "border-border hover:border-amber-400/60"
+                    } ${isWorking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <input
+                    ref={previewVideoInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setPreviewVideoFile(f); }}
+                    className="hidden"
+                    disabled={isWorking}
+                  />
+                  {previewVideoFile ? (
+                    <div className="flex items-center gap-3">
+                      <Film className="h-8 w-8 text-emerald-600 shrink-0" />
+                      <div className="text-left flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-emerald-600 truncate">{previewVideoFile.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {(previewVideoFile.size / (1024 * 1024)).toFixed(1)} MB
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setPreviewVideoFile(null); }}
+                        className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                      <div className="font-semibold text-sm mb-1">Перетащите демо-видео сюда</div>
+                      <div className="text-xs text-muted-foreground">или нажмите для выбора с устройства (MP4, WEBM...)</div>
+                    </>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Это видео будут видеть <strong>все посетители</strong> бесплатно. После покупки покупатель получает доступ к полному видео ниже.
+              </p>
+            </div>
+
+            {/* Video source selector — full course video for buyers only */}
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-semibold">🔒 Полный видеокурс <span className="text-red-500">*</span></label>
+                <span className="text-xs text-emerald-600 font-semibold bg-emerald-400/10 border border-emerald-400/30 px-2 py-0.5 rounded-full">Только для покупателей</span>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"

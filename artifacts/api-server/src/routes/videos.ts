@@ -296,6 +296,41 @@ router.post("/videos/:id/upload-url", requireAdmin, async (req, res): Promise<vo
   res.json({ uploadUrl, key });
 });
 
+// Endpoint: get presigned URL to upload preview/demo video directly to S3
+router.post("/videos/:id/preview-upload-url", requireAdmin, async (req, res): Promise<void> => {
+  const params = GetVideoParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const [video] = await db.select().from(videosTable).where(eq(videosTable.id, params.data.id));
+  if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
+
+  const contentType = typeof req.body?.contentType === "string" && String(req.body.contentType).startsWith("video/")
+    ? String(req.body.contentType)
+    : "video/mp4";
+  const ext = contentType.includes("webm") ? "webm" : contentType.includes("quicktime") ? "mov" : "mp4";
+  const key = `preview-videos/${video.id}-preview-${Date.now()}.${ext}`;
+  const uploadUrl = await generateUploadUrl(key, contentType);
+
+  // Serve via API proxy so visitors can play the full demo without public S3
+  const filename = key.split("/").pop();
+  const publicUrl = `/api/preview-videos/${filename}`;
+
+  res.json({ uploadUrl, key, publicUrl });
+});
+
+// Endpoint: after preview video upload, save the public URL to previewVideoUrl
+router.post("/videos/:id/preview-complete", requireAdmin, async (req, res): Promise<void> => {
+  const params = GetVideoParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const { previewVideoUrl } = req.body as { previewVideoUrl: string };
+  if (!previewVideoUrl) { res.status(400).json({ error: "previewVideoUrl is required" }); return; }
+  const [video] = await db.update(videosTable)
+    .set({ previewVideoUrl })
+    .where(eq(videosTable.id, params.data.id))
+    .returning();
+  if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
+  res.json({ success: true, previewVideoUrl: video.previewVideoUrl });
+});
+
 router.post("/videos/:id/process", requireAdmin, async (req, res): Promise<void> => {
   const params = GetVideoParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }

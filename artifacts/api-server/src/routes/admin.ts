@@ -326,4 +326,46 @@ router.get("/thumbnails/:filename", serveThumbnail);
 /* Alias under /admin/thumbnails (same handler, same behavior) */
 router.get("/admin/thumbnails/:filename", serveThumbnail);
 
+/* ── Demo/preview video proxy (full file for all visitors) ── */
+router.get("/preview-videos/:filename", async (req, res): Promise<void> => {
+  const filename = req.params.filename as string;
+  if (!filename || filename.includes("..") || filename.includes("/")) {
+    res.status(400).json({ error: "Invalid filename" });
+    return;
+  }
+
+  const bucket = process.env.S3_BUCKET || "video-courses";
+  const key = `preview-videos/${filename}`;
+  const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
+
+  try {
+    const response = await s3Client.send(new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ...(range ? { Range: range } : {}),
+    }));
+    if (!response.Body) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
+    res.setHeader("Content-Type", response.ContentType || "video/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    if (response.ContentLength != null) {
+      res.setHeader("Content-Length", String(response.ContentLength));
+    }
+    if (range && response.ContentRange) {
+      res.status(206);
+      res.setHeader("Content-Range", response.ContentRange);
+    }
+
+    const stream = response.Body as NodeJS.ReadableStream;
+    stream.pipe(res);
+  } catch (error) {
+    req.log.error(error);
+    res.status(404).json({ error: "Not found" });
+  }
+});
+
 export default router;
