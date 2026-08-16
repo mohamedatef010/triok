@@ -13,8 +13,22 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
 
 export function DeliveryPage() {
+  const { data: requisitesData } = useQuery({
+    queryKey: ["site-settings", "site_requisites"],
+    queryFn: async () => {
+      const res = await fetch("/api/site-settings/site_requisites");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.value;
+    },
+    retry: false,
+  });
+
+  const phone = requisitesData?.phone || "+7 978 717-66-74";
+  const phoneHref = `tel:${phone.replace(/\s+/g, '')}`;
   useSEO({
     title: "Получение цифрового товара | Порядок предоставления доступа",
     description: "Информация о порядке и сроках предоставления доступа к цифровым обучающим видеокурсам на платформе Классный Фокус после успешной оплаты.",
@@ -161,8 +175,8 @@ export function DeliveryPage() {
                   <a href="mailto:cool-trick@mail.ru" className="text-primary hover:underline font-bold">
                     Email: cool-trick@mail.ru
                   </a>
-                  <a href="tel:+79787176674" className="text-foreground hover:text-primary font-bold">
-                    Тел: +7 978 717-66-74
+                  <a href={phoneHref} className="text-foreground hover:text-primary font-bold">
+                    Тел: {phone}
                   </a>
                 </div>
               </div>

@@ -5,8 +5,22 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useSEO } from "@/hooks/use-seo";
+import { useQuery } from "@tanstack/react-query";
 
 export function HelpPage() {
+  const { data: requisitesData } = useQuery({
+    queryKey: ["site-settings", "site_requisites"],
+    queryFn: async () => {
+      const res = await fetch("/api/site-settings/site_requisites");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.value;
+    },
+    retry: false,
+  });
+
+  const phone = requisitesData?.phone || "+7 978 717-66-74";
+  const phoneHref = `tel:${phone.replace(/\s+/g, '')}`;
   useSEO({
     title: "Помощь и информация",
     description: "Ответы на вопросы об оплате, доступе к курсам, возврате средств и использовании учебных материалов на платформе Классный Фокус.",
@@ -232,10 +246,10 @@ export function HelpPage() {
                 Email: cool-trick@mail.ru
               </a>
               <a
-                href="tel:+79787176674"
+                href={phoneHref}
                 className="text-foreground hover:text-primary hover:underline"
               >
-                Тел: +7 978 717-66-74
+                Тел: {phone}
               </a>
             </div>
             <br />
@@ -280,10 +294,10 @@ export function HelpPage() {
         </a>{" "}
         или по телефону{" "}
         <a
-          href="tel:+79787176674"
+          href={phoneHref}
           className="font-medium text-foreground underline underline-offset-4"
         >
-          +7 978 717-66-74
+          {phone}
         </a>
         .
       </div>

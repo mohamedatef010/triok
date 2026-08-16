@@ -2,8 +2,22 @@ import { useSEO } from "@/hooks/use-seo";
 import { Link } from "wouter";
 import { ShieldCheck, FileText, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 export function TermsPage() {
+  const { data: requisitesData } = useQuery({
+    queryKey: ["site-settings", "site_requisites"],
+    queryFn: async () => {
+      const res = await fetch("/api/site-settings/site_requisites");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.value;
+    },
+    retry: false,
+  });
+
+  const phone = requisitesData?.phone || "+7 978 717-66-74";
+  const phoneHref = `tel:${phone.replace(/\s+/g, '')}`;
   useSEO({
     title: "Публичная оферта и условия предоставления услуг",
     description: "Договор публичной оферты на приобретение доступа к цифровым обучающим видеокурсам на платформе Классный Фокус.",
@@ -124,7 +138,7 @@ export function TermsPage() {
             <div><strong>Исполнитель:</strong> Берестнев Максим Геннадьевич</div>
             <div><strong>Статус:</strong> Плательщик налога на профессиональный доход (Самозанятый)</div>
             <div><strong>ИНН:</strong> 482506027919</div>
-            <div><strong>Телефон:</strong> <a href="tel:+79787176674" className="hover:underline text-foreground font-bold">+7 978 717-66-74</a></div>
+            <div><strong>Телефон:</strong> <a href={phoneHref} className="hover:underline text-foreground font-bold">{phone}</a></div>
             <div><strong>Email:</strong> <a href="mailto:cool-trick@mail.ru" className="hover:underline text-primary font-bold">cool-trick@mail.ru</a></div>
             <div><strong>Сайт:</strong> классный-фокус.рф</div>
             <div><strong>Служба поддержки:</strong> <a href="mailto:magik.777@mail.ru" className="hover:underline text-primary font-bold">magik.777@mail.ru</a></div>

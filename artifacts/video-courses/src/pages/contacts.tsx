@@ -88,6 +88,20 @@ export function ContactsPage() {
     retry: false,
   });
 
+  const { data: requisitesData } = useQuery({
+    queryKey: ['site-settings', 'site_requisites'],
+    queryFn: async () => {
+      const res = await fetch('/api/site-settings/site_requisites');
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.value;
+    },
+    retry: false,
+  });
+
+  const contactPhone = requisitesData?.phone || "+7 978 717-66-74";
+  const contactPhoneHref = `tel:${contactPhone.replace(/\s+/g, '')}`;
+
   const hasData = !isLoading && !isError && data != null;
   const content = data ?? {};
 
@@ -222,7 +236,7 @@ export function ContactsPage() {
             {/* Direct Contact Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <a
-                href="tel:+79787176674"
+                href={contactPhoneHref}
                 className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 transition-all"
               >
                 <div className="h-12 w-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-lg shrink-0">
@@ -230,7 +244,7 @@ export function ContactsPage() {
                 </div>
                 <div>
                   <div className="font-bold text-slate-900 dark:text-white text-sm">Телефон</div>
-                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400">+7 978 717-66-74</div>
+                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400">{contactPhone}</div>
                 </div>
               </a>
 

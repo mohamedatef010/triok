@@ -35,6 +35,19 @@ function useSiteContacts() {
   });
 }
 
+function useRequisitesPhone() {
+  return useQuery({
+    queryKey: ["site-settings", "site_requisites"],
+    queryFn: async () => {
+      const res = await fetch("/api/site-settings/site_requisites");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const json = await res.json();
+      return json?.value;
+    },
+    retry: false,
+  });
+}
+
 interface VideoResult {
   id: number;
   title: string;
@@ -58,10 +71,16 @@ export function Navbar() {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { data: siteData, isLoading: siteLoading } = useSiteContacts();
-  const phone = (!siteLoading && siteData?.phone) ? siteData.phone : "+7 978 717-66-74";
-  const phoneHref = (!siteLoading && siteData?.phone)
-    ? `tel:${siteData.phone.replace(/\s+/g, '')}`
-    : "tel:+79787176674";
+  const { data: reqData, isLoading: reqLoading } = useRequisitesPhone();
+  // Prefer phone from Реквизиты продавца (site_requisites), fallback to author_section, then default
+  const phone = (!reqLoading && reqData?.phone)
+    ? reqData.phone
+    : (!siteLoading && siteData?.phone) ? siteData.phone : "+7 978 717-66-74";
+  const phoneHref = (!reqLoading && reqData?.phone)
+    ? `tel:${reqData.phone.replace(/\s+/g, '')}`
+    : (!siteLoading && siteData?.phone)
+      ? `tel:${siteData.phone.replace(/\s+/g, '')}`
+      : "tel:+79787176674";
   const email = (!siteLoading && siteData?.email)
     ? siteData.email
     : (!siteLoading && siteData?.socialLinks?.mailru)
