@@ -255,8 +255,10 @@ export function CartPage() {
                   <p className="text-xs text-muted-foreground text-center">
                     Для оформления заказа необходимо войти в личный кабинет
                   </p>
-                  <Button size="lg" className="w-full h-13 rounded-2xl font-bold btn-glow" asChild>
-                    <Link href="/auth/login?redirect=/cart">Войти и оформить</Link>
+                  <Button size="lg" className="w-full h-14 text-base font-bold rounded-2xl btn-glow" asChild>
+                    <Link href="/auth/login?redirect=/checkout">
+                      Оформить заказ ({finalTotal} ₽) <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
                   </Button>
                 </div>
               )}
