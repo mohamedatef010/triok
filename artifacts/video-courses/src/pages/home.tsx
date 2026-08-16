@@ -370,6 +370,57 @@ export function HomePage() {
   const { data: rawFeaturedVideos, isLoading, error } = useGetFeaturedVideos();
   const apiVideos = Array.isArray(rawFeaturedVideos) ? rawFeaturedVideos : [];
 
+  // Hero Section Settings (managed by admin in /admm/hero-section)
+  const { data: heroSettings } = useQuery<any>({
+    queryKey: ["site-settings", "hero_section"],
+    queryFn: async () => {
+      const res = await fetch("/api/site-settings/hero_section");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.value;
+    },
+    staleTime: 5000,
+  });
+
+  const hero = {
+    badge1: heroSettings?.badge1 || "Искусство удивлять",
+    badge2: heroSettings?.badge2 || "С трудоустройством",
+    heading: heroSettings?.heading || "Научись фокусам, которые действительно хочется показать друзьям",
+    subheading: heroSettings?.subheading || "Научись эффектным фокусам, раскрывай секреты иллюзионного искусства и удивляй друзей и близких. Понятные пошаговые уроки от профессионального фокусника.",
+    ctaPrimaryText: heroSettings?.ctaPrimaryText || "Смотри секрет трюка",
+    ctaPrimaryLink: heroSettings?.ctaPrimaryLink || "/catalog",
+    ctaSecondaryText: heroSettings?.ctaSecondaryText || "Хочешь удивить друзей?",
+    orbit1Value: heroSettings?.orbit1Value || "10+",
+    orbit1Label: heroSettings?.orbit1Label || "лет в мире иллюзий",
+    orbit2Title: heroSettings?.orbit2Title || "Видеоуроки",
+    orbit2Subtitle: heroSettings?.orbit2Subtitle || "понятно и пошагово",
+    orbit2Desc: heroSettings?.orbit2Desc || "Практический опыт выступлений и обучения",
+    orbit3Title: heroSettings?.orbit3Title || "Первый фокус",
+    orbit3Desc: heroSettings?.orbit3Desc || "Научись своему первому эффектному фокусу",
+    orbit4Title: heroSettings?.orbit4Title || "Бесплатно",
+    orbit4Subtitle: heroSettings?.orbit4Subtitle || "Попробуй первый урок",
+    orbit5Title: heroSettings?.orbit5Title || "Для всех",
+    orbit5Desc: heroSettings?.orbit5Desc || "от новичков до увлечённых магией",
+    authorName: heroSettings?.authorName || "Максим Берестнев",
+    authorRole: heroSettings?.authorRole || "профессиональный фокусник и преподаватель",
+    stat1Value: heroSettings?.stat1Value || "10+ лет",
+    stat1Label: heroSettings?.stat1Label || "опыта в иллюзионном искусстве",
+    stat2Value: heroSettings?.stat2Value || "Практика",
+    stat2Label: heroSettings?.stat2Label || "фокусы, которые можно повторить",
+    stat3Value: heroSettings?.stat3Value || "Пошагово",
+    stat3Label: heroSettings?.stat3Label || "от простых движений до полноценного трюка",
+  };
+
+  const dynamicMarquee = (heroSettings?.marqueeItemsText
+    ? heroSettings.marqueeItemsText.split(",").map((s: string) => s.trim()).filter(Boolean)
+    : null) || MARQUEE_ITEMS;
+
+  const dynamicStats = [
+    { icon: Award, value: hero.stat1Value, label: hero.stat1Label },
+    { icon: CheckCircle, value: hero.stat2Value, label: hero.stat2Label },
+    { icon: Clock, value: hero.stat3Value, label: hero.stat3Label },
+  ];
+
   // Only show real videos added by admin via API
   const displayVideos = apiVideos;
 
@@ -869,40 +920,85 @@ export function HomePage() {
 
               {/* Category badges - updated texts */}
               <div className="flex flex-wrap items-center gap-2 mb-7 hero-anim-down" style={{ animationDelay: "0.05s" }}>
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 rounded-lg shadow-lg shadow-amber-500/20">
-                  <Sparkles className="h-3.5 w-3.5" /> Искусство удивлять
-                </span>
-                {/* Keep the second badge as is because no replacement provided */}
-                <span className="px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-white/80 border border-slate-200/80 text-slate-700 dark:bg-white/5 dark:border-white/15 dark:text-slate-200 rounded-lg shadow-sm backdrop-blur-sm">
-                  С трудоустройством
-                </span>
+                {hero.badge1 && (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 rounded-lg shadow-lg shadow-amber-500/20"
+                    style={{
+                      fontFamily: heroSettings?.styles?.badge1?.fontFamily || undefined,
+                      color: heroSettings?.styles?.badge1?.color || undefined,
+                      background: heroSettings?.styles?.badge1?.bgColor || undefined,
+                    }}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" /> {hero.badge1}
+                  </span>
+                )}
+                {hero.badge2 && (
+                  <span
+                    className="px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-white/80 border border-slate-200/80 text-slate-700 dark:bg-white/5 dark:border-white/15 dark:text-slate-200 rounded-lg shadow-sm backdrop-blur-sm"
+                    style={{
+                      fontFamily: heroSettings?.styles?.badge2?.fontFamily || undefined,
+                      color: heroSettings?.styles?.badge2?.color || undefined,
+                      background: heroSettings?.styles?.badge2?.bgColor || undefined,
+                    }}
+                  >
+                    {hero.badge2}
+                  </span>
+                )}
               </div>
 
-              {/* Massive, High-Impact Typography - updated heading */}
-              <h1 className="text-4xl md:text-5xl lg:text-[58px] xl:text-[64px] font-black text-slate-900 dark:text-white tracking-tight leading-[1.08] mb-6 hero-anim-left" style={{ animationDelay: "0.15s" }}>
-                Научись фокусам, которые действительно хочется показать друзьям
+              {/* Massive, High-Impact Typography - dynamic heading */}
+              <h1
+                className="text-4xl md:text-5xl lg:text-[58px] xl:text-[64px] font-black text-slate-900 dark:text-white tracking-tight leading-[1.08] mb-6 hero-anim-left"
+                style={{
+                  animationDelay: "0.15s",
+                  fontFamily: heroSettings?.styles?.heading?.fontFamily || undefined,
+                  color: heroSettings?.styles?.heading?.color || undefined,
+                }}
+              >
+                {hero.heading}
               </h1>
 
-              {/* Benefit subtext - updated */}
-              <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300/90 mb-9 max-w-xl leading-relaxed font-medium hero-anim-left" style={{ animationDelay: "0.25s" }}>
-                Научись эффектным фокусам, раскрывай секреты иллюзионного искусства и удивляй друзей и близких. Понятные пошаговые уроки от профессионального фокусника.
+              {/* Benefit subtext - dynamic */}
+              <p
+                className="text-lg md:text-xl text-slate-600 dark:text-slate-300/90 mb-9 max-w-xl leading-relaxed font-medium hero-anim-left"
+                style={{
+                  animationDelay: "0.25s",
+                  fontFamily: heroSettings?.styles?.subheading?.fontFamily || undefined,
+                  color: heroSettings?.styles?.subheading?.color || undefined,
+                }}
+              >
+                {hero.subheading}
               </p>
 
-              {/* Bold CTAs - updated button text */}
+              {/* Bold CTAs - dynamic button text */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10 hero-anim-up" style={{ animationDelay: "0.35s" }}>
-                <Button size="lg" className="btn-shine h-14 px-8 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:opacity-90 shadow-xl shadow-amber-500/25 transition-all text-base border-none" asChild>
-                  <Link href="/catalog" className="inline-flex items-center gap-2">
+                <Button
+                  size="lg"
+                  className="btn-shine h-14 px-8 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:opacity-90 shadow-xl shadow-amber-500/25 transition-all text-base border-none"
+                  style={{
+                    fontFamily: heroSettings?.styles?.ctaPrimary?.fontFamily || undefined,
+                    color: heroSettings?.styles?.ctaPrimary?.color || undefined,
+                    background: heroSettings?.styles?.ctaPrimary?.bgColor || undefined,
+                  }}
+                  asChild
+                >
+                  <Link href={hero.ctaPrimaryLink || "/catalog"} className="inline-flex items-center gap-2">
                     <CtaTrickIcon className="h-4 w-4 shrink-0" />
-                    Смотри секрет трюка
+                    {hero.ctaPrimaryText}
                     <ArrowRight className="h-4 w-4 shrink-0 opacity-70" />
                   </Link>
                 </Button>
                 <Button
                   size="lg" variant="outline"
                   className="h-14 px-8 rounded-xl bg-white/60 text-slate-900 border-slate-300/80 hover:bg-amber-400/15 hover:border-amber-500/50 dark:bg-transparent dark:text-white dark:border-white/25 dark:hover:bg-amber-400/10 dark:hover:border-amber-400/60 shadow-sm transition-all text-base font-bold backdrop-blur-sm cursor-pointer"
+                  style={{
+                    fontFamily: heroSettings?.styles?.ctaSecondary?.fontFamily || undefined,
+                    color: heroSettings?.styles?.ctaSecondary?.color || undefined,
+                    background: heroSettings?.styles?.ctaSecondary?.bgColor || undefined,
+                  }}
                   onClick={() => setShowMagicSurprise(true)}
                 >
-                  <Play className="h-4 w-4 mr-2 text-amber-400 fill-current" /> Хочешь удивить друзей?
+                  <Play className="h-4 w-4 mr-2 text-amber-400 fill-current" /> {hero.ctaSecondaryText}
                 </Button>
               </div>
 
@@ -935,7 +1031,7 @@ export function HomePage() {
                   />
                   <img
                     src={HERO_IMAGE_SRC}
-                    alt="Максим Берестнев"
+                    alt={hero.authorName}
                     className="relative z-10 max-h-[110%] w-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] mobile-hero-img-mask"
                   />
                 </div>
@@ -943,91 +1039,197 @@ export function HomePage() {
                 {/* ── Outer Orbit Ring Line ── */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[290px] xs:w-[340px] sm:w-[540px] md:w-[640px] lg:w-[700px] h-[280px] xs:h-[320px] sm:h-[500px] md:h-[580px] lg:h-[620px] rounded-full border border-dashed border-amber-400/20 pointer-events-none slow-spin" />
 
-                {/* ── 5 BALANCED FLOATING ORBIT CARDS (updated texts) ── */}
+                {/* ── 5 BALANCED FLOATING ORBIT CARDS (dynamic texts) ── */}
 
                 {/* 1. Bottom-Center on mobile / Top-Right on desktop: "10+" */}
                 <div
                   className="float-chip hero-chip-entry absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
-                  style={{ animation: `heroChipEntrance 0.95s 0.5s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2s ease-in-out infinite` }}
+                  style={{
+                    animation: `heroChipEntrance 0.95s 0.5s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2s ease-in-out infinite`,
+                    fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
+                  }}
                 >
                   <Star className="h-3.5 w-3.5 xs:h-5 w-5 text-amber-400 fill-current" />
                   <div className="leading-tight">
-                    <div className="text-xs xs:text-sm font-black text-white">10+</div>
-                    <div className="text-[8px] xs:text-[10px] font-semibold text-slate-400">лет в мире иллюзий</div>
+                    <div
+                      className="text-xs xs:text-sm font-black text-white"
+                      style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
+                    >
+                      {hero.orbit1Value}
+                    </div>
+                    <div
+                      className="text-[8px] xs:text-[10px] font-semibold text-slate-400"
+                      style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
+                    >
+                      {hero.orbit1Label}
+                    </div>
                   </div>
                 </div>
 
-                {/* 2. Mid-Right: Experience → changed to "Видеоуроки" and "понятно и пошагово" + updated subtitle */}
+                {/* 2. Mid-Right: Experience → Video lessons */}
                 <div
                   className="float-chip hero-chip-entry absolute top-[100px] right-[-12px] xs:right-[0px] z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
-                  style={{ animation: `heroChipEntrance 0.95s 0.8s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.4s ease-in-out infinite` }}
+                  style={{
+                    animation: `heroChipEntrance 0.95s 0.8s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.4s ease-in-out infinite`,
+                    fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
+                  }}
                 >
-                  <div className="text-xs xs:text-sm sm:text-base font-black text-amber-400 leading-none mb-0.5 xs:mb-1">Видеоуроки</div>
-                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">понятно и пошагово</div>
-                  <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1">Практический опыт выступлений и обучения</div>
+                  <div
+                    className="text-xs xs:text-sm sm:text-base font-black text-amber-400 leading-none mb-0.5 xs:mb-1"
+                    style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
+                  >
+                    {hero.orbit2Title}
+                  </div>
+                  <div
+                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
+                  >
+                    {hero.orbit2Subtitle}
+                  </div>
+                  {hero.orbit2Desc && (
+                    <div
+                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1"
+                      style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
+                    >
+                      {hero.orbit2Desc}
+                    </div>
+                  )}
                 </div>
 
-                {/* 3. Bottom-Right: Quick Start → changed to "✨ Первый фокус" and new subtitle */}
+                {/* 3. Bottom-Right: Quick Start */}
                 <div
                   className="float-chip hero-chip-entry absolute top-[260px] right-[-8px] xs:right-[15px] z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
-                  style={{ animation: `heroChipEntrance 0.95s 1.05s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.7s ease-in-out infinite` }}
+                  style={{
+                    animation: `heroChipEntrance 0.95s 1.05s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.7s ease-in-out infinite`,
+                    fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
+                  }}
                 >
                   <div className="text-xs xs:text-sm mb-0.5 xs:mb-1">✨</div>
-                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Первый фокус</div>
-                  <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1">Научись своему первому эффектному фокусу</div>
+                  <div
+                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
+                  >
+                    {hero.orbit3Title}
+                  </div>
+                  {hero.orbit3Desc && (
+                    <div
+                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1"
+                      style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
+                    >
+                      {hero.orbit3Desc}
+                    </div>
+                  )}
                 </div>
 
-                {/* 4. Bottom-Left: Free Trial → changed to "Бесплатно" and "Попробуй первый урок" */}
+                {/* 4. Bottom-Left: Free Trial */}
                 <div
                   className="float-chip hero-chip-entry absolute top-[270px] left-[-8px] xs:left-[15px] z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
-                  style={{ animation: `heroChipEntrance 0.95s 1.35s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 3s ease-in-out infinite` }}
+                  style={{
+                    animation: `heroChipEntrance 0.95s 1.35s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 3s ease-in-out infinite`,
+                    fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
+                  }}
                 >
-                  <div className="text-xs xs:text-sm sm:text-base font-black text-emerald-400 leading-none mb-0.5 xs:mb-1">Бесплатно</div>
-                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Попробуй первый урок</div>
-                  {/* third line removed as per new design */}
+                  <div
+                    className="text-xs xs:text-sm sm:text-base font-black text-emerald-400 leading-none mb-0.5 xs:mb-1"
+                    style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
+                  >
+                    {hero.orbit4Title}
+                  </div>
+                  <div
+                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
+                  >
+                    {hero.orbit4Subtitle}
+                  </div>
                 </div>
 
-                {/* 5. Mid-Left: Community → changed to "Для всех" and "от новичков до увлечённых магией" */}
+                {/* 5. Mid-Left: Community */}
                 <div
                   className="float-chip hero-chip-entry absolute top-[110px] left-[-12px] xs:left-[0px] z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
-                  style={{ animation: `heroChipEntrance 0.95s 1.2s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.85s ease-in-out infinite` }}
+                  style={{
+                    animation: `heroChipEntrance 0.95s 1.2s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.85s ease-in-out infinite`,
+                    fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
+                  }}
                 >
                   <div className="h-6 w-6 xs:h-7 w-7 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mb-1 xs:mb-2 shrink-0">
                     <Users className="h-3.5 w-3.5 xs:h-4 w-4" />
                   </div>
-                  <div className="text-[10px] xs:text-xs font-black text-white leading-tight">Для всех</div>
-                  <div className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5">от новичков до увлечённых магией</div>
+                  <div
+                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
+                  >
+                    {hero.orbit5Title}
+                  </div>
+                  {hero.orbit5Desc && (
+                    <div
+                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5"
+                      style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
+                    >
+                      {hero.orbit5Desc}
+                    </div>
+                  )}
                 </div>
 
               </div>
 
               {/* Author short info footer - Desktop only - Positioned at the bottom of the image to hide sharp edge */}
-              <div className="absolute bottom-8 lg:bottom-12 xl:bottom-16 left-1/2 -translate-x-1/2 z-40 hidden lg:flex w-max items-center gap-3 py-2.5 pl-2.5 pr-5 bg-white/80 border border-slate-200/80 dark:bg-[#151310]/90 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl shadow-black/20 hero-anim-up" style={{ animationDelay: "0.45s" }}>
-                <img src={heroAvatar} alt="Максим Берестнев" className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
+              <div
+                className="absolute bottom-8 lg:bottom-12 xl:bottom-16 left-1/2 -translate-x-1/2 z-40 hidden lg:flex w-max items-center gap-3 py-2.5 pl-2.5 pr-5 bg-white/80 border border-slate-200/80 dark:bg-[#151310]/90 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl shadow-black/20 hero-anim-up"
+                style={{
+                  animationDelay: "0.45s",
+                  fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined,
+                }}
+              >
+                <img src={heroAvatar} alt={hero.authorName} className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
                 <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
                 <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  <span className="font-extrabold text-slate-900 dark:text-white">Максим Берестнев</span> — профессиональный фокусник и преподаватель
+                  <span
+                    className="font-extrabold text-slate-900 dark:text-white"
+                    style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
+                  >
+                    {hero.authorName}
+                  </span>{" "}
+                  <span style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}>
+                    — {hero.authorRole}
+                  </span>
                 </p>
               </div>
 
             </div>
 
-            {/* Author card — mobile only, updated text */}
-            <div className="flex lg:hidden items-center gap-3 py-2.5 pl-2.5 pr-5 mt-4 mx-auto bg-white/75 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-lg shadow-slate-200/50 dark:shadow-black/30 w-fit">
-              <img src={heroAvatar} alt="Максим Берестнев" className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
+            {/* Author card — mobile only, dynamic text */}
+            <div
+              className="flex lg:hidden items-center gap-3 py-2.5 pl-2.5 pr-5 mt-4 mx-auto bg-white/75 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-lg shadow-slate-200/50 dark:shadow-black/30 w-fit"
+              style={{ fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined }}
+            >
+              <img src={heroAvatar} alt={hero.authorName} className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
               <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                <span className="font-extrabold text-slate-900 dark:text-white">Максим Берестнев</span> — профессиональный фокусник и преподаватель
+                <span
+                  className="font-extrabold text-slate-900 dark:text-white"
+                  style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
+                >
+                  {hero.authorName}
+                </span>{" "}
+                <span style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}>
+                  — {hero.authorRole}
+                </span>
               </p>
             </div>
 
           </div>
 
-          {/* Core Stats bar - updated with new STATS */}
-          <div className="relative z-30 mt-6 lg:-mt-24 grid grid-cols-1 md:grid-cols-3 border border-white/10 rounded-3xl bg-[#141210]/90 backdrop-blur-xl overflow-hidden shadow-xl shadow-black/40 hero-anim-zoom" style={{ animationDelay: "0.55s" }}>
-            {STATS.map(({ icon: Icon, value, label }, index) => (
+          {/* Core Stats bar - dynamic stats */}
+          <div
+            className="relative z-30 mt-6 lg:-mt-24 grid grid-cols-1 md:grid-cols-3 border border-white/10 rounded-3xl bg-[#141210]/90 backdrop-blur-xl overflow-hidden shadow-xl shadow-black/40 hero-anim-zoom"
+            style={{
+              animationDelay: "0.55s",
+              fontFamily: heroSettings?.styles?.stats?.fontFamily || undefined,
+            }}
+          >
+            {dynamicStats.map(({ icon: Icon, value, label }, index) => (
               <div
-                key={label}
+                key={label + index}
                 className={`flex items-center gap-4 px-8 py-6 text-left transition-colors hover:bg-white/5
                   ${index < 2 ? "border-b md:border-b-0 md:border-r border-white/10" : ""}
                 `}
@@ -1036,8 +1238,18 @@ export function HomePage() {
                   <Icon className="h-6 w-6" />
                 </div>
                 <div>
-                  <div className="text-xl font-black text-white leading-tight">{value}</div>
-                  <div className="text-xs font-semibold text-slate-400 mt-1">{label}</div>
+                  <div
+                    className="text-xl font-black text-white leading-tight"
+                    style={{ color: heroSettings?.styles?.stats?.color || undefined }}
+                  >
+                    {value}
+                  </div>
+                  <div
+                    className="text-xs font-semibold text-slate-400 mt-1"
+                    style={{ color: heroSettings?.styles?.stats?.secondaryColor || undefined }}
+                  >
+                    {label}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1048,11 +1260,18 @@ export function HomePage() {
         {/* Dark blend zone: hides any poster overflow below the stats bar */}
         <div className="absolute inset-x-0 bottom-12 h-44 bg-gradient-to-t from-[#08070a] via-[#08070a]/80 to-transparent pointer-events-none z-20" />
 
-        {/* Marquee ticker (dark) - updated items */}
-        <div className="absolute bottom-0 inset-x-0 z-10 border-t border-white/10 bg-black/70 backdrop-blur-md py-3.5 overflow-hidden">
+        {/* Marquee ticker (dark) - dynamic items */}
+        <div
+          className="absolute bottom-0 inset-x-0 z-10 border-t border-white/10 bg-black/70 backdrop-blur-md py-3.5 overflow-hidden"
+          style={{ fontFamily: heroSettings?.styles?.marquee?.fontFamily || undefined }}
+        >
           <div className="marquee-track flex whitespace-nowrap items-center gap-10 w-max">
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((marqueeItem, marqueeIdx) => (
-              <span key={marqueeIdx} className="flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-400">
+            {[...dynamicMarquee, ...dynamicMarquee].map((marqueeItem, marqueeIdx) => (
+              <span
+                key={marqueeIdx}
+                className="flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-400"
+                style={{ color: heroSettings?.styles?.marquee?.color || undefined }}
+              >
                 {marqueeItem}
                 <span className="text-amber-500/80 text-sm">✦</span>
               </span>

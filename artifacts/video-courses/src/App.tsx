@@ -17,7 +17,16 @@ setAuthTokenGetter(() => {
   return localStorage.getItem("auth_token");
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchInterval: 5000, // Background polling every 5 seconds so admin changes appear automatically without reloading
+      staleTime: 2000,
+    },
+  },
+});
 
 /** Inner component so hooks can access the React tree */
 function AppInner() {

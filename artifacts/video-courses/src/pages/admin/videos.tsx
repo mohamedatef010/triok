@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useSEO } from "@/hooks/use-seo";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useAdminListVideos,
   useDeleteVideo,
@@ -81,6 +82,7 @@ type VideoSource = "file" | "url";
 export function AdminVideos() {
   useSEO({ robots: "noindex, follow" });
   const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
   const { data, isLoading, refetch } = useAdminListVideos({ page, limit: 10 });
   const deleteMut = useDeleteVideo();
   const discountMut = useSetVideoDiscount();
@@ -91,6 +93,12 @@ export function AdminVideos() {
   const { data: categories, refetch: refetchCategories } = useListCategories();
   const createCategoryMut = useCreateCategory();
   const { toast } = useToast();
+
+  const invalidateVideoCaches = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/videos/featured"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/admin/videos"] });
+  }, [queryClient]);
 
   // --- Dialog state ---
   const [isOpen, setIsOpen] = useState(false);
@@ -119,7 +127,7 @@ export function AdminVideos() {
   const [formData, setFormData] = useState({
     title: "",
     price: "",
-    discountPrice: "",
+    discountPercent: "",
     thumbnailUrl: "",
     description: "",
     previewDurationSeconds: "",
@@ -132,7 +140,7 @@ export function AdminVideos() {
 
   // --- Handlers ---
   const resetDialog = () => {
-    setFormData({ title: "", price: "", discountPrice: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "" });
+    setFormData({ title: "", price: "", discountPercent: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "" });
     setSelectedFile(null);
     setThumbnailFile(null);
     if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
@@ -161,17 +169,36 @@ export function AdminVideos() {
   const handleDelete = async (id: number) => {
     if (!confirm("Точно удалить этот курс?")) return;
     await deleteMut.mutateAsync({ id });
+    invalidateVideoCaches();
     refetch();
     toast({ title: "Курс удалён" });
   };
 
-  const handleDiscount = async (id: number) => {
-    const val = prompt("Введите новую цену со скидкой (или пустое для отмены скидки):");
+  const handleDiscount = async (id: number, currentPrice: number, currentDiscountPrice?: number | null) => {
+    const currentPct = currentDiscountPrice && currentPrice ? Math.round((1 - currentDiscountPrice / currentPrice) * 100) : "";
+    const val = prompt(
+      `Введите процент скидки для курса (текущая цена: ${currentPrice} ₽).\nНапример: введите 20 для скидки 20% (цена со скидкой станет ${Math.round(currentPrice * 0.8)} ₽).\nОставьте пустым для отмены скидки:`,
+      currentPct ? String(currentPct) : ""
+    );
     if (val === null) return;
-    const dp = val ? Number(val) : null;
+    const trimmed = val.trim();
+    if (!trimmed) {
+      await discountMut.mutateAsync({ id, data: { discountPrice: null } });
+      invalidateVideoCaches();
+      refetch();
+      toast({ title: "Скидка убрана" });
+      return;
+    }
+    const pct = Number(trimmed);
+    if (isNaN(pct) || pct <= 0 || pct >= 100) {
+      toast({ title: "Введите корректный процент скидки (от 1 до 99)", variant: "destructive" });
+      return;
+    }
+    const dp = Math.round(currentPrice * (1 - pct / 100));
     await discountMut.mutateAsync({ id, data: { discountPrice: dp } });
+    invalidateVideoCaches();
     refetch();
-    toast({ title: dp ? `Скидка установлена: ${dp} ₽` : "Скидка убрана" });
+    toast({ title: `Скидка ${pct}% установлена! Новая цена: ${dp} ₽ (было ${currentPrice} ₽)` });
   };
 
   const handlePreviewDuration = async (id: number) => {
@@ -179,6 +206,7 @@ export function AdminVideos() {
     if (val === null) return;
     const dp = val ? Number(val) : null;
     await updateMut.mutateAsync({ id, data: { previewDurationSeconds: dp } });
+    invalidateVideoCaches();
     refetch();
     toast({ title: dp ? `Превью: ${dp} сек` : "Превью: авто" });
   };
@@ -257,11 +285,17 @@ export function AdminVideos() {
         refetchCategories();
       }
 
+      const numPrice = Number(formData.price) || 0;
+      const numDiscountPercent = Number(formData.discountPercent) || 0;
+      const calculatedDiscountPrice = (numPrice > 0 && numDiscountPercent > 0 && numDiscountPercent < 100)
+        ? Math.round(numPrice * (1 - numDiscountPercent / 100))
+        : undefined;
+
       const video = await createMut.mutateAsync({
         data: {
           title: formData.title,
-          price: Number(formData.price),
-          discountPrice: formData.discountPrice ? Number(formData.discountPrice) : undefined,
+          price: numPrice,
+          discountPrice: calculatedDiscountPrice,
           thumbnailUrl: resolvedThumbnailUrl,
           description: formData.description || undefined,
           previewDurationSeconds: formData.previewDurationSeconds ? Number(formData.previewDurationSeconds) : undefined,
@@ -311,6 +345,7 @@ export function AdminVideos() {
         // URL source: no upload needed, just save and done
         setUploadStep("done");
         toast({ title: "✅ Курс создан с видео-ссылкой!", description: video.title });
+        invalidateVideoCaches();
         refetch();
         setTimeout(resetDialog, 1500);
         return;
@@ -341,6 +376,7 @@ export function AdminVideos() {
 
       setUploadStep("done");
       toast({ title: "✅ Видео загружено и обрабатывается!", description: "HLS-превью будет готово через несколько минут." });
+      invalidateVideoCaches();
       refetch();
       setTimeout(resetDialog, 2000);
 
@@ -399,8 +435,15 @@ export function AdminVideos() {
                 <TableCell>{v.price} ₽</TableCell>
                 <TableCell>
                   {v.discountPrice ? (
-                    <span className="text-primary font-bold">{v.discountPrice} ₽</span>
-                  ) : "-"}
+                    <div className="flex flex-col">
+                      <span className="text-primary font-bold">{v.discountPrice} ₽</span>
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+                        -{Math.round((1 - v.discountPrice / v.price) * 100)}%
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell>{(v as any).previewDurationSeconds || "Авто"}</TableCell>
                 <TableCell>{v.viewCount}</TableCell>
@@ -409,7 +452,7 @@ export function AdminVideos() {
                     <Button variant="ghost" size="icon" onClick={() => handlePreviewDuration(v.id)} title="Длительность превью">
                       <Clock className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDiscount(v.id)} title="Скидка">
+                    <Button variant="ghost" size="icon" onClick={() => handleDiscount(v.id, v.price, v.discountPrice)} title="Скидка %">
                       <Percent className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(v.id)} title="Удалить">
@@ -498,17 +541,19 @@ export function AdminVideos() {
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  placeholder="4900"
+                  placeholder="5000"
                   disabled={isWorking}
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold">Скидочная цена ₽</label>
+                <label className="text-sm font-semibold">Скидка %</label>
                 <Input
                   type="number"
-                  value={formData.discountPrice}
-                  onChange={(e) => setFormData({ ...formData, discountPrice: e.target.value })}
-                  placeholder="2900"
+                  min="0"
+                  max="99"
+                  value={formData.discountPercent}
+                  onChange={(e) => setFormData({ ...formData, discountPercent: e.target.value })}
+                  placeholder="20 (т.е. 20%)"
                   disabled={isWorking}
                 />
               </div>
@@ -523,6 +568,14 @@ export function AdminVideos() {
                 />
               </div>
             </div>
+
+            {/* Helper preview when discount percent is entered */}
+            {Number(formData.price) > 0 && Number(formData.discountPercent) > 0 && Number(formData.discountPercent) < 100 && (
+              <div className="text-xs bg-amber-400/10 border border-amber-400/30 text-amber-600 dark:text-amber-400 p-2.5 rounded-lg flex items-center justify-between font-medium">
+                <span>🎯 Скидка: <strong>{Number(formData.discountPercent)}%</strong> (экономия {(Number(formData.price) - Math.round(Number(formData.price) * (1 - Number(formData.discountPercent) / 100))).toLocaleString("ru-RU")} ₽)</span>
+                <span className="font-bold text-sm">Итоговая цена: {Math.round(Number(formData.price) * (1 - Number(formData.discountPercent) / 100)).toLocaleString("ru-RU")} ₽</span>
+              </div>
+            )}
 
             {/* Category selection */}
             <div className="grid grid-cols-2 gap-3">

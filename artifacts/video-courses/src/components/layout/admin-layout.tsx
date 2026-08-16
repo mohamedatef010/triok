@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, LayoutDashboard, Film, ShoppingCart, Users, ArrowLeft, Star, Menu, X, Camera, Tag, ShieldCheck } from "lucide-react";
+import { LogOut, LayoutDashboard, Film, ShoppingCart, Users, ArrowLeft, Star, Menu, X, Camera, Tag, ShieldCheck, LayoutTemplate } from "lucide-react";
 
 const navItems = [
   { href: "/admm/dashboard", icon: LayoutDashboard, label: "Дашборд" },
+  { href: "/admm/hero-section", icon: LayoutTemplate, label: "Главный экран (Hero)" },
   { href: "/admm/videos", icon: Film, label: "Видео и курсы" },
   { href: "/admm/orders", icon: ShoppingCart, label: "Заказы" },
   { href: "/admm/users", icon: Users, label: "Пользователи" },

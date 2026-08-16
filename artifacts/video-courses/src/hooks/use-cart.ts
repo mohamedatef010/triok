@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   useGetCart, 
   useAddToCart, 
@@ -6,18 +6,24 @@ import {
   useClearCart,
   CartItem
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./use-auth";
+
+const CART_EVENT = "video_courses_cart_updated";
+
+function getStoredLocalCart(): CartItem[] {
+  try {
+    const stored = localStorage.getItem("local_cart");
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
 
 export function useCart() {
   const { isAuthenticated } = useAuth();
-  const [localCart, setLocalCart] = useState<CartItem[]>(() => {
-    try {
-      const stored = localStorage.getItem("local_cart");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const queryClient = useQueryClient();
+  const [localCart, setLocalCart] = useState<CartItem[]>(getStoredLocalCart);
 
   const { data: serverCart, refetch } = useGetCart({
     query: {
@@ -29,9 +35,24 @@ export function useCart() {
   const removeFromCartMut = useRemoveFromCart();
   const clearCartMut = useClearCart();
 
+  // Listen to cart events across all components & browser tabs
   useEffect(() => {
-    localStorage.setItem("local_cart", JSON.stringify(localCart));
-  }, [localCart]);
+    const handleCartSync = () => {
+      setLocalCart(getStoredLocalCart());
+    };
+    window.addEventListener(CART_EVENT, handleCartSync);
+    window.addEventListener("storage", handleCartSync);
+    return () => {
+      window.removeEventListener(CART_EVENT, handleCartSync);
+      window.removeEventListener("storage", handleCartSync);
+    };
+  }, []);
+
+  const updateLocalCart = useCallback((newCart: CartItem[]) => {
+    setLocalCart(newCart);
+    localStorage.setItem("local_cart", JSON.stringify(newCart));
+    window.dispatchEvent(new Event(CART_EVENT));
+  }, []);
 
   const serverCartItems = Array.isArray(serverCart?.items) ? serverCart!.items : 
                           Array.isArray(serverCart) ? (serverCart as any) : [];
@@ -43,10 +64,13 @@ export function useCart() {
   const add = async (item: CartItem) => {
     if (isAuthenticated) {
       await addToCartMut.mutateAsync({ data: { videoId: item.videoId } });
+      await queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      await queryClient.invalidateQueries({ queryKey: ["cart"] });
       refetch();
     } else {
-      if (!localCart.find(i => i.videoId === item.videoId)) {
-        setLocalCart([...localCart, item]);
+      const current = getStoredLocalCart();
+      if (!current.find(i => i.videoId === item.videoId)) {
+        updateLocalCart([...current, item]);
       }
     }
   };
@@ -54,18 +78,23 @@ export function useCart() {
   const remove = async (videoId: number) => {
     if (isAuthenticated) {
       await removeFromCartMut.mutateAsync({ videoId });
+      await queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      await queryClient.invalidateQueries({ queryKey: ["cart"] });
       refetch();
     } else {
-      setLocalCart(localCart.filter(i => i.videoId !== videoId));
+      const current = getStoredLocalCart();
+      updateLocalCart(current.filter(i => i.videoId !== videoId));
     }
   };
 
   const clear = async () => {
     if (isAuthenticated) {
       await clearCartMut.mutateAsync();
+      await queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+      await queryClient.invalidateQueries({ queryKey: ["cart"] });
       refetch();
     } else {
-      setLocalCart([]);
+      updateLocalCart([]);
     }
   };
 
@@ -84,3 +113,4 @@ export function useCart() {
     isAdding: addToCartMut.isPending,
   };
 }
+
