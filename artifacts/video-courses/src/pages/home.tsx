@@ -374,12 +374,17 @@ export function HomePage() {
   const { data: heroSettings } = useQuery<any>({
     queryKey: ["site-settings", "hero_section"],
     queryFn: async () => {
-      const res = await fetch("/api/site-settings/hero_section");
+      const res = await fetch("/api/site-settings/hero_section", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache, no-store" },
+      });
       if (!res.ok) return null;
       const json = await res.json();
       return json.value;
     },
-    staleTime: 5000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const hero = {

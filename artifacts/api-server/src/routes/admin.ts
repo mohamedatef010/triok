@@ -175,6 +175,10 @@ router.get("/author-media/:filename", async (req, res): Promise<void> => {
 
 /* ── Site Settings (public read) ── */
 router.get("/site-settings/:key", async (req, res): Promise<void> => {
+  // Prevent any browser/CDN/proxy caching so admin changes always appear immediately
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   const key = req.params.key as string;
   const [setting] = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key));
   if (!setting) { res.status(404).json({ error: "Not found" }); return; }
@@ -187,6 +191,9 @@ router.get("/site-settings/:key", async (req, res): Promise<void> => {
 
 /* ── Site Settings (admin read) ── */
 router.get("/admin/site-settings/:key", requireAdmin, async (req, res): Promise<void> => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   const key = req.params.key as string;
   const [setting] = await db.select().from(siteSettingsTable).where(eq(siteSettingsTable.key, key));
   if (!setting) {
