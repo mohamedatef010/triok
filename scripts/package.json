@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
-    "seed-admin": "tsx --env-file=.env ./src/seed-admin.ts",
+    "seed-admin": "tsx --env-file=../.env ./src/seed-admin.ts",
     "change-password": "tsx --env-file=../.env ./src/change-password.ts",
+
 
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
