@@ -26,10 +26,54 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSEO } from "@/hooks/use-seo";
 
 const formSchema = z.object({
-  name: z.string().min(2, "Имя должно содержать минимум 2 символа"),
+  name: z.string().min(2, "Введите ваше имя (минимум 2 символа)"),
   email: z.string().email("Введите корректный email адрес"),
   password: z.string().min(6, "Пароль должен быть не менее 6 символов"),
 });
+
+async function syncLocalCartToServer(token: string) {
+  try {
+    const stored = localStorage.getItem("local_cart");
+    if (!stored) return;
+    const items = JSON.parse(stored);
+    if (!Array.isArray(items) || items.length === 0) return;
+    for (const item of items) {
+      if (!item?.videoId) continue;
+      await fetch("/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ videoId: item.videoId }),
+      });
+    }
+    localStorage.removeItem("local_cart");
+  } catch {}
+}
+
+async function createOrderFromCart(token: string) {
+  let promoCode: string | undefined;
+  try {
+    const stored = localStorage.getItem("applied_promocode");
+    if (stored) promoCode = JSON.parse(stored)?.code;
+  } catch {}
+  const res = await fetch("/api/orders", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ fromCart: true, promoCode }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Не удалось создать заказ");
+  }
+  const order = await res.json();
+  localStorage.removeItem("applied_promocode");
+  return order;
+}
 
 export function RegisterPage() {
   useSEO({
@@ -53,7 +97,24 @@ export function RegisterPage() {
       const res = await registerMut.mutateAsync({ data: values });
       localStorage.setItem("auth_token", res.token);
       await refetch();
-      setLocation("/profile");
+
+      // Handle redirect — same logic as login
+      const url = new URL(window.location.href);
+      const redirect = url.searchParams.get("redirect") || "/profile";
+
+      if (redirect === "/checkout" || redirect.startsWith("/checkout")) {
+        await syncLocalCartToServer(res.token);
+        try {
+          const order = await createOrderFromCart(res.token);
+          setLocation(`/payment/${order.id}`);
+          return;
+        } catch {
+          setLocation("/checkout");
+          return;
+        }
+      }
+
+      setLocation(redirect);
     } catch (err: any) {
       form.setError("root", { message: err.message || "Ошибка при регистрации" });
     }

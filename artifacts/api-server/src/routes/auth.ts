@@ -161,6 +161,10 @@ router.post("/auth/logout", (_req, res): void => {
 });
 
 router.get("/auth/me", requireAuth, async (req, res): Promise<void> => {
+  // Prevent proxy/CDN from ever caching this user-specific response
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+  res.setHeader("Pragma", "no-cache");
+
   const [user] = await db
     .select()
     .from(usersTable)

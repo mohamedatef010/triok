@@ -1,19 +1,39 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { useCreateOrder } from "@workspace/api-client-react";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, Tag, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useSEO } from "@/hooks/use-seo";
 
+async function syncLocalCartToServer(token: string) {
+  try {
+    const stored = localStorage.getItem("local_cart");
+    if (!stored) return;
+    const items = JSON.parse(stored);
+    if (!Array.isArray(items) || items.length === 0) return;
+    for (const item of items) {
+      if (!item?.videoId) continue;
+      await fetch("/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ videoId: item.videoId }),
+      });
+    }
+    localStorage.removeItem("local_cart");
+  } catch {}
+}
+
 export function CheckoutPage() {
   useSEO({ robots: "noindex, follow" });
   const [, setLocation] = useLocation();
   const cart = useCart();
-  const createOrder = useCreateOrder();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [syncing, setSyncing] = useState(true);
 
   const [appliedPromo, setAppliedPromo] = useState<{
     code: string;
@@ -21,6 +41,18 @@ export function CheckoutPage() {
     discountAmount?: number;
     discountType?: string;
   } | null>(null);
+
+  // Sync local guest cart to server on mount (runs once)
+  useEffect(() => {
+    const token = localStorage.getItem("auth_token");
+    if (!token) { setSyncing(false); return; }
+    syncLocalCartToServer(token).finally(async () => {
+      // Invalidate cart query so CheckoutPage sees updated items
+      await cart.refetchCart?.();
+      setSyncing(false);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     try {
@@ -78,10 +110,14 @@ export function CheckoutPage() {
     }
   };
 
+  // Wait for cart sync before checking if cart is empty
+  if (syncing) return null;
+
   if (!cart.items.length) {
     setLocation("/cart");
     return null;
   }
+
 
   return (
     <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center max-w-lg">

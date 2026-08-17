@@ -3,6 +3,8 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -24,7 +26,26 @@ const s3Client = new S3Client({
 
 const bucket = process.env.S3_BUCKET || "video-courses";
 
+let bucketVerified = false;
+
+export async function ensureBucketExists(): Promise<void> {
+  if (bucketVerified) return;
+  try {
+    await s3Client.send(new HeadBucketCommand({ Bucket: bucket }));
+    bucketVerified = true;
+  } catch (err: any) {
+    try {
+      await s3Client.send(new CreateBucketCommand({ Bucket: bucket }));
+      bucketVerified = true;
+      console.log(`[Storage] Bucket '${bucket}' created successfully.`);
+    } catch (createErr) {
+      console.warn(`[Storage] Could not create bucket '${bucket}' automatically:`, createErr);
+    }
+  }
+}
+
 export async function generateUploadUrl(key: string, contentType: string = "video/mp4", expiresIn: number = 3600): Promise<string> {
+  await ensureBucketExists();
   const command = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -34,6 +55,7 @@ export async function generateUploadUrl(key: string, contentType: string = "vide
 }
 
 export async function generatePresignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+  await ensureBucketExists();
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -42,6 +64,7 @@ export async function generatePresignedUrl(key: string, expiresIn: number = 3600
 }
 
 export async function getObjectAsString(key: string): Promise<string> {
+  await ensureBucketExists();
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -54,6 +77,7 @@ export async function getObjectAsString(key: string): Promise<string> {
 }
 
 export async function uploadFile(key: string, body: Buffer | Uint8Array | string, contentType: string): Promise<void> {
+  await ensureBucketExists();
   const command = new PutObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -64,6 +88,7 @@ export async function uploadFile(key: string, body: Buffer | Uint8Array | string
 }
 
 export async function deleteObject(key: string): Promise<void> {
+  await ensureBucketExists();
   const command = new DeleteObjectCommand({
     Bucket: bucket,
     Key: key,
@@ -72,3 +97,4 @@ export async function deleteObject(key: string): Promise<void> {
 }
 
 export { s3Client };
+

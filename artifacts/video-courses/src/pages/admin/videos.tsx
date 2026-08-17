@@ -248,24 +248,21 @@ export function AdminVideos() {
         // Convert image to WebP in the browser via Canvas API
         const webpBlob = await convertImageToWebP(thumbnailFile);
 
-        // Get presigned upload URL from server (key ends with .webp)
-        const imgRes = await fetch("/api/admin/upload-image-url", {
+        // Upload WebP directly to server (which puts it in MinIO reliably)
+        const uploadRes = await fetch("/api/admin/upload-image", {
           method: "POST",
-          headers: { Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("auth_token")}` },
-        });
-        if (!imgRes.ok) throw new Error("Не удалось получить ссылку для загрузки изображения");
-        const { uploadUrl, url: publicUrl } = await imgRes.json() as { uploadUrl: string; url: string; key: string };
-
-        // Upload WebP blob directly to S3 via presigned URL
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": "image/webp" },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("auth_token")}`,
+            "Content-Type": "image/webp",
+          },
           body: webpBlob,
         });
         if (!uploadRes.ok) throw new Error("Ошибка загрузки миниатюры");
+        const { url: publicUrl } = await uploadRes.json() as { url: string };
 
         resolvedThumbnailUrl = publicUrl;
       }
+
 
       // Step 1: Create course record in DB
       setUploadStep("creating");

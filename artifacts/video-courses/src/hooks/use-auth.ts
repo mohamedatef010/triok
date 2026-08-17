@@ -10,7 +10,8 @@ export function useAuth() {
   const { data: user, isLoading, refetch } = useGetMe({
     query: {
       retry: false,
-      staleTime: Infinity,
+      staleTime: 30_000,
+      gcTime: 60_000,
     } as any,
   });
 

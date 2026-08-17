@@ -3,6 +3,7 @@ config(); // Load .env from the current working directory (artifacts/api-server/
 
 import app from "./app";
 import { logger } from "./lib/logger";
+import { ensureBucketExists } from "@workspace/storage";
 
 const rawPort = process.env["PORT"];
 
@@ -18,6 +19,11 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+// Automatically ensure storage bucket exists
+ensureBucketExists().catch((err) => {
+  logger.warn({ err }, "Initial bucket check completed with notice");
+});
+
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -26,3 +32,4 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
 });
+

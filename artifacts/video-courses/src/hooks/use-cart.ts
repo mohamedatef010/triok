@@ -113,6 +113,6 @@ export function useCart() {
     clear,
     isInCart,
     isAdding: addToCartMut.isPending,
+    refetchCart: refetch,
   };
 }
-

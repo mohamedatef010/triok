@@ -212,7 +212,23 @@ export function VideoDetailPage() {
 
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
-      setLocation(`/auth/login?redirect=/video/${id}`);
+      // Add to local cart so it's synced after login
+      if (video) {
+        const localCart = (() => {
+          try { return JSON.parse(localStorage.getItem("local_cart") || "[]"); } catch { return []; }
+        })();
+        if (!localCart.find((i: any) => i.videoId === video.id)) {
+          localCart.push({
+            videoId: video.id,
+            title: video.title,
+            price: video.price,
+            discountPrice: video.discountPrice ?? null,
+            thumbnailUrl: video.thumbnailUrl ?? null,
+          });
+          localStorage.setItem("local_cart", JSON.stringify(localCart));
+        }
+      }
+      setLocation(`/auth/login?redirect=/checkout`);
       return;
     }
     try {
@@ -254,6 +270,7 @@ export function VideoDetailPage() {
       setLocation(`/cart`);
     }
   };
+
 
   if (isLoading && !video) return <LoadingSpinner />;
   if (error && !video) return <ErrorState error={error} />;
