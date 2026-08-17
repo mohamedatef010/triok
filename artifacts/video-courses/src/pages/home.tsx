@@ -24,7 +24,9 @@ import {
   Users,
   Compass,
   ImageIcon,
+  Film,
 } from "lucide-react";
+
 import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { Card, CardContent } from "@/components/ui/card";

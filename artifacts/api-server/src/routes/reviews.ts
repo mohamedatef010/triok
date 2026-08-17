@@ -11,28 +11,35 @@ router.get("/videos/:id/reviews", async (req, res): Promise<void> => {
   const params = ListReviewsParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
   const reviews = await db
-    .select()
+    .select({
+      id: reviewsTable.id,
+      videoId: reviewsTable.videoId,
+      userId: reviewsTable.userId,
+      rating: reviewsTable.rating,
+      text: reviewsTable.text,
+      createdAt: reviewsTable.createdAt,
+      userName: usersTable.name,
+      userAvatarUrl: usersTable.avatarUrl,
+    })
     .from(reviewsTable)
+    .innerJoin(usersTable, eq(reviewsTable.userId, usersTable.id))
     .where(eq(reviewsTable.videoId, params.data.id))
     .orderBy(desc(reviewsTable.createdAt));
-  const users = await db.select().from(usersTable);
-  const userMap = new Map(users.map((u) => [u.id, u]));
+
   res.json(
-    reviews.map((r) => {
-      const u = userMap.get(r.userId);
-      return {
-        id: r.id,
-        videoId: r.videoId,
-        userId: r.userId,
-        userName: u?.name ?? "Пользователь",
-        userAvatarUrl: u?.avatarUrl ?? null,
-        rating: r.rating,
-        text: r.text ?? null,
-        createdAt: r.createdAt,
-      };
-    })
+    reviews.map((r) => ({
+      id: r.id,
+      videoId: r.videoId,
+      userId: r.userId,
+      userName: r.userName || "Пользователь",
+      userAvatarUrl: r.userAvatarUrl ?? null,
+      rating: r.rating,
+      text: r.text ?? null,
+      createdAt: r.createdAt,
+    }))
   );
 });
+
 
 // Get all reviews written by current user
 router.get("/reviews/my", requireAuth, async (req, res): Promise<void> => {

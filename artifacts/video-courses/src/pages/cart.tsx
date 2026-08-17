@@ -120,8 +120,9 @@ export function CartPage() {
             </Button>
           </div>
           
-          {items.map((item) => (
+          {items.map((item: any) => (
             <Card key={item.videoId} className="rounded-3xl border shadow-sm overflow-hidden">
+
               <CardContent className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-center">
                 <div className="w-full sm:w-44 aspect-video rounded-2xl overflow-hidden bg-slate-950 shrink-0">
                   <img 

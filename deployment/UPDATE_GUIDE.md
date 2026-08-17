@@ -5,11 +5,10 @@
 ---
 
 ## 📌 بيانات السيرفر والمشروع:
-* **عنوان السيرفر (IP):** `5.35.87.221`
 * **اسم الدومين:** `классный-фокус.рф` (Punycode: `xn----7sb1acdcpkxafxk9g.xn--p1ai`)
 * **مسار المشروع على السيرفر:** `/var/www/video-courses`
-* **بريد حساب الأدمن الافتراضي:** `admin@videomontazh.ru`
-* **كلمة مرور الأدمن:** `admin123`
+* **بريد وكلمة مرور حساب الأدمن:** يتم تعيينها في ملف `.env` عبر `ADMIN_EMAIL` و `ADMIN_PASSWORD` (ثم تنفيذ `pnpm --filter scripts run seed-admin`)
+
 
 ---
 

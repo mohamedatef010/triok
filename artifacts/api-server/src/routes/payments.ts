@@ -67,7 +67,7 @@ router.post("/payments/initiate", requireAuth, paymentInitiateLimiter, async (re
 });
 
 // Webhook notification from YooKassa
-router.post("/payments/webhook", optionalAuth, async (req, res): Promise<void> => {
+router.post("/payments/webhook", async (req, res): Promise<void> => {
   const body = req.body as {
     type?: string;
     event?: string;
@@ -75,6 +75,10 @@ router.post("/payments/webhook", optionalAuth, async (req, res): Promise<void> =
       id?: string;
       status?: string;
       paid?: boolean;
+      amount?: {
+        value?: string;
+        currency?: string;
+      };
       metadata?: {
         orderId?: string;
         userId?: string;
@@ -85,51 +89,73 @@ router.post("/payments/webhook", optionalAuth, async (req, res): Promise<void> =
     };
   };
 
-  req.log.info({ event: body?.event, type: body?.type, objectId: body?.object?.id, status: body?.object?.status }, "Payment webhook received from YooKassa");
-
   const eventType = body?.event || body?.type;
   const paymentObj = body?.object;
+  const paymentId = paymentObj?.id;
 
-  if (paymentObj?.id) {
-    const paymentId = paymentObj.id;
-    const isSucceeded = eventType === "payment.succeeded" || paymentObj.status === "succeeded" || paymentObj.paid === true;
-    const isCanceled = eventType === "payment.canceled" || paymentObj.status === "canceled";
+  req.log.info({ event: eventType, objectId: paymentId, status: paymentObj?.status }, "Payment webhook received from YooKassa");
 
-    // Find the order by paymentId or metadata.orderId
-    let orderToFulfill = null;
-    if (paymentObj.metadata?.orderId) {
-      const orderIdNum = parseInt(paymentObj.metadata.orderId, 10);
-      if (!isNaN(orderIdNum)) {
-        const [ord] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderIdNum));
+  if (paymentId) {
+    try {
+      // Find the order by metadata.orderId or paymentId
+      let orderToFulfill = null;
+      if (paymentObj.metadata?.orderId) {
+        const orderIdNum = parseInt(paymentObj.metadata.orderId, 10);
+        if (!isNaN(orderIdNum)) {
+          const [ord] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderIdNum));
+          orderToFulfill = ord;
+        }
+      }
+
+      if (!orderToFulfill) {
+        const [ord] = await db.select().from(ordersTable).where(eq(ordersTable.paymentId, paymentId));
         orderToFulfill = ord;
       }
-    }
 
-    if (!orderToFulfill) {
-      const [ord] = await db.select().from(ordersTable).where(eq(ordersTable.paymentId, paymentId));
-      orderToFulfill = ord;
-    }
+      if (orderToFulfill) {
+        // Authenticate directly with YooKassa API to verify authenticity of this event
+        const verifiedPayment = await getYooKassaPayment(paymentId);
+        if (verifiedPayment) {
+          const isSucceeded = verifiedPayment.status === "succeeded" || verifiedPayment.paid === true;
+          const isCanceled = verifiedPayment.status === "canceled";
 
-    if (orderToFulfill) {
-      if (isSucceeded) {
-        await fulfillOrder(
-          orderToFulfill.id,
-          paymentId,
-          paymentObj.payment_method?.type || orderToFulfill.paymentMethod || undefined
-        );
-        req.log.info({ orderId: orderToFulfill.id, paymentId }, "Order fulfilled via YooKassa webhook");
-      } else if (isCanceled && orderToFulfill.status === "pending") {
-        await db.update(ordersTable).set({ status: "cancelled" }).where(eq(ordersTable.id, orderToFulfill.id));
-        req.log.info({ orderId: orderToFulfill.id, paymentId }, "Order cancelled via YooKassa webhook");
+          if (isSucceeded) {
+            // Verify payment amount matches order total (within small rounding delta)
+            const paidAmount = parseFloat(verifiedPayment.amount?.value || "0");
+            const orderTotal = parseFloat(orderToFulfill.total || "0");
+
+            if (Math.abs(paidAmount - orderTotal) <= 0.05 || paidAmount >= orderTotal) {
+              await fulfillOrder(
+                orderToFulfill.id,
+                paymentId,
+                paymentObj.payment_method?.type || orderToFulfill.paymentMethod || undefined
+              );
+              req.log.info({ orderId: orderToFulfill.id, paymentId }, "Order successfully fulfilled via verified YooKassa webhook");
+            } else {
+              req.log.error(
+                { orderId: orderToFulfill.id, paidAmount, orderTotal, paymentId },
+                "SECURITY WARNING: Webhook payment amount does not match order total!"
+              );
+            }
+          } else if (isCanceled && orderToFulfill.status === "pending") {
+            await db.update(ordersTable).set({ status: "cancelled" }).where(eq(ordersTable.id, orderToFulfill.id));
+            req.log.info({ orderId: orderToFulfill.id, paymentId }, "Order cancelled via verified YooKassa webhook");
+          }
+        } else {
+          req.log.warn({ paymentId }, "Could not verify payment directly with YooKassa API");
+        }
+      } else {
+        req.log.warn({ paymentId, metadata: paymentObj.metadata }, "Order not found for YooKassa webhook");
       }
-    } else {
-      req.log.warn({ paymentId, metadata: paymentObj.metadata }, "Order not found for YooKassa webhook");
+    } catch (webhookErr) {
+      req.log.error({ webhookErr, paymentId }, "Error processing YooKassa webhook");
     }
   }
 
   // Always acknowledge receipt of webhook to YooKassa with 200 OK
   res.json({ success: true, message: null });
 });
+
 
 // Check payment status with live YooKassa synchronization
 router.get("/payments/:orderId/status", requireAuth, async (req, res): Promise<void> => {

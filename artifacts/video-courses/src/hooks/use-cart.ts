@@ -27,9 +27,10 @@ export function useCart() {
 
   const { data: serverCart, refetch } = useGetCart({
     query: {
-      enabled: isAuthenticated
-    }
+      enabled: isAuthenticated,
+    } as any,
   });
+
 
   const addToCartMut = useAddToCart();
   const removeFromCartMut = useRemoveFromCart();
@@ -99,8 +100,9 @@ export function useCart() {
   };
 
   const isInCart = (videoId: number) => {
-    return items.some(i => i.videoId === videoId);
+    return items.some((i: any) => i.videoId === videoId);
   };
+
 
   return {
     items,

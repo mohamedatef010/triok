@@ -970,9 +970,10 @@ export function AdminAuthorSection() {
             variant="outline"
             className="w-full border-dashed"
             onClick={() => {
-              const newVideos = [...(data.entertainmentVideos || []), { url: "", platform: "youtube", title: "" }];
+              const newVideos = [...(data.entertainmentVideos || []), { url: "", platform: "youtube" as const, title: "" }];
               setData({ ...data, entertainmentVideos: newVideos });
             }}
+
           >
             + Добавить видео
           </Button>

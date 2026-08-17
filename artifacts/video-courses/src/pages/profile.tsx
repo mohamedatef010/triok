@@ -55,14 +55,15 @@ export function ProfilePage() {
 
   // Fetch real purchased videos
   const { data: videos, isLoading: videosLoading, refetch: refetchVideos } = useGetMyPurchasedVideos({
-    query: { enabled: isAuthenticated }
+    query: { enabled: isAuthenticated } as any
   });
   const videoList = Array.isArray(videos) ? videos : [];
 
   // Fetch real orders
   const { data: orders, isLoading: ordersLoading } = useListOrders({
-    query: { enabled: isAuthenticated }
+    query: { enabled: isAuthenticated } as any
   });
+
   const orderList = Array.isArray(orders) ? orders : [];
 
   // Fetch my reviews
@@ -118,10 +119,6 @@ export function ProfilePage() {
   };
 
   const handleDeleteReview = async (reviewId: number) => {
-    if (demoMode) {
-      toast({ title: "Отзыв удален (Демо)" });
-      return;
-    }
     try {
       const token = localStorage.getItem("auth_token");
       const res = await fetch(`/api/reviews/${reviewId}`, {
@@ -136,9 +133,10 @@ export function ProfilePage() {
       refetchVideos();
       queryClient.invalidateQueries({ queryKey: ["site-settings", "reviews_section"] });
     } catch (err: any) {
-      toast({ title: "Ошибка", description: err.message, variant: "destructive" });
+      toast({ title: "Ошибка", description: err.message || "Ошибка при удалении", variant: "destructive" });
     }
   };
+
 
   const statusMap: Record<string, { label: string, color: string }> = {
     pending: { label: "Ожидает оплаты", color: "text-amber-500 bg-amber-500/10 border-amber-500/20" },

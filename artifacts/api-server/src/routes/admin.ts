@@ -5,7 +5,12 @@ import { generateUploadUrl, s3Client } from "@workspace/storage";
 import { eq, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { signToken } from "../lib/auth";
+import { 
+  signAccessToken, 
+  signRefreshToken, 
+  REFRESH_COOKIE_NAME, 
+  refreshCookieOptions 
+} from "../lib/auth";
 import { requireAdmin } from "../middlewares/requireAuth";
 import {
   AdminLoginBody,
@@ -28,7 +33,7 @@ router.post("/admin/login", authLimiter, async (req, res): Promise<void> => {
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.email, username));
+    .where(eq(usersTable.email, username.toLowerCase().trim()));
 
   if (!user || user.role !== "admin") {
     res.status(401).json({ error: "Неверные данные для входа" });
@@ -41,7 +46,12 @@ router.post("/admin/login", authLimiter, async (req, res): Promise<void> => {
     return;
   }
 
-  const token = signToken({ userId: user.id, role: "admin" });
+  const token = signAccessToken({ userId: user.id, role: "admin" }, user.passwordHash);
+  const refreshToken = signRefreshToken({ userId: user.id, role: "admin" }, user.passwordHash);
+
+
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
+
   res.json({
     user: {
       id: user.id,
@@ -58,6 +68,7 @@ router.post("/admin/login", authLimiter, async (req, res): Promise<void> => {
 
 router.get("/admin/orders", requireAdmin, async (req, res): Promise<void> => {
   const parsed = AdminListOrdersQueryParams.safeParse(req.query);
+
   const page = parsed.data?.page ?? 1;
   const limit = parsed.data?.limit ?? 20;
   const offset = (page - 1) * limit;

@@ -26,9 +26,10 @@ export function useFavorites() {
 
   const { data: serverFavs, refetch } = useGetFavorites({
     query: {
-      enabled: isAuthenticated
-    }
+      enabled: isAuthenticated,
+    } as any,
   });
+
 
   const addToFavMut = useAddToFavorites();
   const removeFromFavMut = useRemoveFromFavorites();

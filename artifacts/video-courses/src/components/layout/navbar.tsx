@@ -4,8 +4,9 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Menu, Search, Heart, ShoppingCart, User,
-  Sun, Moon, LogOut, Settings, Sparkles, X, MoreHorizontal,
+  Sun, Moon, LogOut, Settings, Sparkles, X, MoreHorizontal, Film,
 } from "lucide-react";
+
 import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { Button } from "@/components/ui/button";
 import {

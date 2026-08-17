@@ -460,11 +460,11 @@ storage/
 ```
 
 **ملاحظات مهمة (من الذاكرة):**
-- Admin: `admin@videomontazh.ru` / `admin123`
-- User: `user@example.com` / `user123`
+- Seed Accounts: يتم إنشاؤها عبر `scripts/src/seed-admin.ts` بالاعتماد على متغيرات البيئة `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 - Zod v4 يجب externalize في `api-server/build.mjs`
 - `useListOrders()` يرجع `Order[]` مباشرة (بدون wrapper)
 - `thumbnailUrl` الفارغ يجب معالجته: `src={video.thumbnailUrl || undefined}`
+
 
 ---
 

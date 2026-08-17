@@ -93,12 +93,9 @@ pnpm --filter @workspace/video-courses run dev
 
 > **ملاحظة:** مجلدا `frontend/` و `backend/` في الجذر هما **أدلة تنقل فقط** — لم تُنقل الملفات الفعلية حتى لا يتعطل المشروع. المسارات الحقيقية ما زالت كما في `artifacts/` و `lib/`.
 
+```bash
 docker-compose up -d
-
 pnpm --parallel --filter "@workspace/video-courses" --filter "@workspace/api-server" run dev
+```
 
-
-
-"username": "[admin@videomontazh.ru](mailto:admin@videomontazh.ru)",
-
-  "password": "admin123"
+> **بيانات المدير (Admin):** يتم ضبط البريد الإلكتروني وكلمة المرور من خلال ملف `.env` عبر `ADMIN_EMAIL` و `ADMIN_PASSWORD` ثم تشغيل سكربت `pnpm --filter scripts run seed-admin`.

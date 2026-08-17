@@ -1,15 +1,21 @@
 import { Router, IRouter } from "express";
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { signToken } from "../lib/auth";
+import { eq, inArray } from "drizzle-orm";
+import { 
+  signAccessToken, 
+  signRefreshToken, 
+  verifyRefreshToken,
+  REFRESH_COOKIE_NAME,
+  refreshCookieOptions 
+} from "../lib/auth";
 import { requireAuth } from "../middlewares/requireAuth";
 import {
   RegisterBody,
   LoginBody,
   UpdateMeBody,
 } from "@workspace/api-zod";
-import { authLimiter } from "../middlewares/rateLimiter";
+import { authLimiter, refreshLimiter } from "../middlewares/rateLimiter";
 
 const router: IRouter = Router();
 
@@ -24,7 +30,7 @@ router.post("/auth/register", authLimiter, async (req, res): Promise<void> => {
   const [existing] = await db
     .select({ id: usersTable.id })
     .from(usersTable)
-    .where(eq(usersTable.email, email));
+    .where(eq(usersTable.email, email.toLowerCase().trim()));
   if (existing) {
     res.status(409).json({ error: "Email уже занят" });
     return;
@@ -33,10 +39,15 @@ router.post("/auth/register", authLimiter, async (req, res): Promise<void> => {
   const passwordHash = await bcrypt.hash(password, 10);
   const [user] = await db
     .insert(usersTable)
-    .values({ email, passwordHash, name, role: "user" })
+    .values({ email: email.toLowerCase().trim(), passwordHash, name: name.trim(), role: "user" })
     .returning();
 
-  const token = signToken({ userId: user.id, role: user.role });
+  const accessToken = signAccessToken({ userId: user.id, role: user.role }, user.passwordHash);
+  const refreshToken = signRefreshToken({ userId: user.id, role: user.role }, user.passwordHash);
+
+  // Set secure HttpOnly cookie for refresh token
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
+
   res.status(201).json({
     user: {
       id: user.id,
@@ -47,7 +58,7 @@ router.post("/auth/register", authLimiter, async (req, res): Promise<void> => {
       role: user.role,
       createdAt: user.createdAt,
     },
-    token,
+    token: accessToken,
   });
 });
 
@@ -62,7 +73,7 @@ router.post("/auth/login", authLimiter, async (req, res): Promise<void> => {
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.email, email));
+    .where(eq(usersTable.email, email.toLowerCase().trim()));
   if (!user) {
     res.status(401).json({ error: "Неверный email или пароль" });
     return;
@@ -74,7 +85,12 @@ router.post("/auth/login", authLimiter, async (req, res): Promise<void> => {
     return;
   }
 
-  const token = signToken({ userId: user.id, role: user.role });
+  const accessToken = signAccessToken({ userId: user.id, role: user.role }, user.passwordHash);
+  const refreshToken = signRefreshToken({ userId: user.id, role: user.role }, user.passwordHash);
+
+  // Set secure HttpOnly cookie for refresh token
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
+
   res.json({
     user: {
       id: user.id,
@@ -85,11 +101,62 @@ router.post("/auth/login", authLimiter, async (req, res): Promise<void> => {
       role: user.role,
       createdAt: user.createdAt,
     },
-    token,
+    token: accessToken,
+  });
+});
+
+router.post("/auth/refresh", refreshLimiter, async (req, res): Promise<void> => {
+  const tokenFromCookie = req.cookies?.[REFRESH_COOKIE_NAME];
+  const tokenFromBody = typeof req.body?.refreshToken === "string" ? req.body.refreshToken : undefined;
+  const refreshToken = tokenFromCookie || tokenFromBody;
+
+  if (!refreshToken) {
+    res.status(401).json({ error: "Токен обновления не найден" });
+    return;
+  }
+
+  const payload = verifyRefreshToken(refreshToken);
+  if (!payload) {
+    res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+    res.status(401).json({ error: "Недействительный или истекший токен обновления" });
+    return;
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, payload.userId));
+
+  if (!user) {
+    res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+    res.status(401).json({ error: "Пользователь не найден" });
+    return;
+  }
+
+  // Issue new access token and rotated refresh token (with updated pwfp from current passwordHash)
+  const newAccessToken = signAccessToken({ userId: user.id, role: user.role }, user.passwordHash);
+  const newRefreshToken = signRefreshToken({ userId: user.id, role: user.role }, user.passwordHash);
+
+  res.cookie(REFRESH_COOKIE_NAME, newRefreshToken, refreshCookieOptions);
+
+  res.json({
+    token: newAccessToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone ?? null,
+      avatarUrl: user.avatarUrl ?? null,
+      role: user.role,
+      createdAt: user.createdAt,
+    },
   });
 });
 
 router.post("/auth/logout", (_req, res): void => {
+  res.clearCookie(REFRESH_COOKIE_NAME, refreshCookieOptions);
+  res.clearCookie("auth_token", { path: "/" });
+  res.clearCookie("admin_token", { path: "/" });
   res.json({ success: true, message: "Выход выполнен" });
 });
 
@@ -120,7 +187,7 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   const updates: Partial<typeof usersTable.$inferInsert> = {};
-  if (parsed.data.name != null) updates.name = parsed.data.name;
+  if (parsed.data.name != null) updates.name = parsed.data.name.trim();
   if ("phone" in parsed.data) updates.phone = parsed.data.phone ?? undefined;
   if ("avatarUrl" in parsed.data) updates.avatarUrl = parsed.data.avatarUrl ?? undefined;
 
@@ -141,7 +208,7 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.get("/auth/me/videos", requireAuth, async (req, res): Promise<void> => {
-  const { ordersTable, orderItemsTable, videosTable, categoriesTable } = await import("@workspace/db");
+  const { ordersTable, orderItemsTable, videosTable, categoriesTable, reviewsTable } = await import("@workspace/db");
   const rows = await db
     .selectDistinctOn([videosTable.id])
     .from(orderItemsTable)
@@ -150,10 +217,17 @@ router.get("/auth/me/videos", requireAuth, async (req, res): Promise<void> => {
     .leftJoin(categoriesTable, eq(videosTable.categoryId, categoriesTable.id))
     .where(eq(ordersTable.userId, req.user!.userId));
 
-  const { reviewsTable } = await import("@workspace/db");
+  if (rows.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  // Fetch only reviews relevant to the purchased videos
+  const videoIds = rows.map((r) => r.videos.id);
   const reviews = await db
-    .select()
-    .from(reviewsTable);
+    .select({ videoId: reviewsTable.videoId, rating: reviewsTable.rating })
+    .from(reviewsTable)
+    .where(inArray(reviewsTable.videoId, videoIds));
 
   res.json(
     rows.map((r) => {
@@ -184,3 +258,4 @@ router.get("/auth/me/videos", requireAuth, async (req, res): Promise<void> => {
 });
 
 export default router;
+

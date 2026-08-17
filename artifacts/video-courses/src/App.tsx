@@ -22,11 +22,12 @@ const queryClient = new QueryClient({
     queries: {
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      refetchInterval: 5000, // Background polling every 5 seconds so admin changes appear automatically without reloading
-      staleTime: 2000,
+      refetchInterval: 30000, // Background polling every 30 seconds
+      staleTime: 5000,
     },
   },
 });
+
 
 /** Inner component so hooks can access the React tree */
 function AppInner() {

@@ -27,13 +27,14 @@ export interface YooKassaPaymentResponse {
 }
 
 function getYooKassaConfig() {
-  const shopId = process.env.YOOKASSA_SHOP_ID || "1432013";
-  const secretKey = process.env.YOOKASSA_SECRET_KEY || "test_i8JyuX6HKaJhOa1YnAuXh5J2aC92jDuq_tWRFyuJCeU";
+  const shopId = (process.env.YOOKASSA_SHOP_ID || "1429730").trim();
+  const secretKey = (process.env.YOOKASSA_SECRET_KEY || "live_g95j3CTRPZQSgobDiBLKu0uZuG4iu6Y2PX679ZHC0Ts").trim();
   const baseUrl = "https://api.yookassa.ru/v3";
-  const authHeader = "Basic " + Buffer.from(`${shopId.trim()}:${secretKey.trim()}`).toString("base64");
+  const authHeader = "Basic " + Buffer.from(`${shopId}:${secretKey}`).toString("base64");
 
   return { shopId, secretKey, baseUrl, authHeader };
 }
+
 
 /**
  * Creates a new payment session in YooKassa (ЮKassa API v3)

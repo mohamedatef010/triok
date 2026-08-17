@@ -3,13 +3,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function LoadingSpinner() {
+export function LoadingSpinner({ className }: { className?: string } = {}) {
   return (
-    <div className="flex items-center justify-center p-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <div className={`flex items-center justify-center ${className ? "" : "p-8"}`}>
+      <div className={`animate-spin rounded-full border-b-2 border-primary ${className || "h-8 w-8"}`}></div>
     </div>
   );
 }
+
 
 export function ErrorState({ error, retry }: { error?: unknown; retry?: () => void }) {
   return (

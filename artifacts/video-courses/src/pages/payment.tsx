@@ -35,14 +35,14 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
   const isComplete = isPaid || paymentStatus?.status === 'paid';
 
   useEffect(() => {
-    if (isComplete) {
-      // Redirect to profile after a brief success message
-      const timer = setTimeout(() => {
-        setLocation("/profile");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!isComplete) return undefined;
+    // Redirect to profile after a brief success message
+    const timer = setTimeout(() => {
+      setLocation("/profile");
+    }, 3000);
+    return () => clearTimeout(timer);
   }, [isComplete, setLocation]);
+
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorState error={error} />;

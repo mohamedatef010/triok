@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
 import { 
   useGetMe, 
   useLogout, 
-  User, 
-  customFetch 
+  type User, 
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -13,21 +11,23 @@ export function useAuth() {
     query: {
       retry: false,
       staleTime: Infinity,
-    }
+    } as any,
   });
 
   const logoutMutation = useLogout({
     mutation: {
       onSuccess: () => {
         localStorage.removeItem("auth_token");
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("applied_promocode");
         queryClient.clear();
         window.location.href = "/";
-      }
-    }
+      },
+    },
   });
 
   return {
-    user,
+    user: user as User | undefined,
     isLoading,
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
@@ -35,3 +35,4 @@ export function useAuth() {
     refetch,
   };
 }
+

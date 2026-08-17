@@ -41,19 +41,19 @@ export function VideoDetailPage() {
   const { toast } = useToast();
   
   const { data: apiVideo, isLoading, error } = useGetVideo(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id } as any
   });
 
   const { data: playbackData } = useGetVideoPlayback(id, {
-    query: { enabled: !!id, retry: false }
+    query: { enabled: !!id, retry: false } as any
   });
 
   const { data: relatedVideos } = useGetRelatedVideos(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id } as any
   });
   
   const { data: similarVideos } = useGetSimilarVideos(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id } as any
   });
 
   const { data: featuredVideos } = useGetFeaturedVideos();
@@ -72,13 +72,14 @@ export function VideoDetailPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: realReviews, refetch: refetchReviews } = useListReviews(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id } as any
   });
   const reviewsList = Array.isArray(realReviews) ? realReviews : [];
 
   const { data: myPurchasedVideos } = useGetMyPurchasedVideos({
-    query: { enabled: isAuthenticated }
+    query: { enabled: isAuthenticated } as any
   });
+
   const isPurchasedByUser = Array.isArray(myPurchasedVideos) 
     ? myPurchasedVideos.some((v: any) => v.id === id) 
     : false;
@@ -125,7 +126,7 @@ export function VideoDetailPage() {
         "availability": "https://schema.org/InStock"
       }
     } : {}),
-    ...(displayVideo.averageRating && displayVideo.reviewCount ? {
+    ...(displayVideo && displayVideo.averageRating && displayVideo.reviewCount ? {
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": displayVideo.averageRating,
@@ -135,6 +136,7 @@ export function VideoDetailPage() {
       }
     } : {})
   } : undefined;
+
 
   useSEO({
     title: seoTitle,
@@ -349,11 +351,12 @@ export function VideoDetailPage() {
                 <span className="px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs border border-amber-400/20">
                   {video.categoryName || "Фокусы"}
                 </span>
-                {(video.duration || video.durationSeconds) && (
+                {Boolean((video as any).duration || video.durationSeconds) && (
                   <span className="text-xs text-muted-foreground font-semibold">
-                    • {video.duration || formatDuration(video.durationSeconds)}
+                    • {(video as any).duration || formatDuration(video.durationSeconds)}
                   </span>
                 )}
+
               </div>
 
               <h1 className="text-2xl sm:text-3xl font-black leading-tight mb-4">{video.title}</h1>

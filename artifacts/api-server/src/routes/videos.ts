@@ -18,8 +18,13 @@ import { processVideoAsync } from "../lib/videoProcessor";
 import jwt from "jsonwebtoken";
 import { videoViewLimiter } from "../middlewares/rateLimiter";
 
-const JWT_SECRET = process.env.JWT_SECRET || "super_secret_video_token_key";
+const isProduction = process.env.NODE_ENV === "production";
+const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? "" : "dev-jwt-access-secret-change-in-prod");
+if (isProduction && !JWT_SECRET) {
+  throw new Error("CRITICAL SECURITY ERROR: JWT_SECRET must be set in production");
+}
 const router: IRouter = Router();
+
 
 async function buildVideoRow(video: typeof videosTable.$inferSelect, catName: string | null, userId?: number) {
   const videoReviews = await db.select().from(reviewsTable).where(eq(reviewsTable.videoId, video.id));
@@ -391,10 +396,11 @@ router.get("/videos/:id/manifest", async (req, res): Promise<void> => {
 
   let decoded: any;
   try {
-    decoded = jwt.verify(token, JWT_SECRET);
+    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
   } catch (err) {
     res.status(401).send("Invalid or expired token"); return;
   }
+
 
   if (decoded.videoId !== params.data.id) {
     res.status(403).send("Forbidden"); return;

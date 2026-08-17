@@ -6,13 +6,20 @@ import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
-const ADMIN_EMAIL = "admin@videomontazh.ru";
-const ADMIN_PASSWORD = "admin123";
-const ADMIN_NAME = "Admin";
+const isProduction = process.env.NODE_ENV === "production";
 
-const USER_EMAIL = "user@example.com";
-const USER_PASSWORD = "user123";
-const USER_NAME = "Test User";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@videomontazh.ru";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (isProduction ? "" : "admin123");
+const ADMIN_NAME = process.env.ADMIN_NAME || "Admin";
+
+if (isProduction && (!ADMIN_PASSWORD || ADMIN_PASSWORD === "admin123")) {
+  throw new Error("SECURITY ERROR: Please provide a strong ADMIN_PASSWORD in environment variables for production seeding.");
+}
+
+const USER_EMAIL = process.env.TEST_USER_EMAIL || "user@example.com";
+const USER_PASSWORD = process.env.TEST_USER_PASSWORD || (isProduction ? "" : "user123");
+const USER_NAME = process.env.TEST_USER_NAME || "Test User";
+
 
 async function upsertUser(
   email: string,
