@@ -14,9 +14,23 @@ if (!process.env.S3_ENDPOINT) {
   } catch {}
 }
 
+// Internal client — used for server-side operations (uploadFile, getObjectAsString, ensureBucketExists)
 const s3Client = new S3Client({
   region: process.env.S3_REGION || "us-east-1",
   endpoint: process.env.S3_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+  },
+  forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+});
+
+// Public client — used ONLY for generating presigned URLs that browsers will call directly.
+// Uses S3_PUBLIC_ENDPOINT (the public-facing domain/IP) so the signed URL is reachable from browsers.
+// Falls back to S3_ENDPOINT if S3_PUBLIC_ENDPOINT is not set.
+const s3PublicClient = new S3Client({
+  region: process.env.S3_REGION || "us-east-1",
+  endpoint: process.env.S3_PUBLIC_ENDPOINT || process.env.S3_ENDPOINT,
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
@@ -44,6 +58,7 @@ export async function ensureBucketExists(): Promise<void> {
   }
 }
 
+// Generates a presigned PUT URL using the PUBLIC endpoint (for browser uploads)
 export async function generateUploadUrl(key: string, contentType: string = "video/mp4", expiresIn: number = 3600): Promise<string> {
   await ensureBucketExists();
   const command = new PutObjectCommand({
@@ -51,16 +66,17 @@ export async function generateUploadUrl(key: string, contentType: string = "vide
     Key: key,
     ContentType: contentType,
   });
-  return await getSignedUrl(s3Client, command, { expiresIn });
+  return await getSignedUrl(s3PublicClient, command, { expiresIn });
 }
 
+// Generates a presigned GET URL using the PUBLIC endpoint (for browser downloads)
 export async function generatePresignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
   await ensureBucketExists();
   const command = new GetObjectCommand({
     Bucket: bucket,
     Key: key,
   });
-  return await getSignedUrl(s3Client, command, { expiresIn });
+  return await getSignedUrl(s3PublicClient, command, { expiresIn });
 }
 
 export async function getObjectAsString(key: string): Promise<string> {
