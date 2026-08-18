@@ -73,25 +73,20 @@ export function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { data: siteData, isLoading: siteLoading } = useSiteContacts();
   const { data: reqData, isLoading: reqLoading } = useRequisitesPhone();
-  // Prefer phone from Реквизиты продавца (site_requisites), fallback to author_section, then default
-  const phone = (!reqLoading && reqData?.phone)
+  // Prefer phone from Реквизиты продавца (site_requisites), fallback to author_section, then 'Не указан'
+  const rawPhone = (!reqLoading && reqData?.phone)
     ? reqData.phone
-    : (!siteLoading && siteData?.phone) ? siteData.phone : "+7 978 717-66-74";
-  const phoneHref = (!reqLoading && reqData?.phone)
-    ? `tel:${reqData.phone.replace(/\s+/g, '')}`
-    : (!siteLoading && siteData?.phone)
-      ? `tel:${siteData.phone.replace(/\s+/g, '')}`
-      : "tel:+79787176674";
-  const email = (!siteLoading && siteData?.email)
+    : (!siteLoading && siteData?.phone) ? siteData.phone : null;
+  const phone = rawPhone || "Не указан";
+  const phoneHref = rawPhone ? `tel:${rawPhone.replace(/\s+/g, '')}` : undefined;
+
+  const rawEmail = (!siteLoading && siteData?.email)
     ? siteData.email
     : (!siteLoading && siteData?.socialLinks?.mailru)
       ? siteData.socialLinks.mailru.replace('mailto:', '')
-      : "magik.777@mail.ru";
-  const emailHref = (!siteLoading && siteData?.email)
-    ? `mailto:${siteData.email}`
-    : (!siteLoading && siteData?.socialLinks?.mailru)
-      ? siteData.socialLinks.mailru
-      : "mailto:magik.777@mail.ru";
+      : null;
+  const email = rawEmail || "Не указан";
+  const emailHref = rawEmail ? `mailto:${rawEmail}` : undefined;
 
   // Close on click outside
   useEffect(() => {
@@ -206,8 +201,16 @@ export function Navbar() {
                  {/* Контакты */}
                  <div className="flex flex-col gap-3">
                    <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Контакты</h4>
-                   <a href={phoneHref} className="text-lg font-black text-foreground hover:text-amber-500 transition-colors">{phone}</a>
-                   <a href={emailHref} className="text-base font-bold text-muted-foreground hover:text-amber-500 transition-colors">{email}</a>
+                   {phoneHref ? (
+                     <a href={phoneHref} className="text-lg font-black text-foreground hover:text-amber-500 transition-colors">{phone}</a>
+                   ) : (
+                     <span className="text-lg font-bold text-muted-foreground">{phone}</span>
+                   )}
+                   {emailHref ? (
+                     <a href={emailHref} className="text-base font-bold text-muted-foreground hover:text-amber-500 transition-colors">{email}</a>
+                   ) : (
+                     <span className="text-base font-medium text-muted-foreground/80">{email}</span>
+                   )}
 
                    {!siteLoading && siteData?.socialLinks && (
                      <div className="flex flex-wrap gap-2 pt-2">

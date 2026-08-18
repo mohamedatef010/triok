@@ -23,12 +23,12 @@ export interface RequisitesData {
 }
 
 export const DEFAULT_REQUISITES: RequisitesData = {
-  fullName: "Берестнев Максим Геннадьевич",
-  inn: "482506027919",
+  fullName: "",
+  inn: "",
   taxStatus: "Самозанятый (Плательщик налога на профессиональный доход)",
-  phone: "+7 978 717-66-74",
-  email: "cool-trick@mail.ru",
-  supportEmail: "magik.777@mail.ru",
+  phone: "",
+  email: "",
+  supportEmail: "",
   location: "Россия",
   paymentMethods: "Банковские карты (МИР, Visa, MasterCard), СБП через сервис ЮKassa",
   deliveryMethod: "Электронный доступ к цифровым видеокурсам в Личном кабинете сразу после онлайн-оплаты",
@@ -133,7 +133,7 @@ export function AdminRequisites() {
               <Input
                 value={data.fullName}
                 onChange={(e) => setData({ ...data, fullName: e.target.value })}
-                placeholder="Берестнев Максим Геннадьевич"
+                placeholder="ФИО (например: Иванов Иван Иванович)"
               />
             </div>
 
@@ -144,7 +144,7 @@ export function AdminRequisites() {
               <Input
                 value={data.inn}
                 onChange={(e) => setData({ ...data, inn: e.target.value })}
-                placeholder="482506027919"
+                placeholder="ИНН (12 цифр)"
               />
             </div>
 
@@ -178,7 +178,7 @@ export function AdminRequisites() {
               <Input
                 value={data.phone}
                 onChange={(e) => setData({ ...data, phone: e.target.value })}
-                placeholder="+7 978 717-66-74"
+                placeholder="+7 (XXX) XXX-XX-XX"
               />
             </div>
 
@@ -189,7 +189,7 @@ export function AdminRequisites() {
               <Input
                 value={data.email}
                 onChange={(e) => setData({ ...data, email: e.target.value })}
-                placeholder="cool-trick@mail.ru"
+                placeholder="email@domain.ru"
               />
             </div>
 
@@ -200,7 +200,7 @@ export function AdminRequisites() {
               <Input
                 value={data.supportEmail}
                 onChange={(e) => setData({ ...data, supportEmail: e.target.value })}
-                placeholder="magik.777@mail.ru"
+                placeholder="support@domain.ru"
               />
             </div>
 

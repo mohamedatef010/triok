@@ -4,59 +4,55 @@ import { useLocation } from "wouter";
 /**
  * useScrollReveal
  *
- * Observes every element with the class "sr" and adds "sr-visible"
- * when ≥15% of the element enters the viewport.
- *
- * Usage in TSX (no JSX changes needed — add classes in HTML):
- *   <section className="sr sr-fade-up" data-sr-delay="200"> ... </section>
- *
- * Available direction modifiers:
- *   sr-fade-up | sr-fade-in | sr-fade-left | sr-fade-right | sr-scale
- *
- * Delay (data-sr-delay):  80 | 120 | 160 | 200 | 260 | 320 | 400 | 480 | 560
+ * Observes elements with the class "sr" and adds "sr-visible"
+ * smoothly and proactively on both mobile and desktop.
  */
 export function useScrollReveal() {
   const [location] = useLocation();
 
   useEffect(() => {
+    // Eager margin on top/bottom so elements reveal just before scrolling into view
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("sr-visible");
-            // Once revealed, stop watching to save memory
             observer.unobserve(entry.target);
           }
         });
       },
       {
-        threshold: 0.1,      // trigger when 10% is visible
-        rootMargin: "0px 0px -40px 0px", // slight bottom offset for natural feel
+        threshold: 0.02,
+        rootMargin: "80px 0px 80px 0px",
       }
     );
 
-    // Observe all current .sr elements
+    // Observe unobserved .sr elements directly without forced layout reflows
     const attachObserver = () => {
-      document.querySelectorAll(".sr:not(.sr-visible)").forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        // If element is already in viewport on mount, reveal it gracefully
-        if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
-          el.classList.add("sr-visible");
-        } else {
-          observer.observe(el);
-        }
+      const elements = document.querySelectorAll(".sr:not(.sr-visible)");
+      elements.forEach((el) => {
+        observer.observe(el);
       });
     };
 
     attachObserver();
 
-    // Re-run after short delays to catch async data loads & image layout shifts
-    const t1 = setTimeout(attachObserver, 150);
-    const t2 = setTimeout(attachObserver, 500);
+    // Re-check for elements loaded asynchronously
+    const t1 = setTimeout(attachObserver, 100);
+    const t2 = setTimeout(attachObserver, 400);
 
-    // Watch for new .sr elements added to DOM by async API sections
+    // Fail-safe: Ensure all elements are visible after page settles so no content is ever missed
+    const tFallback = setTimeout(() => {
+      document.querySelectorAll(".sr:not(.sr-visible)").forEach((el) => {
+        el.classList.add("sr-visible");
+      });
+    }, 1200);
+
+    // Watch for new .sr elements added dynamically without calling getBoundingClientRect
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const mutationObserver = new MutationObserver(() => {
-      attachObserver();
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(attachObserver, 60);
     });
 
     mutationObserver.observe(document.body, {
@@ -69,6 +65,9 @@ export function useScrollReveal() {
       mutationObserver.disconnect();
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(tFallback);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [location]);
 }
+

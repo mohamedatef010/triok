@@ -16,8 +16,8 @@ export function TermsPage() {
     retry: false,
   });
 
-  const phone = requisitesData?.phone || "+7 978 717-66-74";
-  const phoneHref = `tel:${phone.replace(/\s+/g, '')}`;
+  const phone = requisitesData?.phone || "Не указан";
+  const phoneHref = phone && phone !== "Не указан" ? `tel:${phone.replace(/\s+/g, '')}` : undefined;
   useSEO({
     title: "Публичная оферта и условия предоставления услуг",
     description: "Договор публичной оферты на приобретение доступа к цифровым обучающим видеокурсам на платформе Классный Фокус.",
@@ -135,13 +135,34 @@ export function TermsPage() {
         <section className="space-y-4 border-t border-border/60 pt-8">
           <h2 className="text-xl font-bold text-foreground">8. Реквизиты и контакты Исполнителя</h2>
           <div className="p-6 rounded-2xl bg-muted/40 border text-sm space-y-2">
-            <div><strong>Исполнитель:</strong> Берестнев Максим Геннадьевич</div>
-            <div><strong>Статус:</strong> Плательщик налога на профессиональный доход (Самозанятый)</div>
-            <div><strong>ИНН:</strong> 482506027919</div>
-            <div><strong>Телефон:</strong> <a href={phoneHref} className="hover:underline text-foreground font-bold">{phone}</a></div>
-            <div><strong>Email:</strong> <a href="mailto:cool-trick@mail.ru" className="hover:underline text-primary font-bold">cool-trick@mail.ru</a></div>
+            <div><strong>Исполнитель:</strong> {requisitesData?.fullName || "Не указано"}</div>
+            <div><strong>Статус:</strong> {requisitesData?.taxStatus || "Плательщик налога на профессиональный доход (Самозанятый)"}</div>
+            <div><strong>ИНН:</strong> {requisitesData?.inn || "Не указано"}</div>
+            <div>
+              <strong>Телефон:</strong>{" "}
+              {phoneHref ? (
+                <a href={phoneHref} className="hover:underline text-foreground font-bold">{phone}</a>
+              ) : (
+                <span className="text-muted-foreground">{phone}</span>
+              )}
+            </div>
+            <div>
+              <strong>Email:</strong>{" "}
+              {requisitesData?.email ? (
+                <a href={`mailto:${requisitesData.email}`} className="hover:underline text-primary font-bold">{requisitesData.email}</a>
+              ) : (
+                <span className="text-muted-foreground">Не указано</span>
+              )}
+            </div>
             <div><strong>Сайт:</strong> классный-фокус.рф</div>
-            <div><strong>Служба поддержки:</strong> <a href="mailto:magik.777@mail.ru" className="hover:underline text-primary font-bold">magik.777@mail.ru</a></div>
+            <div>
+              <strong>Служба поддержки:</strong>{" "}
+              {requisitesData?.supportEmail ? (
+                <a href={`mailto:${requisitesData.supportEmail}`} className="hover:underline text-primary font-bold">{requisitesData.supportEmail}</a>
+              ) : (
+                <span className="text-muted-foreground">Не указано</span>
+              )}
+            </div>
           </div>
         </section>
       </div>

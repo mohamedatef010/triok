@@ -229,7 +229,10 @@ function MagicFloatItem({ type, size }: { type: string; size: number }) {
 
 /* ── Ambient Dust Particle Component ── */
 function DustParticles() {
-  const particles = Array.from({ length: 35 }, (_, i) => ({
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const particleCount = isMobile ? 8 : 30;
+
+  const particles = Array.from({ length: particleCount }, (_, i) => ({
     id: i,
     left: `${Math.random() * 100}%`,
     top: `${Math.random() * 100}%`,
@@ -458,6 +461,7 @@ export function HomePage() {
   const parallaxVelocity = useRef({ x: 0, y: 0 });
 
   const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    if (typeof window !== "undefined" && !window.matchMedia("(pointer: fine)").matches) return;
     const rect = heroSectionRef.current?.getBoundingClientRect();
     if (!rect) return;
     // Smoother normalized coordinates with reduced sensitivity
@@ -472,6 +476,11 @@ export function HomePage() {
   }, []);
 
   useEffect(() => {
+    // Only run continuous parallax loop on desktop devices with fine pointer
+    if (typeof window !== "undefined" && !window.matchMedia("(pointer: fine)").matches) {
+      return;
+    }
+
     let raf = 0;
     const depths = [10, 22, 40]; // Reduced depths for subtler movement
     const smoothingFactor = 0.035; // Very smooth interpolation
@@ -507,7 +516,6 @@ export function HomePage() {
 
       // Move the light beam with the mouse for realistic lighting
       if (lightBeamRef.current && heroSectionRef.current) {
-        const rect = heroSectionRef.current.getBoundingClientRect();
         const lightX = 50 + parallaxCurrent.current.x * 15;
         const lightY = 50 + parallaxCurrent.current.y * 10;
         lightBeamRef.current.style.background = `radial-gradient(ellipse 50% 70% at ${lightX}% ${lightY}%, rgba(251,191,36,0.08) 0%, transparent 70%)`;
@@ -524,6 +532,12 @@ export function HomePage() {
   const [spiralStep, setSpiralStep] = useState(-1);
 
   useEffect(() => {
+    // On mobile devices, reveal all course cards immediately without delay
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setSpiralStep(99);
+      return;
+    }
+
     const el = spiralRef.current;
     if (!el) return;
     let spiralInterval: ReturnType<typeof setInterval> | null = null;
@@ -544,7 +558,7 @@ export function HomePage() {
           }
         });
       },
-      { threshold: 0.2 }
+      { threshold: 0.05 }
     );
     observer.observe(el);
     return () => {
@@ -554,8 +568,8 @@ export function HomePage() {
   }, []);
 
   // Card i appears at step i*2, the line leading to it at step i*2 - 1
-  const isCardVisible = (spiralIdx: number) => spiralStep >= spiralIdx * 2;
-  const isLinkVisible = (spiralIdx: number) => spiralStep >= spiralIdx * 2 - 1;
+  const isCardVisible = (spiralIdx: number) => spiralStep >= 90 || spiralStep >= spiralIdx * 2;
+  const isLinkVisible = (spiralIdx: number) => spiralStep >= 90 || spiralStep >= spiralIdx * 2 - 1;
 
   /* ── Course card renderer (shared between mobile grid & desktop spiral flow) ── */
   const renderCourseCard = (video: any) => {
@@ -1376,7 +1390,7 @@ export function HomePage() {
       {/* ── NEW SECTION: Social Media Videos ── */}
       <SocialVideosSection />
 
-      {/* ── NEW SECTION: Event Photos Gallery (صور من المناسبات) ── */}
+      {/* ── NEW SECTION: Event Photos Gallery ── */}
       <EventsGallerySection />
 
       {/* ── Free Trial CTA Banner (Light, mouse-follow interactive) ── */}

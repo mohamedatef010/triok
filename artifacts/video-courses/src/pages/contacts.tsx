@@ -99,8 +99,11 @@ export function ContactsPage() {
     retry: false,
   });
 
-  const contactPhone = requisitesData?.phone || "+7 978 717-66-74";
-  const contactPhoneHref = `tel:${contactPhone.replace(/\s+/g, '')}`;
+  const contactPhone = requisitesData?.phone || (!isLoading && data?.phone) ? (requisitesData?.phone || data?.phone) : "Не указан";
+  const contactPhoneHref = contactPhone && contactPhone !== "Не указан" ? `tel:${contactPhone.replace(/\s+/g, '')}` : undefined;
+
+  const contactEmail = requisitesData?.email || (!isLoading && data?.email) ? (requisitesData?.email || data?.email) : "Не указан";
+  const contactEmailHref = contactEmail && contactEmail !== "Не указан" ? `mailto:${contactEmail}` : undefined;
 
   const hasData = !isLoading && !isError && data != null;
   const content = data ?? {};
@@ -142,8 +145,7 @@ export function ContactsPage() {
         {/* ── Main Content ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           
-          {/* ── Right Side: Author Image with Layers ── 
-              يظهر أولاً في الموبايل (order-1)، وعلى اليمين في الديسكتوب (lg:order-2) */}
+          {/* ── Right Side: Author Image with Layers (Mobile order-1, Desktop lg:order-2) ── */}
           <div className="order-1 lg:order-2 relative flex justify-center lg:justify-end">
             <div className="relative w-full max-w-md group">
               
@@ -198,8 +200,7 @@ export function ContactsPage() {
             </div>
           </div>
 
-          {/* ── Left Side: Contact Details ── 
-              يظهر ثانياً في الموبايل (order-2)، وعلى اليسار في الديسكتوب (lg:order-1) */}
+          {/* ── Left Side: Contact Details (Mobile order-2, Desktop lg:order-1) ── */}
           <div className="order-2 lg:order-1 space-y-8">
             
             {/* Social Media Cards — all platforms */}
@@ -235,31 +236,55 @@ export function ContactsPage() {
 
             {/* Direct Contact Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <a
-                href={contactPhoneHref}
-                className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 transition-all"
-              >
-                <div className="h-12 w-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-lg shrink-0">
-                  📞
+              {contactPhoneHref ? (
+                <a
+                  href={contactPhoneHref}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/15 transition-all"
+                >
+                  <div className="h-12 w-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-lg shrink-0">
+                    📞
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Телефон</div>
+                    <div className="text-xs font-bold text-amber-600 dark:text-amber-400">{contactPhone}</div>
+                  </div>
+                </a>
+              ) : (
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/5 border border-amber-500/15">
+                  <div className="h-12 w-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-lg shrink-0">
+                    📞
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Телефон</div>
+                    <div className="text-xs font-bold text-muted-foreground">{contactPhone}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-sm">Телефон</div>
-                  <div className="text-xs font-bold text-amber-600 dark:text-amber-400">{contactPhone}</div>
-                </div>
-              </a>
+              )}
 
-              <a
-                href="mailto:cool-trick@mail.ru"
-                className="flex items-center gap-4 p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/15 transition-all"
-              >
-                <div className="h-12 w-12 rounded-xl bg-cyan-500/20 text-cyan-500 flex items-center justify-center font-bold text-lg shrink-0">
-                  ✉️
+              {contactEmailHref ? (
+                <a
+                  href={contactEmailHref}
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/15 transition-all"
+                >
+                  <div className="h-12 w-12 rounded-xl bg-cyan-500/20 text-cyan-500 flex items-center justify-center font-bold text-lg shrink-0">
+                    ✉️
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Email</div>
+                    <div className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{contactEmail}</div>
+                  </div>
+                </a>
+              ) : (
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-cyan-500/5 border border-cyan-500/15">
+                  <div className="h-12 w-12 rounded-xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center font-bold text-lg shrink-0">
+                    ✉️
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 dark:text-white text-sm">Email</div>
+                    <div className="text-xs font-bold text-muted-foreground">{contactEmail}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-bold text-slate-900 dark:text-white text-sm">Email</div>
-                  <div className="text-xs font-bold text-cyan-600 dark:text-cyan-400">cool-trick@mail.ru</div>
-                </div>
-              </a>
+              )}
             </div>
 
             {/* Location */}

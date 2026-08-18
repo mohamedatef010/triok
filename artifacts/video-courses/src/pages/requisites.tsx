@@ -27,12 +27,13 @@ export function RequisitesPage() {
     staleTime: 60000,
   });
 
-  const fullName = requisitesData?.fullName || "Берестнев Максим Геннадьевич";
-  const inn = requisitesData?.inn || "482506027919";
+  const NOT_SET = "Не указано";
+  const fullName = requisitesData?.fullName || NOT_SET;
+  const inn = requisitesData?.inn || NOT_SET;
   const taxStatus = requisitesData?.taxStatus || "Самозанятый (Плательщик налога на профессиональный доход)";
-  const phone = requisitesData?.phone || "+7 978 717-66-74";
-  const email = requisitesData?.email || "cool-trick@mail.ru";
-  const supportEmail = requisitesData?.supportEmail || "magik.777@mail.ru";
+  const phone = requisitesData?.phone || NOT_SET;
+  const email = requisitesData?.email || NOT_SET;
+  const supportEmail = requisitesData?.supportEmail || NOT_SET;
   const location = requisitesData?.location || "Россия";
   const paymentMethods = requisitesData?.paymentMethods || "Банковские карты (МИР, Visa, MasterCard), СБП через сервис ЮKassa";
   const deliveryMethod = requisitesData?.deliveryMethod || "Электронный доступ к цифровым видеокурсам в Личном кабинете сразу после онлайн-оплаты";
@@ -60,19 +61,19 @@ export function RequisitesPage() {
       icon: Phone,
       label: "Контактный телефон",
       value: phone,
-      href: `tel:${phone.replace(/\s+/g, '')}`,
+      href: phone !== NOT_SET ? `tel:${phone.replace(/\s+/g, '')}` : null,
     },
     {
       icon: Mail,
       label: "Основной Email",
       value: email,
-      href: `mailto:${email}`,
+      href: email !== NOT_SET ? `mailto:${email}` : null,
     },
     {
       icon: Mail,
       label: "Email службы поддержки",
       value: supportEmail,
-      href: `mailto:${supportEmail}`,
+      href: supportEmail !== NOT_SET ? `mailto:${supportEmail}` : null,
     },
     {
       icon: MapPin,

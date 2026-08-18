@@ -1,5 +1,5 @@
 /**
- * Premium Magic Logo component — خفة اليد والسحر
+ * Premium Magic Logo component
  * Features a magic wand with sparkles, a top hat silhouette, and golden amber accents.
  */
 export function Logo({ size = 50, className = "" }: { size?: number; className?: string }) {

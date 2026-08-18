@@ -27,8 +27,10 @@ export function DeliveryPage() {
     retry: false,
   });
 
-  const phone = requisitesData?.phone || "+7 978 717-66-74";
-  const phoneHref = `tel:${phone.replace(/\s+/g, '')}`;
+  const phone = requisitesData?.phone || "Не указан";
+  const phoneHref = phone && phone !== "Не указан" ? `tel:${phone.replace(/\s+/g, '')}` : undefined;
+  const email = requisitesData?.email || "Не указан";
+  const emailHref = email && email !== "Не указан" ? `mailto:${email}` : undefined;
   useSEO({
     title: "Получение цифрового товара | Порядок предоставления доступа",
     description: "Информация о порядке и сроках предоставления доступа к цифровым обучающим видеокурсам на платформе Классный Фокус после успешной оплаты.",
@@ -172,12 +174,20 @@ export function DeliveryPage() {
                   Если после оплаты курс не отобразился в Личном кабинете или возникла техническая заминка, обратитесь в службу поддержки:
                 </p>
                 <div className="flex flex-wrap gap-4 pt-2 text-sm font-medium">
-                  <a href="mailto:cool-trick@mail.ru" className="text-primary hover:underline font-bold">
-                    Email: cool-trick@mail.ru
-                  </a>
-                  <a href={phoneHref} className="text-foreground hover:text-primary font-bold">
-                    Тел: {phone}
-                  </a>
+                  {emailHref ? (
+                    <a href={emailHref} className="text-primary hover:underline font-bold">
+                      Email: {email}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground font-semibold">Email: {email}</span>
+                  )}
+                  {phoneHref ? (
+                    <a href={phoneHref} className="text-foreground hover:text-primary font-bold">
+                      Тел: {phone}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground font-semibold">Тел: {phone}</span>
+                  )}
                 </div>
               </div>
             </div>

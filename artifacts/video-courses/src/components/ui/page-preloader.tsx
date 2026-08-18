@@ -11,14 +11,21 @@ import { useEffect, useState } from "react";
  *  - Fast open: duration reduced, preloader exits with a gentle fade+scale (not slide-up)
  *  - Smooth transition: soft curtain fade-out before site appears
  */
-export function PagePreloader({ duration = 1500 }: { duration?: number }) {
+export function PagePreloader({ duration = 1200 }: { duration?: number }) {
   const [progress, setProgress] = useState(0);
   const [hidden, setHidden] = useState(false);
   const [removed, setRemoved] = useState(false);
 
+  const dismiss = () => {
+    setHidden(true);
+    setTimeout(() => setRemoved(true), 400);
+  };
+
   useEffect(() => {
-    const intervalTime = 25;
-    const steps = duration / intervalTime;
+    // Fast duration on mobile
+    const effectiveDuration = typeof window !== "undefined" && window.innerWidth < 768 ? Math.min(duration, 800) : duration;
+    const intervalTime = 20;
+    const steps = effectiveDuration / intervalTime;
     let currentStep = 0;
 
     const timer = setInterval(() => {
@@ -31,10 +38,8 @@ export function PagePreloader({ duration = 1500 }: { duration?: number }) {
 
       if (currentStep >= steps) {
         clearInterval(timer);
-        // Small pause at 100% before hiding
-        setTimeout(() => setHidden(true), 120);
-        // Remove from DOM after transition completes
-        setTimeout(() => setRemoved(true), 850);
+        setTimeout(() => setHidden(true), 80);
+        setTimeout(() => setRemoved(true), 600);
       }
     }, intervalTime);
 
@@ -48,6 +53,7 @@ export function PagePreloader({ duration = 1500 }: { duration?: number }) {
       id="page-preloader"
       className={hidden ? "preloader-hidden" : ""}
       aria-hidden="true"
+      onClick={dismiss}
     >
       {/* Cinematic background */}
       <div className="absolute inset-0 overflow-hidden bg-[#05070b]">

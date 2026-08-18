@@ -86,10 +86,10 @@ export function AdminReviewsSection() {
     setSaving(false);
     if (ok) {
       toast.success('Настройки сохранены!');
-      alert('Успешно сохранено! / تم حفظ البيانات بنجاح!');
+      alert('Успешно сохранено!');
     } else {
       toast.error('Ошибка при сохранении.');
-      alert('Ошибка при сохранении! / حدث خطأ أثناء حفظ البيانات!');
+      alert('Ошибка при сохранении!');
     }
   };
 

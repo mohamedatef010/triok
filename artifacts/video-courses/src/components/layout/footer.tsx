@@ -39,24 +39,17 @@ export function Footer() {
   // Real contact information — prefer phone from Реквизиты продавца (site_requisites)
   const rawPhone = (!reqLoading && reqData?.phone)
     ? reqData.phone
-    : (!isLoading && data?.phone) ? data.phone : "+7 978 717-66-74";
-  const phone = rawPhone;
-  const phoneHref = rawPhone && rawPhone !== "+7 978 717-66-74"
-    ? `tel:${rawPhone.replace(/\s+/g, '')}`
-    : (!isLoading && data?.phone)
-      ? `tel:${data.phone.replace(/\s+/g, '')}`
-      : "tel:+79787176674";
+    : (!isLoading && data?.phone) ? data.phone : null;
+  const phone = rawPhone || "Не указан";
+  const phoneHref = rawPhone ? `tel:${rawPhone.replace(/\s+/g, '')}` : undefined;
   
-  const email = (!isLoading && data?.email) 
+  const rawEmail = (!isLoading && data?.email) 
     ? data.email 
     : (!isLoading && socialLinks.mailru)
       ? socialLinks.mailru.replace('mailto:', '')
-      : "cool-trick@mail.ru";
-  const emailHref = (!isLoading && data?.email)
-    ? `mailto:${data.email}`
-    : (!isLoading && socialLinks.mailru)
-      ? socialLinks.mailru
-      : "mailto:cool-trick@mail.ru";
+      : null;
+  const email = rawEmail || "Не указан";
+  const emailHref = rawEmail ? `mailto:${rawEmail}` : undefined;
 
   return (
     <footer className="bg-slate-950 text-slate-200 pt-16 pb-12 border-t border-slate-800">
@@ -106,13 +99,21 @@ export function Footer() {
               <div className="h-9 w-9 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
                 <Phone className="h-4 w-4 text-amber-400" />
               </div>
-              <a href={phoneHref} className="font-bold hover:text-amber-400 transition-colors">{phone}</a>
+              {phoneHref ? (
+                <a href={phoneHref} className="font-bold hover:text-amber-400 transition-colors">{phone}</a>
+              ) : (
+                <span className="font-semibold text-slate-400">{phone}</span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-cyan-400/10 border border-cyan-400/20 flex items-center justify-center shrink-0">
                 <Mail className="h-4 w-4 text-cyan-400" />
               </div>
-              <a href={emailHref} className="font-medium hover:text-cyan-400 transition-colors">{email}</a>
+              {emailHref ? (
+                <a href={emailHref} className="font-medium hover:text-cyan-400 transition-colors">{email}</a>
+              ) : (
+                <span className="font-medium text-slate-400">{email}</span>
+              )}
             </div>
 
             {/* Dynamic Social Links from CMS */}

@@ -19,8 +19,10 @@ export function HelpPage() {
     retry: false,
   });
 
-  const phone = requisitesData?.phone || "+7 978 717-66-74";
-  const phoneHref = `tel:${phone.replace(/\s+/g, '')}`;
+  const phone = requisitesData?.phone || "Не указан";
+  const phoneHref = phone && phone !== "Не указан" ? `tel:${phone.replace(/\s+/g, '')}` : undefined;
+  const email = requisitesData?.email || "Не указан";
+  const emailHref = email && email !== "Не указан" ? `mailto:${email}` : undefined;
   useSEO({
     title: "Помощь и информация",
     description: "Ответы на вопросы об оплате, доступе к курсам, возврате средств и использовании учебных материалов на платформе Классный Фокус.",
@@ -239,18 +241,26 @@ export function HelpPage() {
             <br />
             <br />
             <div className="flex flex-wrap gap-4 font-bold">
-              <a
-                href="mailto:cool-trick@mail.ru"
-                className="text-primary hover:underline"
-              >
-                Email: cool-trick@mail.ru
-              </a>
-              <a
-                href={phoneHref}
-                className="text-foreground hover:text-primary hover:underline"
-              >
-                Тел: {phone}
-              </a>
+              {emailHref ? (
+                <a
+                  href={emailHref}
+                  className="text-primary hover:underline"
+                >
+                  Email: {email}
+                </a>
+              ) : (
+                <span className="text-muted-foreground font-semibold">Email: {email}</span>
+              )}
+              {phoneHref ? (
+                <a
+                  href={phoneHref}
+                  className="text-foreground hover:text-primary hover:underline"
+                >
+                  Тел: {phone}
+                </a>
+              ) : (
+                <span className="text-muted-foreground font-semibold">Тел: {phone}</span>
+              )}
             </div>
             <br />
             В обращении укажите ваш email при регистрации и номер заказа. 
@@ -285,20 +295,28 @@ export function HelpPage() {
       </Accordion>
 
       <div className="mt-10 text-center text-sm text-muted-foreground">
-        Если вы не нашли ответ на свой вопрос, свяжитесь с нами по адресу{" "}
-        <a
-          href="mailto:cool-trick@mail.ru"
-          className="font-medium text-foreground underline underline-offset-4"
-        >
-          cool-trick@mail.ru
-        </a>{" "}
-        или по телефону{" "}
-        <a
-          href={phoneHref}
-          className="font-medium text-foreground underline underline-offset-4"
-        >
-          {phone}
-        </a>
+        Если вы не нашли ответ на свой вопрос, свяжитесь с нами по электронной почте{" "}
+        {emailHref ? (
+          <a
+            href={emailHref}
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            {email}
+          </a>
+        ) : (
+          <span className="font-medium text-foreground">{email}</span>
+        )}
+        {" "}или по телефону{" "}
+        {phoneHref ? (
+          <a
+            href={phoneHref}
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            {phone}
+          </a>
+        ) : (
+          <span className="font-medium text-foreground">{phone}</span>
+        )}
         .
       </div>
     </div>

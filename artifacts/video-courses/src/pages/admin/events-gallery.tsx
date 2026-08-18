@@ -251,7 +251,7 @@ export function AdminEventsGallery() {
             <Camera className="h-4 w-4" />
             Маркетинговая галерея
           </div>
-          <h1 className="text-2xl font-black tracking-tight">Фото с мероприятий (صور من المناسبات)</h1>
+          <h1 className="text-2xl font-black tracking-tight">Фото с мероприятий</h1>
           <p className="text-sm text-muted-foreground">
             Управляйте фотографиями ваших выступлений. Все изображения автоматически конвертируются в легкий и быстрый формат <b>WebP</b>.
           </p>
