@@ -77,7 +77,7 @@ export function HelpPage() {
 
   return (
 
-    <div className="container mx-auto max-w-4xl px-4 py-12">
+    <div className="container mx-auto max-w-4xl px-4 py-12 overflow-hidden">
       <div className="mb-10 text-center">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
           Помощь и информация

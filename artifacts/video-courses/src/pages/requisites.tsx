@@ -96,7 +96,7 @@ export function RequisitesPage() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-3xl flex-1 flex flex-col justify-center">
+    <div className="container mx-auto px-4 py-12 max-w-3xl flex-1 flex flex-col justify-center overflow-hidden">
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/10 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider mb-3 border border-amber-400/20">
           <ShieldCheck className="h-3.5 w-3.5" />

@@ -532,15 +532,15 @@ export function VideoDetailPage() {
                 key={review.id}
                 className="bg-card p-6 rounded-3xl border border-border/80 shadow-sm space-y-3 hover:border-amber-400/30 transition-colors"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="h-10 w-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-500 text-slate-950 font-black text-sm flex items-center justify-center shadow-md shrink-0">
                       {(review.userName || "U").charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <div className="font-extrabold text-sm text-foreground flex items-center gap-2">
-                        <span>{review.userName || "Пользователь"}</span>
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-500 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <div className="min-w-0">
+                      <div className="font-extrabold text-sm text-foreground flex flex-wrap items-center gap-2">
+                        <span className="truncate max-w-[120px] sm:max-w-none">{review.userName || "Пользователь"}</span>
+                        <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-500 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shrink-0">
                           <ShieldCheck className="h-3 w-3" /> Покупатель
                         </span>
                       </div>
@@ -551,7 +551,7 @@ export function VideoDetailPage() {
                   </div>
 
                   {/* Stars */}
-                  <div className="flex items-center gap-0.5 bg-amber-400/10 px-2.5 py-1 rounded-xl border border-amber-400/20">
+                  <div className="flex items-center gap-0.5 bg-amber-400/10 px-2.5 py-1 rounded-xl border border-amber-400/20 shrink-0">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
                         key={i}

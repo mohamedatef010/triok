@@ -45,7 +45,7 @@ export function DeliveryPage() {
   });
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12 flex-1">
+    <div className="container mx-auto max-w-4xl px-4 py-12 flex-1 overflow-hidden">
       {/* Page Header */}
       <div className="text-center mb-12">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/10 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider mb-4 border border-amber-400/20">

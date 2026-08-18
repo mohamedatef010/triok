@@ -32,7 +32,7 @@ export function TermsPage() {
   });
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12 flex-1">
+    <div className="container mx-auto max-w-4xl px-4 py-12 flex-1 overflow-hidden">
       <div className="mb-12 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-400/10 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider mb-4 border border-amber-400/20">
           <FileText className="h-3.5 w-3.5" />
@@ -167,13 +167,13 @@ export function TermsPage() {
         </section>
       </div>
 
-      <div className="mt-8 flex justify-center gap-4">
-        <Button variant="outline" className="rounded-2xl font-bold px-6" asChild>
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        <Button variant="outline" className="rounded-2xl font-bold px-6 w-full sm:w-auto" asChild>
           <Link href="/requisites">
             Смотреть реквизиты
           </Link>
         </Button>
-        <Button variant="outline" className="rounded-2xl font-bold px-6" asChild>
+        <Button variant="outline" className="rounded-2xl font-bold px-6 w-full sm:w-auto" asChild>
           <Link href="/delivery">
             Получение цифрового товара
           </Link>
