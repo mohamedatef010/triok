@@ -984,6 +984,11 @@ button {
     max-width: 100% !important;
     overflow-x: hidden;
   }
+
+  /* Completely disable Preloader on mobile devices */
+  #page-preloader {
+    display: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

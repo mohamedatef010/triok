@@ -1051,8 +1051,9 @@ export function HomePage() {
                   <img
                     src="/n13.jpg"
                     alt="Background text"
-                    className="absolute z-0 -top-8 sm:-top-12 left-1/2 -translate-x-1/2 -rotate-6 max-w-full h-auto object-contain pointer-events-none"
+                    className="absolute z-0 -top-8 sm:-top-12 left-1/2 -translate-x-1/2 -rotate-6 max-w-full h-auto object-contain pointer-events-none mix-blend-screen"
                     style={{
+                      mixBlendMode: "screen",
                       maskImage: "linear-gradient(to bottom, black 50%, transparent 98%)",
                       WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 98%)"
                     }}

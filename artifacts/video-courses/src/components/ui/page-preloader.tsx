@@ -12,9 +12,10 @@ import { useEffect, useState } from "react";
  *  - Reduced mobile background blur radius to avoid VRAM bottleneck
  */
 export function PagePreloader({ duration = 1100 }: { duration?: number }) {
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
   const [progress, setProgress] = useState(0);
   const [hidden, setHidden] = useState(false);
-  const [removed, setRemoved] = useState(false);
+  const [removed, setRemoved] = useState(isMobile);
 
   const dismiss = () => {
     setHidden(true);
@@ -22,9 +23,11 @@ export function PagePreloader({ duration = 1100 }: { duration?: number }) {
   };
 
   useEffect(() => {
-    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
-    const effectiveDuration = isMobile ? 600 : duration;
-    const intervalTime = isMobile ? 30 : 25;
+    // Completely disable preloader on mobile phones
+    if (isMobile) return;
+
+    const effectiveDuration = duration;
+    const intervalTime = 25;
     const steps = effectiveDuration / intervalTime;
     let currentStep = 0;
 
@@ -38,14 +41,14 @@ export function PagePreloader({ duration = 1100 }: { duration?: number }) {
       if (currentStep >= steps) {
         clearInterval(timer);
         setTimeout(() => setHidden(true), 60);
-        setTimeout(() => setRemoved(true), isMobile ? 350 : 500);
+        setTimeout(() => setRemoved(true), 500);
       }
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, [duration]);
+  }, [duration, isMobile]);
 
-  if (removed) return null;
+  if (removed || isMobile) return null;
 
   return (
     <div
