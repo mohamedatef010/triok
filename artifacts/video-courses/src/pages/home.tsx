@@ -811,6 +811,13 @@ export function HomePage() {
           transition: transform 0.1s linear;
           backface-visibility: hidden;
         }
+        @media (max-width: 768px) {
+          .film-grain { display: none !important; }
+          .magic-float { will-change: auto !important; }
+          .hero-img-container { will-change: auto !important; transform: none !important; }
+          .parallax-layer { will-change: auto !important; transform: none !important; }
+          .hero-section { perspective: none !important; }
+        }
         @media (max-width: 1023px) {
           .mobile-hero-img-mask {
             -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 55%, rgba(0,0,0,0.5) 78%, rgba(0,0,0,0) 98%);

@@ -11,7 +11,14 @@ export function useScrollReveal() {
   const [location] = useLocation();
 
   useEffect(() => {
-    // Eager margin on top/bottom so elements reveal just before scrolling into view
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+
+    if (isMobile) {
+      document.querySelectorAll(".sr").forEach((el) => el.classList.add("sr-visible"));
+      return;
+    }
+
+    // Eager margin on top/bottom so elements reveal just before scrolling into view on desktop/tablet
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {

@@ -938,12 +938,33 @@ button {
   transition-delay: 800ms;
 }
 
-/* Mobile & Touch Performance Boost (60 FPS Smooth Scroll & Instant Reveal) */
+/* Mobile & Touch Performance Boost (60 FPS Smooth Scroll & Instant Native Rendering) */
 @media (max-width: 768px) {
-  .sr {
+  .sr,
+  .sr-fade-up,
+  .sr-fade-left,
+  .sr-fade-right,
+  .sr-fade-down,
+  .sr-blur,
+  .sr-clip,
+  .sr-scale,
+  .sr-card,
+  .hero-anim,
+  .hero-anim-up,
+  .hero-anim-left,
+  .hero-anim-right,
+  .hero-anim-down,
+  .hero-anim-zoom,
+  .hero-chip-entry {
+    opacity: 1 !important;
     filter: none !important;
     transform: none !important;
-    transition: opacity 0.35s ease-out !important;
+    clip-path: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+    transform-style: flat !important;
   }
   .sr.sr-visible {
     opacity: 1 !important;

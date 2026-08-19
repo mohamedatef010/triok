@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,34 @@ const navItems = [
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
+    if (typeof window !== "undefined") {
+      return Boolean(localStorage.getItem("admin_token"));
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
+    if (!token) {
+      setIsAuthenticated(false);
+      setLocation("/admm");
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [location, setLocation]);
+
+  if (isAuthenticated === false || isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold">Проверка авторизации...</span>
+        </div>
+      </div>
+    );
+  }
 
   const SidebarContent = () => (
     <>

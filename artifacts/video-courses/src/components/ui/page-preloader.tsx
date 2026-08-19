@@ -5,41 +5,40 @@ import { useEffect, useState } from "react";
  * Features an ultra-premium logo assembly & glow reveal animation
  * matching the user's custom brand logo (МБ / Максим Берестнев).
  *
- * Fixes:
- *  - Image flicker: removed animate-ping particles, image is immediately visible
- *  - Text disappearing: all text uses stable opacity-based animation (no flicker)
- *  - Fast open: duration reduced, preloader exits with a gentle fade+scale (not slide-up)
- *  - Smooth transition: soft curtain fade-out before site appears
+ * Mobile Performance Optimizations:
+ *  - Removed filter: blur animations inside keyframes (eliminates GPU raster stalls & mobile flicker)
+ *  - Snappy 600ms load on mobile, smooth 1100ms on desktop
+ *  - Uses pure hardware-accelerated opacity & transform
+ *  - Reduced mobile background blur radius to avoid VRAM bottleneck
  */
-export function PagePreloader({ duration = 1200 }: { duration?: number }) {
+export function PagePreloader({ duration = 1100 }: { duration?: number }) {
   const [progress, setProgress] = useState(0);
   const [hidden, setHidden] = useState(false);
   const [removed, setRemoved] = useState(false);
 
   const dismiss = () => {
     setHidden(true);
-    setTimeout(() => setRemoved(true), 400);
+    setTimeout(() => setRemoved(true), 300);
   };
 
   useEffect(() => {
-    // Fast duration on mobile
-    const effectiveDuration = typeof window !== "undefined" && window.innerWidth < 768 ? Math.min(duration, 800) : duration;
-    const intervalTime = 20;
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+    const effectiveDuration = isMobile ? 600 : duration;
+    const intervalTime = isMobile ? 30 : 25;
     const steps = effectiveDuration / intervalTime;
     let currentStep = 0;
 
     const timer = setInterval(() => {
       currentStep += 1;
-      // Ease-out curve: fast at start, slows near 100%
       const ratio = currentStep / steps;
-      const eased = 1 - Math.pow(1 - ratio, 2.5);
+      const eased = 1 - Math.pow(1 - ratio, 2.2);
       const nextProgress = Math.min(100, Math.round(eased * 100));
       setProgress(nextProgress);
 
       if (currentStep >= steps) {
         clearInterval(timer);
-        setTimeout(() => setHidden(true), 80);
-        setTimeout(() => setRemoved(true), 600);
+        setTimeout(() => setHidden(true), 60);
+        setTimeout(() => setRemoved(true), isMobile ? 350 : 500);
       }
     }, intervalTime);
 
@@ -59,15 +58,15 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
       <div className="absolute inset-0 overflow-hidden bg-[#05070b]">
 
         {/* Large atmospheric glow — static, no flicker */}
-        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/[0.03] blur-[150px]" />
+        <div className="absolute left-1/2 top-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/[0.03] blur-[80px] md:blur-[150px]" />
 
-        {/* Ambient lights — use CSS animation not Tailwind animate-pulse to avoid reflow */}
+        {/* Ambient lights */}
         <div
-          className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full bg-cyan-500/[0.055] blur-[150px]"
+          className="absolute -left-40 top-1/4 h-[400px] w-[400px] md:h-[500px] md:w-[500px] rounded-full bg-cyan-500/[0.055] blur-[80px] md:blur-[150px]"
           style={{ animation: "plrAmbient 5s ease-in-out infinite alternate" }}
         />
         <div
-          className="absolute -right-40 bottom-1/4 h-[500px] w-[500px] rounded-full bg-amber-500/[0.045] blur-[150px]"
+          className="absolute -right-40 bottom-1/4 h-[400px] w-[400px] md:h-[500px] md:w-[500px] rounded-full bg-amber-500/[0.045] blur-[80px] md:blur-[150px]"
           style={{ animation: "plrAmbient 6s ease-in-out 1.5s infinite alternate-reverse" }}
         />
 
@@ -87,7 +86,7 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
 
         {/* Subtle scan line */}
         <div
-          className="absolute left-0 h-px w-full bg-gradient-to-r from-transparent via-white/8 to-transparent"
+          className="absolute left-0 h-px w-full bg-gradient-to-r from-transparent via-white/8 to-transparent hidden md:block"
           style={{ animation: "preloaderScan 3s linear infinite" }}
         />
 
@@ -102,50 +101,49 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
 
         {/* Small top label */}
         <div
-          className="mb-10 flex items-center gap-4"
-          style={{ animation: "plrFadeUp 0.6s cubic-bezier(.16,1,.3,1) 0.1s both", opacity: 0 }}
+          className="mb-8 md:mb-10 flex items-center gap-4"
+          style={{ animation: "plrFadeUp 0.5s cubic-bezier(.16,1,.3,1) 0.05s both", opacity: 0 }}
         >
-          <div className="h-px w-12 bg-gradient-to-r from-transparent to-cyan-400/50" />
+          <div className="h-px w-10 md:w-12 bg-gradient-to-r from-transparent to-cyan-400/50" />
           <span className="text-[9px] font-bold uppercase tracking-[0.45em] text-slate-400">
             ФОКУСЫ • ТРЮКИ • СЕКРЕТЫ
           </span>
-          <div className="h-px w-12 bg-gradient-to-l from-transparent to-cyan-400/50" />
+          <div className="h-px w-10 md:w-12 bg-gradient-to-l from-transparent to-cyan-400/50" />
         </div>
 
         {/* Main logo stage */}
-        <div className="relative" style={{ animation: "plrFadeUp 0.7s cubic-bezier(.16,1,.3,1) both", opacity: 0 }}>
+        <div className="relative" style={{ animation: "plrFadeUp 0.6s cubic-bezier(.16,1,.3,1) both", opacity: 0 }}>
 
           {/* Backlight */}
-          <div className="absolute left-1/2 top-1/2 h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/[0.07] blur-[90px]" />
+          <div className="absolute left-1/2 top-1/2 h-[220px] w-[220px] md:h-[260px] md:w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-400/[0.07] blur-[50px] md:blur-[90px]" />
 
           {/* Rotating light accents */}
           <div
-            className="absolute -inset-10 opacity-40"
+            className="absolute -inset-8 md:-inset-10 opacity-40 hidden md:block"
             style={{ animation: "preloaderRotate 12s linear infinite" }}
           >
             <div className="absolute left-1/2 top-0 h-16 w-px -translate-x-1/2 bg-gradient-to-b from-cyan-300/50 to-transparent" />
             <div className="absolute bottom-0 left-1/2 h-16 w-px -translate-x-1/2 bg-gradient-to-t from-amber-300/40 to-transparent" />
           </div>
 
-          {/* Logo — stable, no flicker */}
+          {/* Logo — crisp, hardware-accelerated, no flicker */}
           <div className="relative z-10">
             <img
               src="/repload.webp"
               alt="Logo"
               className="preloader-logo-ring"
               style={{
-                width: 250,
-                height: 250,
+                width: 230,
+                height: 230,
                 objectFit: "contain",
-                willChange: "transform, filter",
-                filter:
-                  "drop-shadow(0 0 25px rgba(34,211,238,0.22)) drop-shadow(0 0 55px rgba(34,211,238,0.1))",
-                animation: "preloaderLogoReveal 1s cubic-bezier(.16,1,.3,1) both",
+                willChange: "transform, opacity",
+                filter: "drop-shadow(0 0 20px rgba(34,211,238,0.22))",
+                animation: "preloaderLogoReveal 0.8s cubic-bezier(.16,1,.3,1) both",
               }}
             />
           </div>
 
-          {/* Glowing dots — stable opacity (no animate-ping which causes flicker) */}
+          {/* Glowing dots */}
           <span
             className="absolute -right-4 top-8 h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.9)]"
             style={{ animation: "plrDot 2.4s ease-in-out infinite" }}
@@ -162,10 +160,10 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
 
         {/* Brand information */}
         <div
-          className="mt-8 text-center"
-          style={{ animation: "plrFadeUp 0.7s cubic-bezier(.16,1,.3,1) 0.25s both", opacity: 0 }}
+          className="mt-6 md:mt-8 text-center"
+          style={{ animation: "plrFadeUp 0.6s cubic-bezier(.16,1,.3,1) 0.15s both", opacity: 0 }}
         >
-          <div className="mb-3 text-[10px] font-bold uppercase tracking-[0.5em] text-amber-400/80">
+          <div className="mb-2.5 text-[10px] font-bold uppercase tracking-[0.5em] text-amber-400/80">
             Максим Берестнев
           </div>
 
@@ -176,8 +174,8 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
 
         {/* Loading section */}
         <div
-          className="mt-12 w-full max-w-[320px]"
-          style={{ animation: "plrFadeUp 0.7s cubic-bezier(.16,1,.3,1) 0.4s both", opacity: 0 }}
+          className="mt-10 md:mt-12 w-full max-w-[300px] md:max-w-[320px]"
+          style={{ animation: "plrFadeUp 0.6s cubic-bezier(.16,1,.3,1) 0.25s both", opacity: 0 }}
         >
           <div className="mb-3 flex items-end justify-between">
             <span className="text-[8px] font-bold uppercase tracking-[0.35em] text-slate-500">
@@ -194,7 +192,7 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
               className="absolute left-0 top-0 h-full bg-gradient-to-r from-cyan-400 via-white to-amber-400 transition-[width] duration-75"
               style={{
                 width: `${progress}%`,
-                boxShadow: "0 0 10px rgba(34,211,238,0.6), 0 0 22px rgba(34,211,238,0.22)",
+                boxShadow: "0 0 10px rgba(34,211,238,0.6)",
               }}
             />
             <div
@@ -217,8 +215,8 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
       {/* Animation styles */}
       <style>{`
         @keyframes plrFadeUp {
-          from { opacity: 0; transform: translateY(16px); filter: blur(6px); }
-          to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes plrAmbient {
@@ -227,37 +225,35 @@ export function PagePreloader({ duration = 1200 }: { duration?: number }) {
         }
 
         @keyframes plrDot {
-          0%,100% { opacity: 0.5; transform: scale(1);   }
+          0%,100% { opacity: 0.5; transform: scale(1); }
           50%      { opacity: 1;   transform: scale(1.35); }
         }
 
         @keyframes preloaderLogoReveal {
           0% {
             opacity: 0;
-            transform: scale(0.78) translateY(14px);
-            filter: blur(10px) drop-shadow(0 0 0 transparent);
+            transform: scale(0.88) translateY(8px);
           }
-          65% {
+          70% {
             opacity: 1;
-            transform: scale(1.03) translateY(0);
+            transform: scale(1.02) translateY(0);
           }
           100% {
             opacity: 1;
             transform: scale(1) translateY(0);
-            filter: blur(0) drop-shadow(0 0 25px rgba(34,211,238,0.22)) drop-shadow(0 0 55px rgba(34,211,238,0.1));
           }
         }
 
         @keyframes preloaderRotate {
-          from { transform: rotate(0deg);   }
+          from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
 
         @keyframes preloaderScan {
-          0%   { top: 10%; opacity: 0;   }
+          0%   { top: 10%; opacity: 0; }
           10%  { opacity: 0.8; }
           90%  { opacity: 0.8; }
-          100% { top: 90%; opacity: 0;   }
+          100% { top: 90%; opacity: 0; }
         }
       `}</style>
     </div>
