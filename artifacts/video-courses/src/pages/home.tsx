@@ -1486,19 +1486,7 @@ export function HomePage() {
                           <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
                         </filter>
                       </defs>
-                      <path
-                        d="M 98.5,2 L 98.5,95 Q 98.5,98.5 95,98.5 L 5,98.5 Q 1.5,98.5 1.5,95 L 1.5,2"
-                        fill="none"
-                        pathLength={100}
-                        stroke="url(#badgeMedallionStrokeGrad)"
-                        strokeWidth="0.9"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeDasharray={100}
-                        strokeDashoffset={100 * (1 - badgeBorderProgress)}
-                        filter="url(#handDrawnDesktop)"
-                        className="transition-[stroke-dashoffset] duration-1200 [transition-timing-function:cubic-bezier(0.37,0,0.63,1)]"
-                      />
+                      
                     </svg>
 
                     {/* Bottom Golden Glow Flare */}
