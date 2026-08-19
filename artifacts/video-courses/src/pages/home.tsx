@@ -1413,7 +1413,7 @@ export function HomePage() {
 
               </div>
 
-              {/* Hero value guarantee luxury badge - Desktop only (Pure CSS & SVG with 3D Perspective) */}
+              {/* Hero value guarantee luxury badge - Desktop only (Pure CSS & SVG with 3D Perspective & Light/Dark Mode) */}
               <div
                 ref={desktopBadgeRef}
                 className="absolute bottom-6 lg:bottom-10 xl:bottom-14 left-1/2 -translate-x-1/2 z-40 hidden lg:block w-full max-w-[440px] xl:max-w-[480px] hero-anim-up [perspective:1000px]"
@@ -1423,13 +1423,13 @@ export function HomePage() {
                 }}
               >
                 <div className="relative pt-12 [transform:perspective(1000px)_rotateX(7deg)] transition-transform duration-300 hover:[transform:perspective(1000px)_rotateX(3deg)]">
-                  {/* Top Center Circular Medallion with Wand (Enlarged) */}
+                  {/* Top Center Circular Medallion with Wand (Enlarged & Adaptive) */}
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none">
                     {/* Golden ambient aura */}
-                    <div className="absolute -inset-3 rounded-full bg-amber-400/35 blur-xl pointer-events-none" />
+                    <div className="absolute -inset-3 rounded-full bg-amber-500/20 dark:bg-amber-400/35 blur-xl pointer-events-none" />
 
                     {/* Outer gold ring with animated border stroke on scroll */}
-                    <div className="relative h-24 w-24 xl:h-26 xl:w-26 rounded-full p-[2.5px] bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shadow-[0_0_28px_rgba(251,191,36,0.65)] flex items-center justify-center overflow-hidden">
+                    <div className="relative h-24 w-24 xl:h-26 xl:w-26 rounded-full p-[2.5px] bg-gradient-to-b from-amber-300 via-amber-500 to-amber-600 dark:from-amber-200 dark:via-amber-400 dark:to-amber-700 shadow-[0_0_20px_rgba(217,119,6,0.3)] dark:shadow-[0_0_28px_rgba(251,191,36,0.65)] flex items-center justify-center overflow-hidden">
                       {/* Animated Circle Golden Ring Stroke */}
                       <svg
                         className="absolute inset-0 w-full h-full pointer-events-none -rotate-90 z-20 overflow-visible"
@@ -1450,10 +1450,10 @@ export function HomePage() {
                         />
                       </svg>
 
-                      {/* Inner dark plate with gold rim */}
-                      <div className="relative w-full h-full rounded-full bg-gradient-to-b from-[#1b1d22] via-[#121316] to-[#0a0b0d] border border-amber-400/50 flex items-center justify-center overflow-hidden shadow-inner">
+                      {/* Inner plate with gold rim (Light: Crisp Pearl White / Dark: Metallic Obsidian) */}
+                      <div className="relative w-full h-full rounded-full bg-gradient-to-b from-white via-[#faf8f5] to-[#f3ede3] dark:from-[#1b1d22] dark:via-[#121316] dark:to-[#0a0b0d] border border-amber-400/60 dark:border-amber-400/50 flex items-center justify-center overflow-hidden shadow-inner">
                         {/* Radial spotlight inside circle */}
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.3),transparent_70%)]" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(245,158,11,0.2),transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.3),transparent_70%)]" />
                         <img
                           src="/rtick.webp"
                           alt="magic wand"
@@ -1465,11 +1465,11 @@ export function HomePage() {
                     </div>
                   </div>
 
-                  {/* Main Card Body (Gold gradient outer border + dark metallic core + 3D outward flare) */}
-                  <div className="relative rounded-3xl p-[2px] bg-gradient-to-b from-amber-300/90 via-amber-500/45 to-amber-700/90 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_30px_rgba(251,191,36,0.22)]">
-                    {/* Animated Gold Perimeter Tracing Line on Scroll */}
+                  {/* Main Card Body (Gold gradient outer border + light/dark core + 3D outward flare) */}
+                  <div className="relative rounded-3xl p-[2px] bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 dark:from-amber-300/90 dark:via-amber-500/45 dark:to-amber-700/90 shadow-[0_16px_40px_rgba(217,119,6,0.16),0_0_20px_rgba(251,191,36,0.12)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_30px_rgba(251,191,36,0.22)]">
+                    {/* Animated Gold Border — thin hand-drawn style, U-shape (circle covers top) */}
                     <svg
-                      className="absolute inset-0 w-full h-full pointer-events-none rounded-3xl overflow-visible z-20"
+                      className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20"
                       viewBox="0 0 100 100"
                       preserveAspectRatio="none"
                     >
@@ -1480,47 +1480,49 @@ export function HomePage() {
                           <stop offset="60%" stopColor="#f59e0b" />
                           <stop offset="100%" stopColor="#ea580c" />
                         </linearGradient>
+                        {/* Subtle hand-drawn wobble filter */}
+                        <filter id="handDrawnDesktop" x="-5%" y="-5%" width="110%" height="110%">
+                          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="2" result="noise" />
+                          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+                        </filter>
                       </defs>
-                      <rect
-                        x="0.8"
-                        y="0.8"
-                        width="98.4"
-                        height="98.4"
-                        rx="6"
-                        ry="6"
+                      <path
+                        d="M 98.5,2 L 98.5,95 Q 98.5,98.5 95,98.5 L 5,98.5 Q 1.5,98.5 1.5,95 L 1.5,2"
                         fill="none"
                         pathLength={100}
                         stroke="url(#badgeMedallionStrokeGrad)"
-                        strokeWidth="1.8"
+                        strokeWidth="0.9"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         strokeDasharray={100}
                         strokeDashoffset={100 * (1 - badgeBorderProgress)}
-                        filter="drop-shadow(0 0 6px rgba(251,191,36,0.85))"
-                        className="transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                        filter="url(#handDrawnDesktop)"
+                        className="transition-[stroke-dashoffset] duration-1200 [transition-timing-function:cubic-bezier(0.37,0,0.63,1)]"
                       />
                     </svg>
 
                     {/* Bottom Golden Glow Flare */}
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-3 bg-amber-400/80 blur-sm rounded-full pointer-events-none" />
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-3 bg-amber-500/50 dark:bg-amber-400/80 blur-sm rounded-full pointer-events-none" />
 
-                    {/* Inner Dark Metallic Plate */}
-                    <div className="relative rounded-[22px] bg-gradient-to-b from-[#1a1c22] via-[#121316] to-[#0b0c0e] border border-amber-400/20 px-8 pt-14 pb-4 overflow-hidden select-text">
+                    {/* Inner Plate (Light: Luxury White Glass / Dark: Obsidian Metallic) */}
+                    <div className="relative rounded-[22px] bg-gradient-to-b from-white via-[#fcfbf9] to-[#f6f2ea] dark:from-[#1a1c22] dark:via-[#121316] dark:to-[#0b0c0e] border border-amber-300/70 dark:border-amber-400/20 px-8 pt-14 pb-4 overflow-hidden select-text">
                       {/* Ambient corner sparkles */}
-                      <span className="absolute top-3 left-6 text-amber-300/80 text-[10px] pointer-events-none">✦</span>
-                      <span className="absolute top-3 right-6 text-amber-300/80 text-[10px] pointer-events-none">✦</span>
-                      <span className="absolute bottom-5 left-7 text-amber-300/45 text-[8px] pointer-events-none">✦</span>
-                      <span className="absolute bottom-5 right-7 text-amber-300/45 text-[8px] pointer-events-none">✦</span>
+                      <span className="absolute top-3 left-6 text-amber-500/80 dark:text-amber-300/80 text-[10px] pointer-events-none">✦</span>
+                      <span className="absolute top-3 right-6 text-amber-500/80 dark:text-amber-300/80 text-[10px] pointer-events-none">✦</span>
+                      <span className="absolute bottom-5 left-7 text-amber-500/50 dark:text-amber-300/45 text-[8px] pointer-events-none">✦</span>
+                      <span className="absolute bottom-5 right-7 text-amber-500/50 dark:text-amber-300/45 text-[8px] pointer-events-none">✦</span>
 
                       {/* Title with gold star (Selectable & dynamic from admin) */}
                       <div className="relative z-10 flex items-center justify-center gap-1.5 text-center">
-                        <span className="text-amber-400 text-sm xl:text-base font-black shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.75)] select-none">✦</span>
+                        <span className="text-amber-500 dark:text-amber-400 text-sm xl:text-base font-black shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.75)] select-none">✦</span>
                         <h3
-                          className="text-sm xl:text-base font-black text-white leading-tight tracking-tight drop-shadow select-text cursor-text"
+                          className="text-sm xl:text-base font-black text-slate-900 dark:text-white leading-tight tracking-tight drop-shadow select-text cursor-text"
                           style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
                         >
                           {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').includes(' за ') ? (
                             <>
                               <span>{hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[0]}</span>{" "}
-                              <span className="text-amber-400 font-black drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]">
+                              <span className="text-amber-600 dark:text-amber-400 font-black drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]">
                                 за {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[1]}
                               </span>
                             </>
@@ -1532,7 +1534,7 @@ export function HomePage() {
 
                       {/* Subtitle (Selectable & dynamic from admin) */}
                       <p
-                        className="relative z-10 text-[11px] xl:text-xs font-medium text-slate-300/90 mt-1.5 text-center leading-snug max-w-[92%] mx-auto select-text cursor-text"
+                        className="relative z-10 text-[11px] xl:text-xs font-medium text-slate-600 dark:text-slate-300/90 mt-1.5 text-center leading-snug max-w-[92%] mx-auto select-text cursor-text"
                         style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}
                       >
                         {hero.authorRole}
@@ -1540,9 +1542,9 @@ export function HomePage() {
 
                       {/* Bottom divider line with center diamond star */}
                       <div className="relative z-10 flex items-center justify-center mt-3 pt-0.5 pointer-events-none select-none">
-                        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[120px]" />
-                        <span className="text-amber-400 text-[9px] px-2 leading-none font-bold drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]">✦</span>
-                        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[120px]" />
+                        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/60 dark:via-amber-400/50 to-transparent flex-1 max-w-[120px]" />
+                        <span className="text-amber-600 dark:text-amber-400 text-[9px] px-2 leading-none font-bold drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]">✦</span>
+                        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/60 dark:via-amber-400/50 to-transparent flex-1 max-w-[120px]" />
                       </div>
                     </div>
                   </div>
@@ -1551,19 +1553,19 @@ export function HomePage() {
 
             </div>
 
-            {/* Hero value guarantee luxury badge — Mobile only (Pure CSS & SVG with 3D Perspective) */}
+            {/* Hero value guarantee luxury badge — Mobile only (Pure CSS & SVG with 3D Perspective & Light/Dark Mode) */}
             <div
               ref={mobileBadgeRef}
               className="flex lg:hidden flex-col items-center mt-2 mb-2 mx-auto w-full max-w-[340px] xs:max-w-[370px] [perspective:900px]"
               style={{ fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined }}
             >
               <div className="relative w-full pt-10 [transform:perspective(900px)_rotateX(6deg)]">
-                {/* Top Center Circular Medallion with Wand (Enlarged) */}
+                {/* Top Center Circular Medallion with Wand (Enlarged & Adaptive) */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none">
-                  <div className="absolute -inset-2.5 rounded-full bg-amber-400/30 blur-lg pointer-events-none" />
+                  <div className="absolute -inset-2.5 rounded-full bg-amber-500/20 dark:bg-amber-400/30 blur-lg pointer-events-none" />
 
                   {/* Outer gold ring with animated border stroke */}
-                  <div className="relative h-20 w-20 xs:h-22 xs:w-22 rounded-full p-[2px] bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shadow-[0_0_24px_rgba(251,191,36,0.6)] flex items-center justify-center overflow-hidden">
+                  <div className="relative h-20 w-20 xs:h-22 xs:w-22 rounded-full p-[2px] bg-gradient-to-b from-amber-300 via-amber-500 to-amber-600 dark:from-amber-200 dark:via-amber-400 dark:to-amber-700 shadow-[0_0_20px_rgba(217,119,6,0.3)] dark:shadow-[0_0_24px_rgba(251,191,36,0.6)] flex items-center justify-center overflow-hidden">
                     {/* Animated Circle Golden Ring Stroke */}
                     <svg
                       className="absolute inset-0 w-full h-full pointer-events-none -rotate-90 z-20 overflow-visible"
@@ -1584,8 +1586,8 @@ export function HomePage() {
                       />
                     </svg>
 
-                    <div className="relative w-full h-full rounded-full bg-gradient-to-b from-[#1b1d22] via-[#121316] to-[#0a0b0d] border border-amber-400/50 flex items-center justify-center overflow-hidden shadow-inner">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.3),transparent_70%)]" />
+                    <div className="relative w-full h-full rounded-full bg-gradient-to-b from-white via-[#faf8f5] to-[#f3ede3] dark:from-[#1b1d22] dark:via-[#121316] dark:to-[#0a0b0d] border border-amber-400/60 dark:border-amber-400/50 flex items-center justify-center overflow-hidden shadow-inner">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(245,158,11,0.2),transparent_70%)] dark:bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.3),transparent_70%)]" />
                       <img
                         src="/rtick.webp"
                         alt="magic wand"
@@ -1597,54 +1599,58 @@ export function HomePage() {
                   </div>
                 </div>
 
-                {/* Main Card Body */}
-                <div className="relative rounded-2xl xs:rounded-3xl p-[1.5px] bg-gradient-to-b from-amber-300/90 via-amber-500/45 to-amber-700/90 shadow-[0_15px_36px_rgba(0,0,0,0.8),0_0_24px_rgba(251,191,36,0.2)]">
-                  {/* Animated Gold Perimeter Tracing Line on Scroll */}
+                {/* Main Card Body (Light/Dark Mode Adaptive) */}
+                <div className="relative rounded-2xl xs:rounded-3xl p-[1.5px] bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 dark:from-amber-300/90 dark:via-amber-500/45 dark:to-amber-700/90 shadow-[0_12px_30px_rgba(217,119,6,0.16),0_0_18px_rgba(251,191,36,0.12)] dark:shadow-[0_15px_36px_rgba(0,0,0,0.8),0_0_24px_rgba(251,191,36,0.2)]">
+                  {/* Animated Gold Border — thin hand-drawn style, U-shape (circle covers top) */}
                   <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none rounded-2xl xs:rounded-3xl overflow-visible z-20"
+                    className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20"
                     viewBox="0 0 100 100"
                     preserveAspectRatio="none"
                   >
-                    <rect
-                      x="0.8"
-                      y="0.8"
-                      width="98.4"
-                      height="98.4"
-                      rx="6"
-                      ry="6"
+                    <defs>
+                      {/* Subtle hand-drawn wobble filter */}
+                      <filter id="handDrawnMobile" x="-5%" y="-5%" width="110%" height="110%">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="5" result="noise" />
+                        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
+                      </filter>
+                    </defs>
+                    <path
+                      d="M 98.5,2 L 98.5,95 Q 98.5,98.5 95,98.5 L 5,98.5 Q 1.5,98.5 1.5,95 L 1.5,2"
                       fill="none"
                       pathLength={100}
                       stroke="url(#badgeMedallionStrokeGrad)"
-                      strokeWidth="1.8"
+                      strokeWidth="0.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                       strokeDasharray={100}
                       strokeDashoffset={100 * (1 - badgeBorderProgress)}
-                      filter="drop-shadow(0 0 6px rgba(251,191,36,0.85))"
-                      className="transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                      filter="url(#handDrawnMobile)"
+                      className="transition-[stroke-dashoffset] duration-1200 [transition-timing-function:cubic-bezier(0.37,0,0.63,1)]"
                     />
                   </svg>
 
                   {/* Bottom Golden Glow Flare */}
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-28 h-2.5 bg-amber-400/80 blur-sm rounded-full pointer-events-none" />
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-28 h-2.5 bg-amber-500/50 dark:bg-amber-400/80 blur-sm rounded-full pointer-events-none" />
 
-                  {/* Inner Dark Metallic Plate */}
-                  <div className="relative rounded-[20px] bg-gradient-to-b from-[#1a1c22] via-[#121316] to-[#0b0c0e] border border-amber-400/20 px-5 xs:px-6 pt-12 xs:pt-13 pb-3.5 overflow-hidden select-text">
+                  {/* Inner Plate (Light: Luxury White Glass / Dark: Obsidian Metallic) */}
+                  <div className="relative rounded-[20px] bg-gradient-to-b from-white via-[#fcfbf9] to-[#f6f2ea] dark:from-[#1a1c22] dark:via-[#121316] dark:to-[#0b0c0e] border border-amber-300/70 dark:border-amber-400/20 px-5 xs:px-6 pt-12 xs:pt-13 pb-3.5 overflow-hidden select-text">
                     {/* Corner sparkles */}
-                    <span className="absolute top-2.5 left-5 text-amber-300/80 text-[9px] pointer-events-none">✦</span>
-                    <span className="absolute top-2.5 right-5 text-amber-300/80 text-[9px] pointer-events-none">✦</span>
-                    <span className="absolute bottom-4 left-6 text-amber-300/40 text-[7px] pointer-events-none">✦</span>
-                    <span className="absolute bottom-4 right-6 text-amber-300/40 text-[7px] pointer-events-none">✦</span>
+                    <span className="absolute top-2.5 left-5 text-amber-500/80 dark:text-amber-300/80 text-[9px] pointer-events-none">✦</span>
+                    <span className="absolute top-2.5 right-5 text-amber-500/80 dark:text-amber-300/80 text-[9px] pointer-events-none">✦</span>
+                    <span className="absolute bottom-4 left-6 text-amber-500/50 dark:text-amber-300/40 text-[7px] pointer-events-none">✦</span>
+                    <span className="absolute bottom-4 right-6 text-amber-500/50 dark:text-amber-300/40 text-[7px] pointer-events-none">✦</span>
 
                     {/* Title (Selectable & dynamic from admin) */}
                     <div className="relative z-10 flex items-center justify-center gap-1 text-center">
-                      <span className="text-amber-400 text-xs xs:text-sm font-black shrink-0 drop-shadow-[0_0_6px_rgba(251,191,36,0.75)] select-none">✦</span>
+                      <span className="text-amber-500 dark:text-amber-400 text-xs xs:text-sm font-black shrink-0 drop-shadow-[0_0_6px_rgba(251,191,36,0.75)] select-none">✦</span>
                       <h3
-                        className="text-xs xs:text-sm font-black text-white leading-tight tracking-tight drop-shadow truncate select-text cursor-text"
+                        className="text-xs xs:text-sm font-black text-slate-900 dark:text-white leading-tight tracking-tight drop-shadow truncate select-text cursor-text"
                         style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
                       >
                         {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').includes(' за ') ? (
                           <>
                             <span>{hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[0]}</span>{" "}
-                            <span className="text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
+                            <span className="text-amber-600 dark:text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
                               за {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[1]}
                             </span>
                           </>
@@ -1656,7 +1662,7 @@ export function HomePage() {
 
                     {/* Subtitle (Selectable & dynamic from admin) */}
                     <p
-                      className="relative z-10 text-[9px] xs:text-[10px] font-medium text-slate-300/90 mt-1 text-center leading-tight max-w-[94%] mx-auto line-clamp-2 select-text cursor-text"
+                      className="relative z-10 text-[9px] xs:text-[10px] font-medium text-slate-600 dark:text-slate-300/90 mt-1 text-center leading-tight max-w-[94%] mx-auto line-clamp-2 select-text cursor-text"
                       style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}
                     >
                       {hero.authorRole}
@@ -1664,9 +1670,9 @@ export function HomePage() {
 
                     {/* Bottom divider line with center diamond star */}
                     <div className="relative z-10 flex items-center justify-center mt-2.5 pt-0.5 pointer-events-none select-none">
-                      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[90px]" />
-                      <span className="text-amber-400 text-[8px] px-1.5 leading-none font-bold drop-shadow-[0_0_5px_rgba(251,191,36,0.7)]">✦</span>
-                      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[90px]" />
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/60 dark:via-amber-400/50 to-transparent flex-1 max-w-[90px]" />
+                      <span className="text-amber-600 dark:text-amber-400 text-[8px] px-1.5 leading-none font-bold drop-shadow-[0_0_5px_rgba(251,191,36,0.7)]">✦</span>
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/60 dark:via-amber-400/50 to-transparent flex-1 max-w-[90px]" />
                     </div>
                   </div>
                 </div>
