@@ -1049,14 +1049,9 @@ export function HomePage() {
                 <div className="absolute inset-0 w-full h-full hero-img-breath flex items-start justify-center -top-16 sm:-top-24 lg:-top-32">
                   {/* Natural size background image behind person's head */}
                   <img
-                    src="/n13.jpg"
+                    src="/n13.webp"
                     alt="Background text"
-                    className="absolute z-0 -top-8 sm:-top-12 left-1/2 -translate-x-1/2 -rotate-6 max-w-full h-auto object-contain pointer-events-none mix-blend-screen"
-                    style={{
-                      mixBlendMode: "screen",
-                      maskImage: "linear-gradient(to bottom, black 50%, transparent 98%)",
-                      WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 98%)"
-                    }}
+                    className="absolute z-0 -top-8 sm:-top-12 left-1/2 -translate-x-1/2 -rotate-6 max-w-full h-auto object-contain pointer-events-none"
                   />
                   <img
                     src={HERO_IMAGE_SRC}
