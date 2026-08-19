@@ -1137,7 +1137,7 @@ export function HomePage() {
 
                 {/* 2. Mid-Right: Experience → Video lessons */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[100px] right-[-12px] xs:right-[0px] z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
+                  className="float-chip hero-chip-entry absolute top-[100px] right-0 xs:right-2 z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
                   style={{
                     animation: `heroChipEntrance 0.95s 0.8s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.4s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
@@ -1167,7 +1167,7 @@ export function HomePage() {
 
                 {/* 3. Bottom-Right: Quick Start */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[260px] right-[-8px] xs:right-[15px] z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
+                  className="float-chip hero-chip-entry absolute top-[260px] right-0 xs:right-2 z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.05s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.7s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
@@ -1192,7 +1192,7 @@ export function HomePage() {
 
                 {/* 4. Bottom-Left: Free Trial */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[270px] left-[-8px] xs:left-[15px] z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
+                  className="float-chip hero-chip-entry absolute top-[270px] left-0 xs:left-2 z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.35s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 3s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
@@ -1214,7 +1214,7 @@ export function HomePage() {
 
                 {/* 5. Mid-Left: Community */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[110px] left-[-12px] xs:left-[0px] z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
+                  className="float-chip hero-chip-entry absolute top-[110px] left-0 xs:left-2 z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.2s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.85s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,

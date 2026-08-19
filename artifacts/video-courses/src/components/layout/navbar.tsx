@@ -64,8 +64,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [visible, setVisible] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<VideoResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -93,9 +91,6 @@ export function Navbar() {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setSearchOpen(false);
-      }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
-        setMobileMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -144,7 +139,7 @@ export function Navbar() {
   return (
     <header
       className={`
-        sticky top-0 z-50 w-full border-b transition-transform duration-300 ease-in-out
+        sticky top-0 z-[1000] w-full border-b transition-transform duration-300 ease-in-out
         ${visible ? "translate-y-0" : "-translate-y-full"}
         ${scrolled
           ? "bg-background/85 shadow-lg shadow-black/5 backdrop-blur-xl border-border/80"
@@ -165,7 +160,7 @@ export function Navbar() {
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[320px] sm:w-[400px] bg-background/95 backdrop-blur-2xl overflow-y-auto">
+            <SheetContent side="left" className="w-[320px] sm:w-[400px] bg-background/95 backdrop-blur-2xl overflow-y-auto z-[99999]">
               <SheetHeader>
                 <SheetTitle className="text-left pt-2 font-black text-2xl">
                   Меню
@@ -173,6 +168,28 @@ export function Navbar() {
               </SheetHeader>
               
               <div className="mt-8 flex flex-col gap-8 pb-10">
+                {/* Тема оформления (Mobile friendly) */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/60 border border-border/60">
+                  <div className="flex items-center gap-2.5">
+                    {theme === "dark" ? (
+                      <Moon className="h-5 w-5 text-amber-400" />
+                    ) : (
+                      <Sun className="h-5 w-5 text-amber-500" />
+                    )}
+                    <span className="text-sm font-bold">
+                      {theme === "dark" ? "Тёмная тема" : "Светлая тема"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleTheme}
+                    className="rounded-xl text-xs font-bold border-border/80"
+                  >
+                    {theme === "dark" ? "Светлая" : "Тёмная"}
+                  </Button>
+                </div>
+
                 {/* Верхнее меню */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Верхнее меню</h4>
@@ -256,7 +273,7 @@ export function Navbar() {
 
             {/* Expandable search overlay */}
             {searchOpen && (
-              <div className="absolute right-0 top-full mt-3 w-[min(380px,calc(100vw-2rem))] rounded-2xl bg-background/98 dark:bg-slate-950/98 border border-border/60 shadow-2xl shadow-black/20 backdrop-blur-xl overflow-hidden z-[100]">
+              <div className="absolute right-0 top-full mt-3 w-[min(380px,calc(100vw-2rem))] rounded-2xl bg-background/98 dark:bg-slate-950/98 border border-border/60 shadow-2xl shadow-black/20 backdrop-blur-xl overflow-hidden z-[1001]">
                 {/* Input row */}
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
                   <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -384,7 +401,7 @@ export function Navbar() {
                   }
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60 rounded-2xl shadow-xl border-border bg-popover/95 backdrop-blur-xl p-1.5">
+              <DropdownMenuContent align="end" className="w-60 rounded-2xl shadow-xl border-border bg-popover/95 backdrop-blur-xl p-1.5 z-[99999]">
                 {isAuthenticated ? (
                   <>
                     <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl mb-1">
@@ -424,34 +441,38 @@ export function Navbar() {
             </DropdownMenu>
           </div>
 
-          {/* ── Mobile-only: More button (⋯) ── */}
-          <div ref={mobileMenuRef} className="relative flex sm:hidden">
-            <Button
-              variant="ghost" size="icon"
-              className="nav-icon-btn rounded-full"
-              title="Ещё"
-              onClick={() => setMobileMenuOpen((v) => !v)}
-            >
-              <MoreHorizontal className="h-[19px] w-[19px]" />
-            </Button>
-
-            {mobileMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 rounded-2xl bg-background/98 dark:bg-slate-950/98 border border-border/60 shadow-2xl shadow-black/20 backdrop-blur-xl z-[100] p-2 flex flex-col gap-1 min-w-[180px]">
-                {/* Theme toggle */}
-                <button
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-sm font-semibold w-full text-left"
-                  onClick={() => { toggleTheme(); setMobileMenuOpen(false); }}
+          {/* ── Mobile-only: More button (⋯) with Radix DropdownMenu (Portaled, z-[99999]) ── */}
+          <div className="flex sm:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost" size="icon"
+                  className="nav-icon-btn rounded-full"
+                  title="Ещё"
                 >
-                  {theme === "dark"
-                    ? <Sun className="h-4 w-4 text-amber-400" />
-                    : <Moon className="h-4 w-4 text-slate-700" />
-                  }
-                  {theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-                </button>
+                  <MoreHorizontal className="h-[19px] w-[19px]" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={8} className="w-56 rounded-2xl shadow-2xl border-border bg-popover/98 backdrop-blur-2xl p-2 z-[99999]">
+                {/* Theme toggle */}
+                <DropdownMenuItem
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-semibold text-sm focus:bg-accent focus:text-accent-foreground"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    toggleTheme();
+                  }}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4 text-amber-400" />
+                  ) : (
+                    <Moon className="h-4 w-4 text-slate-700" />
+                  )}
+                  <span>{theme === "dark" ? "Светлая тема" : "Тёмная тема"}</span>
+                </DropdownMenuItem>
 
                 {/* Favorites */}
-                <Link href="/favorites" onClick={() => setMobileMenuOpen(false)}>
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-sm font-semibold">
+                <DropdownMenuItem asChild>
+                  <Link href="/favorites" className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-semibold text-sm w-full">
                     <div className="relative">
                       <Heart className="h-4 w-4" />
                       {favs.count > 0 && (
@@ -460,14 +481,14 @@ export function Navbar() {
                         </span>
                       )}
                     </div>
-                    Избранное
+                    <span>Избранное</span>
                     {favs.count > 0 && <span className="ml-auto text-xs text-muted-foreground">{favs.count}</span>}
-                  </div>
-                </Link>
+                  </Link>
+                </DropdownMenuItem>
 
                 {/* Cart */}
-                <Link href="/cart" onClick={() => setMobileMenuOpen(false)}>
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-sm font-semibold">
+                <DropdownMenuItem asChild>
+                  <Link href="/cart" className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-semibold text-sm w-full">
                     <div className="relative">
                       <ShoppingCart className="h-4 w-4" />
                       {cart.count > 0 && (
@@ -476,44 +497,48 @@ export function Navbar() {
                         </span>
                       )}
                     </div>
-                    Корзина
+                    <span>Корзина</span>
                     {cart.count > 0 && <span className="ml-auto text-xs text-muted-foreground">{cart.count}</span>}
-                  </div>
-                </Link>
+                  </Link>
+                </DropdownMenuItem>
 
-                <div className="my-1 border-t border-border/40" />
+                <DropdownMenuSeparator className="my-1" />
 
                 {/* User */}
                 {isAuthenticated ? (
                   <>
-                    <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-sm font-semibold">
-                        <Settings className="h-4 w-4" /> Личный кабинет
-                      </div>
-                    </Link>
-                    <button
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors text-sm font-semibold text-destructive w-full text-left"
-                      onClick={() => { logout(); setMobileMenuOpen(false); }}
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-semibold text-sm w-full">
+                        <Settings className="h-4 w-4" />
+                        <span>Личный кабинет</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-semibold text-sm text-destructive focus:text-destructive focus:bg-destructive/10"
+                      onSelect={() => logout()}
                     >
-                      <LogOut className="h-4 w-4" /> Выйти
-                    </button>
+                      <LogOut className="h-4 w-4" />
+                      <span>Выйти</span>
+                    </DropdownMenuItem>
                   </>
                 ) : (
                   <>
-                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-sm font-bold">
-                        <User className="h-4 w-4" /> Войти
-                      </div>
-                    </Link>
-                    <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-sm font-semibold">
-                        <Sparkles className="h-4 w-4" /> Регистрация
-                      </div>
-                    </Link>
+                    <DropdownMenuItem asChild>
+                      <Link href="/auth/login" className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-bold text-sm w-full">
+                        <User className="h-4 w-4" />
+                        <span>Войти</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/auth/register" className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer font-semibold text-sm w-full">
+                        <Sparkles className="h-4 w-4" />
+                        <span>Регистрация</span>
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
-              </div>
-            )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
         </div>

@@ -1001,10 +1001,10 @@ button {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Ensure all page-level containers don't overflow */
+  /* Ensure all page-level containers fit screen width without clipping dropdowns */
   .container {
     max-width: 100% !important;
-    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   /* Completely disable Preloader on mobile devices */
