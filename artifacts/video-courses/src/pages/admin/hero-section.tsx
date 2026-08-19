@@ -104,14 +104,14 @@ export const DEFAULT_HERO_DATA: HeroSectionData = {
   orbit4Subtitle: "Попробуй первый урок",
   orbit5Title: "Для всех",
   orbit5Desc: "от новичков до увлечённых магией",
-  authorName: "Максим Берестнев",
-  authorRole: "профессиональный фокусник и преподаватель",
-  stat1Value: "10+ лет",
-  stat1Label: "опыта в иллюзионном искусстве",
-  stat2Value: "Практика",
-  stat2Label: "фокусы, которые можно повторить",
-  stat3Value: "Пошагово",
-  stat3Label: "от простых движений до полноценного трюка",
+  authorName: "✨ Первый трюк за 15 минут",
+  authorRole: "понятный разбор секрета без сложного реквизита",
+  stat1Value: "15 минут на трюк",
+  stat1Label: "пошаговое объяснение и легкий старт с нуля",
+  stat2Value: "HD и 2 ракурса",
+  stat2Label: "крупные планы: вид со стороны и глазами фокусника",
+  stat3Value: "Доступ навсегда",
+  stat3Label: "учись 24/7 в удобном темпе с любого устройства",
   marqueeItemsText: "Фокусы, Иллюзии, Секреты магии, Карточные трюки, Ментальная магия, Пошаговые уроки, Мастер-классы, Удивляй друзей, Открывай мир иллюзий",
   styles: {},
 };
@@ -633,30 +633,33 @@ export function AdminHeroSection() {
         <CardHeader className="pb-4 border-b bg-muted/20">
           <CardTitle className="text-lg flex items-center gap-2">
             <Award className="h-5 w-5 text-amber-500" />
-            Автор и 3 блока статистики
+            Гарантийный бейдж и 3 блока преимуществ
           </CardTitle>
           <CardDescription>
-            Бейдж автора под постером и три карточки показателей с настройкой цветов и шрифтов
+            Иконка-бейдж с главным УТП под постером (заголовок + подзаголовок) и три карточки ценностного предложения с настройкой цветов и шрифтов
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6 space-y-6">
-          {/* Author Tagline */}
+          {/* Guarantee Pill (formerly Author Tagline) */}
           <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
+            <div className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-2">
+              ✨ Гарантийный бейдж под постером
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold">Имя автора</label>
+                <label className="text-xs font-semibold">Главный УТП (жирный текст)</label>
                 <Input
                   value={data.authorName}
                   onChange={(e) => setData({ ...data, authorName: e.target.value })}
-                  placeholder="Максим Берестнев"
+                  placeholder="✨ Первый трюк за 15 минут"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold">Должность / Роль автора</label>
+                <label className="text-xs font-semibold">Подзаголовок бейджа</label>
                 <Input
                   value={data.authorRole}
                   onChange={(e) => setData({ ...data, authorRole: e.target.value })}
-                  placeholder="профессиональный фокусник и преподаватель"
+                  placeholder="понятный разбор секрета без сложного реквизита"
                 />
               </div>
             </div>
@@ -672,53 +675,53 @@ export function AdminHeroSection() {
           {/* Stats Bar */}
           <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
             <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
-              Три карточки статистики
+              Три карточки преимуществ (внизу Hero)
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 rounded-lg border bg-background space-y-1.5">
-                <label className="text-[11px] font-semibold text-amber-600">Статистика 1</label>
+                <label className="text-[11px] font-semibold text-amber-600">⚡ Карточка 1 — Заголовок</label>
                 <Input
                   value={data.stat1Value}
                   onChange={(e) => setData({ ...data, stat1Value: e.target.value })}
-                  placeholder="10+ лет"
+                  placeholder="15 минут на трюк"
                   className="font-bold"
                 />
                 <Input
                   value={data.stat1Label}
                   onChange={(e) => setData({ ...data, stat1Label: e.target.value })}
-                  placeholder="опыта в иллюзионном искусстве"
+                  placeholder="пошаговое объяснение и легкий старт с нуля"
                   className="text-xs"
                 />
               </div>
 
               <div className="p-3 rounded-lg border bg-background space-y-1.5">
-                <label className="text-[11px] font-semibold text-amber-600">Статистика 2</label>
+                <label className="text-[11px] font-semibold text-amber-600">🎥 Карточка 2 — Заголовок</label>
                 <Input
                   value={data.stat2Value}
                   onChange={(e) => setData({ ...data, stat2Value: e.target.value })}
-                  placeholder="Практика"
+                  placeholder="HD и 2 ракурса"
                   className="font-bold"
                 />
                 <Input
                   value={data.stat2Label}
                   onChange={(e) => setData({ ...data, stat2Label: e.target.value })}
-                  placeholder="фокусы, которые можно повторить"
+                  placeholder="крупные планы: вид со стороны и глазами фокусника"
                   className="text-xs"
                 />
               </div>
 
               <div className="p-3 rounded-lg border bg-background space-y-1.5">
-                <label className="text-[11px] font-semibold text-amber-600">Статистика 3</label>
+                <label className="text-[11px] font-semibold text-amber-600">🛡 Карточка 3 — Заголовок</label>
                 <Input
                   value={data.stat3Value}
                   onChange={(e) => setData({ ...data, stat3Value: e.target.value })}
-                  placeholder="Пошагово"
+                  placeholder="Доступ навсегда"
                   className="font-bold"
                 />
                 <Input
                   value={data.stat3Label}
                   onChange={(e) => setData({ ...data, stat3Label: e.target.value })}
-                  placeholder="от простых движений..."
+                  placeholder="учись 24/7 в удобном темпе с любого устройства"
                   className="text-xs"
                 />
               </div>

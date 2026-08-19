@@ -25,6 +25,8 @@ import {
   Compass,
   ImageIcon,
   Film,
+  ShieldCheck,
+  Eye,
 } from "lucide-react";
 
 import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
@@ -34,8 +36,8 @@ import { EventsGallerySection } from "@/components/events-gallery-section";
 import { InteractiveMagicSurpriseModal } from "@/components/interactive-magic-surprise-modal";
 
 /* ── Visual assets ──
-   n1.jpg is served from the public folder as /n1.jpg */
-const HERO_IMAGE_SRC = "/n1.jpg";
+   n1.webp has crisp alpha transparency and fast loading */
+const HERO_IMAGE_SRC = "/n1.webp";
 const heroAvatar = "https://image.qwenlm.ai/public_source/eaa9d9e3-ae37-4110-9836-468770a4b316/12dd3bf23-8156-4de4-8ab4-1848d6d2d24b.png";
 const authorAvatar = "/n12.png";
 
@@ -415,14 +417,14 @@ export function HomePage() {
     orbit4Subtitle: heroSettings?.orbit4Subtitle || "Попробуй первый урок",
     orbit5Title: heroSettings?.orbit5Title || "Для всех",
     orbit5Desc: heroSettings?.orbit5Desc || "от новичков до увлечённых магией",
-    authorName: heroSettings?.authorName || "Максим Берестнев",
-    authorRole: heroSettings?.authorRole || "профессиональный фокусник и преподаватель",
-    stat1Value: heroSettings?.stat1Value || "10+ лет",
-    stat1Label: heroSettings?.stat1Label || "опыта в иллюзионном искусстве",
-    stat2Value: heroSettings?.stat2Value || "Практика",
-    stat2Label: heroSettings?.stat2Label || "фокусы, которые можно повторить",
-    stat3Value: heroSettings?.stat3Value || "Пошагово",
-    stat3Label: heroSettings?.stat3Label || "от простых движений до полноценного трюка",
+    authorName: heroSettings?.authorName || "✨ Первый трюк за 15 минут",
+    authorRole: heroSettings?.authorRole || "понятный разбор секрета без сложного реквизита",
+    stat1Value: heroSettings?.stat1Value || "15 минут на трюк",
+    stat1Label: heroSettings?.stat1Label || "пошаговое объяснение и легкий старт с нуля",
+    stat2Value: heroSettings?.stat2Value || "HD и 2 ракурса",
+    stat2Label: heroSettings?.stat2Label || "крупные планы: вид со стороны и глазами фокусника",
+    stat3Value: heroSettings?.stat3Value || "Доступ навсегда",
+    stat3Label: heroSettings?.stat3Label || "учись 24/7 в удобном темпе с любого устройства",
   };
 
   const dynamicMarquee = (heroSettings?.marqueeItemsText
@@ -430,9 +432,9 @@ export function HomePage() {
     : null) || MARQUEE_ITEMS;
 
   const dynamicStats = [
-    { icon: Award, value: hero.stat1Value, label: hero.stat1Label },
-    { icon: CheckCircle, value: hero.stat2Value, label: hero.stat2Label },
-    { icon: Clock, value: hero.stat3Value, label: hero.stat3Label },
+    { icon: Zap, value: hero.stat1Value, label: hero.stat1Label },
+    { icon: Video, value: hero.stat2Value, label: hero.stat2Label },
+    { icon: ShieldCheck, value: hero.stat3Value, label: hero.stat3Label },
   ];
 
   // Only show real videos added by admin via API
@@ -477,6 +479,80 @@ export function HomePage() {
 
   const handleHeroMouseLeave = useCallback(() => {
     parallaxTarget.current = { x: 0, y: 0 };
+  }, []);
+
+  /* ── Mobile Hero Orbit Line: interactive scroll-connected constellation ── */
+  const [mobileOrbitProgress, setMobileOrbitProgress] = useState(0);
+
+  useEffect(() => {
+    const el = heroImageRef.current;
+    if (!el) return;
+
+    let animTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setMobileOrbitProgress(0);
+            if (animTimer) clearTimeout(animTimer);
+            animTimer = setTimeout(() => {
+              setMobileOrbitProgress(1);
+            }, 120);
+          } else {
+            if (animTimer) clearTimeout(animTimer);
+            setMobileOrbitProgress(0);
+          }
+        });
+      },
+      {
+        threshold: 0.15,
+        rootMargin: "0px 0px -40px 0px",
+      }
+    );
+
+    observer.observe(el);
+    return () => {
+      if (animTimer) clearTimeout(animTimer);
+      observer.disconnect();
+    };
+  }, []);
+
+  /* ── Guarantee Badge Border Tracing on Scroll (Dedicated Observer) ── */
+  const desktopBadgeRef = useRef<HTMLDivElement | null>(null);
+  const mobileBadgeRef = useRef<HTMLDivElement | null>(null);
+  const [badgeBorderProgress, setBadgeBorderProgress] = useState(0);
+
+  useEffect(() => {
+    const targets = [desktopBadgeRef.current, mobileBadgeRef.current].filter(Boolean) as HTMLDivElement[];
+    if (targets.length === 0) return;
+
+    let badgeTimer: ReturnType<typeof setTimeout> | null = null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const isVisible = entries.some((e) => e.isIntersecting);
+        if (isVisible) {
+          setBadgeBorderProgress(0);
+          if (badgeTimer) clearTimeout(badgeTimer);
+          badgeTimer = setTimeout(() => {
+            setBadgeBorderProgress(1);
+          }, 150);
+        } else {
+          if (badgeTimer) clearTimeout(badgeTimer);
+          setBadgeBorderProgress(0);
+        }
+      },
+      {
+        threshold: 0.15,
+        rootMargin: "0px 0px -20px 0px",
+      }
+    );
+
+    targets.forEach((t) => observer.observe(t));
+    return () => {
+      if (badgeTimer) clearTimeout(badgeTimer);
+      observer.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -1108,26 +1184,122 @@ export function HomePage() {
                 {/* ── Outer Orbit Ring Line ── */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[290px] xs:w-[340px] sm:w-[540px] md:w-[640px] lg:w-[700px] h-[280px] xs:h-[320px] sm:h-[500px] md:h-[580px] lg:h-[620px] rounded-full border border-dashed border-amber-400/20 pointer-events-none slow-spin" />
 
+                {/* ── Mobile-Only Interactive Magic Constellation Connecting Line (Eye-Comfortable & Elegant) ── */}
+                <svg
+                  className="absolute inset-0 w-full h-full pointer-events-none z-20 block lg:hidden"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id="mobileOrbitGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.75" />
+                      <stop offset="25%" stopColor="#fbbf24" stopOpacity="0.9" />
+                      <stop offset="50%" stopColor="#fef08a" stopOpacity="0.85" />
+                      <stop offset="75%" stopColor="#fbbf24" stopOpacity="0.9" />
+                      <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.75" />
+                    </linearGradient>
+                    <linearGradient id="mobileOrbitGradLight" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#d97706" stopOpacity="0.65" />
+                      <stop offset="25%" stopColor="#b45309" stopOpacity="0.8" />
+                      <stop offset="50%" stopColor="#d97706" stopOpacity="0.75" />
+                      <stop offset="75%" stopColor="#b45309" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#d97706" stopOpacity="0.65" />
+                    </linearGradient>
+                    <filter id="mobileOrbitGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="0.8" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
+
+                  {/* Faint soft guide track */}
+                  <path
+                    d="M 20 28 C 12 45, 14 56, 22 68 C 30 82, 38 93, 50 93 C 62 93, 70 82, 78 66 C 86 54, 88 43, 80 26"
+                    fill="none"
+                    className="stroke-amber-500/15 dark:stroke-amber-400/10"
+                    strokeWidth="0.6"
+                    strokeDasharray="2 3"
+                  />
+
+                  {/* Active Glowing Drawn Line (Dark Mode) */}
+                  <path
+                    d="M 20 28 C 12 45, 14 56, 22 68 C 30 82, 38 93, 50 93 C 62 93, 70 82, 78 66 C 86 54, 88 43, 80 26"
+                    fill="none"
+                    pathLength={100}
+                    stroke="url(#mobileOrbitGradDark)"
+                    className="hidden dark:block transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                    strokeWidth="1.1"
+                    strokeDasharray={100}
+                    strokeDashoffset={100 * (1 - mobileOrbitProgress)}
+                    filter="url(#mobileOrbitGlow)"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Active Glowing Drawn Line (Light Mode) */}
+                  <path
+                    d="M 20 28 C 12 45, 14 56, 22 68 C 30 82, 38 93, 50 93 C 62 93, 70 82, 78 66 C 86 54, 88 43, 80 26"
+                    fill="none"
+                    pathLength={100}
+                    stroke="url(#mobileOrbitGradLight)"
+                    className="block dark:hidden transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                    strokeWidth="1.1"
+                    strokeDasharray={100}
+                    strokeDashoffset={100 * (1 - mobileOrbitProgress)}
+                    filter="url(#mobileOrbitGlow)"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Soft connecting node dots at each card with staggered delays */}
+                  {/* Node 1: Card 5 (Mid-Left) */}
+                  <g className="transition-all duration-400 ease-out delay-[120ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
+                    <circle cx="20" cy="28" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="20" cy="28" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                  </g>
+
+                  {/* Node 2: Card 4 (Bottom-Left) */}
+                  <g className="transition-all duration-400 ease-out delay-[320ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
+                    <circle cx="22" cy="68" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="22" cy="68" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                  </g>
+
+                  {/* Node 3: Card 1 (Bottom-Center) */}
+                  <g className="transition-all duration-400 ease-out delay-[520ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
+                    <circle cx="50" cy="93" r="1.6" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="50" cy="93" r="3.2" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                  </g>
+
+                  {/* Node 4: Card 3 (Bottom-Right) */}
+                  <g className="transition-all duration-400 ease-out delay-[720ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
+                    <circle cx="78" cy="66" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="78" cy="66" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                  </g>
+
+                  {/* Node 5: Card 2 (Mid-Right) */}
+                  <g className="transition-all duration-400 ease-out delay-[920ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
+                    <circle cx="80" cy="26" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="80" cy="26" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                  </g>
+                </svg>
+
                 {/* ── 5 BALANCED FLOATING ORBIT CARDS (dynamic texts) ── */}
 
                 {/* 1. Bottom-Center on mobile / Top-Right on desktop: "10+" */}
                 <div
-                  className="float-chip hero-chip-entry absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
+                  className="float-chip hero-chip-entry absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
                   style={{
                     animation: `heroChipEntrance 0.95s 0.5s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
-                  <Star className="h-3.5 w-3.5 xs:h-5 w-5 text-amber-400 fill-current" />
+                  <Star className="h-3.5 w-3.5 xs:h-5 w-5 text-amber-500 dark:text-amber-400 fill-current" />
                   <div className="leading-tight">
                     <div
-                      className="text-xs xs:text-sm font-black text-white"
+                      className="text-xs xs:text-sm font-black text-slate-900 dark:text-white"
                       style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                     >
                       {hero.orbit1Value}
                     </div>
                     <div
-                      className="text-[8px] xs:text-[10px] font-semibold text-slate-400"
+                      className="text-[8px] xs:text-[10px] font-semibold text-slate-500 dark:text-slate-400"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit1Label}
@@ -1137,27 +1309,27 @@ export function HomePage() {
 
                 {/* 2. Mid-Right: Experience → Video lessons */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[100px] right-0 xs:right-2 z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
+                  className="float-chip hero-chip-entry absolute top-[100px] right-0 xs:right-2 z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
                   style={{
                     animation: `heroChipEntrance 0.95s 0.8s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.4s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
                   <div
-                    className="text-xs xs:text-sm sm:text-base font-black text-amber-400 leading-none mb-0.5 xs:mb-1"
+                    className="text-xs xs:text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 leading-none mb-0.5 xs:mb-1"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit2Title}
                   </div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit2Subtitle}
                   </div>
                   {hero.orbit2Desc && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1"
+                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit2Desc}
@@ -1167,7 +1339,7 @@ export function HomePage() {
 
                 {/* 3. Bottom-Right: Quick Start */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[260px] right-0 xs:right-2 z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
+                  className="float-chip hero-chip-entry absolute top-[260px] right-0 xs:right-2 z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.05s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.7s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
@@ -1175,14 +1347,14 @@ export function HomePage() {
                 >
                   <div className="text-xs xs:text-sm mb-0.5 xs:mb-1">✨</div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit3Title}
                   </div>
                   {hero.orbit3Desc && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 xs:mt-1"
+                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit3Desc}
@@ -1192,20 +1364,20 @@ export function HomePage() {
 
                 {/* 4. Bottom-Left: Free Trial */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[270px] left-0 xs:left-2 z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
+                  className="float-chip hero-chip-entry absolute top-[270px] left-0 xs:left-2 z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.35s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 3s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
                   <div
-                    className="text-xs xs:text-sm sm:text-base font-black text-emerald-400 leading-none mb-0.5 xs:mb-1"
+                    className="text-xs xs:text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 leading-none mb-0.5 xs:mb-1"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit4Title}
                   </div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                   >
                     {hero.orbit4Subtitle}
@@ -1214,24 +1386,24 @@ export function HomePage() {
 
                 {/* 5. Mid-Left: Community */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[110px] left-0 xs:left-2 z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-[#151310]/95 backdrop-blur-xl border border-amber-500/30 shadow-xl p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
+                  className="float-chip hero-chip-entry absolute top-[110px] left-0 xs:left-2 z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.2s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.85s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
-                  <div className="h-6 w-6 xs:h-7 w-7 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-400 flex items-center justify-center mb-1 xs:mb-2 shrink-0">
+                  <div className="h-6 w-6 xs:h-7 w-7 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-1 xs:mb-2 shrink-0">
                     <Users className="h-3.5 w-3.5 xs:h-4 w-4" />
                   </div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-white leading-tight"
+                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit5Title}
                   </div>
                   {hero.orbit5Desc && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5"
+                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit5Desc}
@@ -1241,56 +1413,271 @@ export function HomePage() {
 
               </div>
 
-              {/* Author short info footer - Desktop only - Positioned at the bottom of the image to hide sharp edge */}
+              {/* Hero value guarantee luxury badge - Desktop only (Pure CSS & SVG with 3D Perspective) */}
               <div
-                className="absolute bottom-8 lg:bottom-12 xl:bottom-16 left-1/2 -translate-x-1/2 z-40 hidden lg:flex w-max items-center gap-3 py-2.5 pl-2.5 pr-5 bg-white/80 border border-slate-200/80 dark:bg-[#151310]/90 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl shadow-black/20 hero-anim-up"
+                ref={desktopBadgeRef}
+                className="absolute bottom-6 lg:bottom-10 xl:bottom-14 left-1/2 -translate-x-1/2 z-40 hidden lg:block w-full max-w-[440px] xl:max-w-[480px] hero-anim-up [perspective:1000px]"
                 style={{
                   animationDelay: "0.45s",
                   fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined,
                 }}
               >
-                <img src={heroAvatar} alt={hero.authorName} className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
-                <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
-                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                  <span
-                    className="font-extrabold text-slate-900 dark:text-white"
-                    style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
-                  >
-                    {hero.authorName}
-                  </span>{" "}
-                  <span style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}>
-                    — {hero.authorRole}
-                  </span>
-                </p>
+                <div className="relative pt-12 [transform:perspective(1000px)_rotateX(7deg)] transition-transform duration-300 hover:[transform:perspective(1000px)_rotateX(3deg)]">
+                  {/* Top Center Circular Medallion with Wand (Enlarged) */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none">
+                    {/* Golden ambient aura */}
+                    <div className="absolute -inset-3 rounded-full bg-amber-400/35 blur-xl pointer-events-none" />
+
+                    {/* Outer gold ring with animated border stroke on scroll */}
+                    <div className="relative h-24 w-24 xl:h-26 xl:w-26 rounded-full p-[2.5px] bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shadow-[0_0_28px_rgba(251,191,36,0.65)] flex items-center justify-center overflow-hidden">
+                      {/* Animated Circle Golden Ring Stroke */}
+                      <svg
+                        className="absolute inset-0 w-full h-full pointer-events-none -rotate-90 z-20 overflow-visible"
+                        viewBox="0 0 100 100"
+                      >
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="48"
+                          fill="none"
+                          pathLength={100}
+                          stroke="url(#badgeMedallionStrokeGrad)"
+                          strokeWidth="3.5"
+                          strokeDasharray={100}
+                          strokeDashoffset={100 * (1 - badgeBorderProgress)}
+                          filter="drop-shadow(0 0 6px rgba(251,191,36,0.9))"
+                          className="transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                        />
+                      </svg>
+
+                      {/* Inner dark plate with gold rim */}
+                      <div className="relative w-full h-full rounded-full bg-gradient-to-b from-[#1b1d22] via-[#121316] to-[#0a0b0d] border border-amber-400/50 flex items-center justify-center overflow-hidden shadow-inner">
+                        {/* Radial spotlight inside circle */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.3),transparent_70%)]" />
+                        <img
+                          src="/rtick.webp"
+                          alt="magic wand"
+                          className="relative h-18 w-18 xl:h-20 xl:w-20 object-contain drop-shadow-[0_4px_14px_rgba(251,191,36,0.8)] scale-110"
+                          loading="eager"
+                          decoding="async"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Card Body (Gold gradient outer border + dark metallic core + 3D outward flare) */}
+                  <div className="relative rounded-3xl p-[2px] bg-gradient-to-b from-amber-300/90 via-amber-500/45 to-amber-700/90 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_30px_rgba(251,191,36,0.22)]">
+                    {/* Animated Gold Perimeter Tracing Line on Scroll */}
+                    <svg
+                      className="absolute inset-0 w-full h-full pointer-events-none rounded-3xl overflow-visible z-20"
+                      viewBox="0 0 100 100"
+                      preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <linearGradient id="badgeMedallionStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#fef08a" />
+                          <stop offset="25%" stopColor="#fbbf24" />
+                          <stop offset="60%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#ea580c" />
+                        </linearGradient>
+                      </defs>
+                      <rect
+                        x="0.8"
+                        y="0.8"
+                        width="98.4"
+                        height="98.4"
+                        rx="6"
+                        ry="6"
+                        fill="none"
+                        pathLength={100}
+                        stroke="url(#badgeMedallionStrokeGrad)"
+                        strokeWidth="1.8"
+                        strokeDasharray={100}
+                        strokeDashoffset={100 * (1 - badgeBorderProgress)}
+                        filter="drop-shadow(0 0 6px rgba(251,191,36,0.85))"
+                        className="transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                      />
+                    </svg>
+
+                    {/* Bottom Golden Glow Flare */}
+                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-36 h-3 bg-amber-400/80 blur-sm rounded-full pointer-events-none" />
+
+                    {/* Inner Dark Metallic Plate */}
+                    <div className="relative rounded-[22px] bg-gradient-to-b from-[#1a1c22] via-[#121316] to-[#0b0c0e] border border-amber-400/20 px-8 pt-14 pb-4 overflow-hidden select-text">
+                      {/* Ambient corner sparkles */}
+                      <span className="absolute top-3 left-6 text-amber-300/80 text-[10px] pointer-events-none">✦</span>
+                      <span className="absolute top-3 right-6 text-amber-300/80 text-[10px] pointer-events-none">✦</span>
+                      <span className="absolute bottom-5 left-7 text-amber-300/45 text-[8px] pointer-events-none">✦</span>
+                      <span className="absolute bottom-5 right-7 text-amber-300/45 text-[8px] pointer-events-none">✦</span>
+
+                      {/* Title with gold star (Selectable & dynamic from admin) */}
+                      <div className="relative z-10 flex items-center justify-center gap-1.5 text-center">
+                        <span className="text-amber-400 text-sm xl:text-base font-black shrink-0 drop-shadow-[0_0_8px_rgba(251,191,36,0.75)] select-none">✦</span>
+                        <h3
+                          className="text-sm xl:text-base font-black text-white leading-tight tracking-tight drop-shadow select-text cursor-text"
+                          style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
+                        >
+                          {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').includes(' за ') ? (
+                            <>
+                              <span>{hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[0]}</span>{" "}
+                              <span className="text-amber-400 font-black drop-shadow-[0_0_10px_rgba(251,191,36,0.4)]">
+                                за {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[1]}
+                              </span>
+                            </>
+                          ) : (
+                            hero.authorName.replace(/^✨\s*/, '')
+                          )}
+                        </h3>
+                      </div>
+
+                      {/* Subtitle (Selectable & dynamic from admin) */}
+                      <p
+                        className="relative z-10 text-[11px] xl:text-xs font-medium text-slate-300/90 mt-1.5 text-center leading-snug max-w-[92%] mx-auto select-text cursor-text"
+                        style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}
+                      >
+                        {hero.authorRole}
+                      </p>
+
+                      {/* Bottom divider line with center diamond star */}
+                      <div className="relative z-10 flex items-center justify-center mt-3 pt-0.5 pointer-events-none select-none">
+                        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[120px]" />
+                        <span className="text-amber-400 text-[9px] px-2 leading-none font-bold drop-shadow-[0_0_6px_rgba(251,191,36,0.7)]">✦</span>
+                        <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[120px]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </div>
 
-            {/* Author card — mobile only, dynamic text */}
+            {/* Hero value guarantee luxury badge — Mobile only (Pure CSS & SVG with 3D Perspective) */}
             <div
-              className="flex lg:hidden items-center gap-3 py-2.5 pl-2.5 pr-5 mt-4 mx-auto bg-white/75 border border-slate-200/80 dark:bg-white/5 dark:border-white/10 rounded-2xl backdrop-blur-xl shadow-lg shadow-slate-200/50 dark:shadow-black/30 w-fit"
+              ref={mobileBadgeRef}
+              className="flex lg:hidden flex-col items-center mt-2 mb-2 mx-auto w-full max-w-[340px] xs:max-w-[370px] [perspective:900px]"
               style={{ fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined }}
             >
-              <img src={heroAvatar} alt={hero.authorName} className="h-10 w-10 rounded-xl object-cover border border-slate-200/80 dark:border-white/15 shadow-md" />
-              <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
-              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                <span
-                  className="font-extrabold text-slate-900 dark:text-white"
-                  style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
-                >
-                  {hero.authorName}
-                </span>{" "}
-                <span style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}>
-                  — {hero.authorRole}
-                </span>
-              </p>
+              <div className="relative w-full pt-10 [transform:perspective(900px)_rotateX(6deg)]">
+                {/* Top Center Circular Medallion with Wand (Enlarged) */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center pointer-events-none">
+                  <div className="absolute -inset-2.5 rounded-full bg-amber-400/30 blur-lg pointer-events-none" />
+
+                  {/* Outer gold ring with animated border stroke */}
+                  <div className="relative h-20 w-20 xs:h-22 xs:w-22 rounded-full p-[2px] bg-gradient-to-b from-amber-200 via-amber-400 to-amber-700 shadow-[0_0_24px_rgba(251,191,36,0.6)] flex items-center justify-center overflow-hidden">
+                    {/* Animated Circle Golden Ring Stroke */}
+                    <svg
+                      className="absolute inset-0 w-full h-full pointer-events-none -rotate-90 z-20 overflow-visible"
+                      viewBox="0 0 100 100"
+                    >
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="48"
+                        fill="none"
+                        pathLength={100}
+                        stroke="url(#badgeMedallionStrokeGrad)"
+                        strokeWidth="3.5"
+                        strokeDasharray={100}
+                        strokeDashoffset={100 * (1 - badgeBorderProgress)}
+                        filter="drop-shadow(0 0 6px rgba(251,191,36,0.9))"
+                        className="transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                      />
+                    </svg>
+
+                    <div className="relative w-full h-full rounded-full bg-gradient-to-b from-[#1b1d22] via-[#121316] to-[#0a0b0d] border border-amber-400/50 flex items-center justify-center overflow-hidden shadow-inner">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(251,191,36,0.3),transparent_70%)]" />
+                      <img
+                        src="/rtick.webp"
+                        alt="magic wand"
+                        className="relative h-15 w-15 xs:h-16 xs:w-16 object-contain drop-shadow-[0_3px_10px_rgba(251,191,36,0.75)] scale-110"
+                        loading="eager"
+                        decoding="async"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main Card Body */}
+                <div className="relative rounded-2xl xs:rounded-3xl p-[1.5px] bg-gradient-to-b from-amber-300/90 via-amber-500/45 to-amber-700/90 shadow-[0_15px_36px_rgba(0,0,0,0.8),0_0_24px_rgba(251,191,36,0.2)]">
+                  {/* Animated Gold Perimeter Tracing Line on Scroll */}
+                  <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none rounded-2xl xs:rounded-3xl overflow-visible z-20"
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                  >
+                    <rect
+                      x="0.8"
+                      y="0.8"
+                      width="98.4"
+                      height="98.4"
+                      rx="6"
+                      ry="6"
+                      fill="none"
+                      pathLength={100}
+                      stroke="url(#badgeMedallionStrokeGrad)"
+                      strokeWidth="1.8"
+                      strokeDasharray={100}
+                      strokeDashoffset={100 * (1 - badgeBorderProgress)}
+                      filter="drop-shadow(0 0 6px rgba(251,191,36,0.85))"
+                      className="transition-[stroke-dashoffset] duration-1000 cubic-bezier(0.16,1,0.3,1)"
+                    />
+                  </svg>
+
+                  {/* Bottom Golden Glow Flare */}
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-28 h-2.5 bg-amber-400/80 blur-sm rounded-full pointer-events-none" />
+
+                  {/* Inner Dark Metallic Plate */}
+                  <div className="relative rounded-[20px] bg-gradient-to-b from-[#1a1c22] via-[#121316] to-[#0b0c0e] border border-amber-400/20 px-5 xs:px-6 pt-12 xs:pt-13 pb-3.5 overflow-hidden select-text">
+                    {/* Corner sparkles */}
+                    <span className="absolute top-2.5 left-5 text-amber-300/80 text-[9px] pointer-events-none">✦</span>
+                    <span className="absolute top-2.5 right-5 text-amber-300/80 text-[9px] pointer-events-none">✦</span>
+                    <span className="absolute bottom-4 left-6 text-amber-300/40 text-[7px] pointer-events-none">✦</span>
+                    <span className="absolute bottom-4 right-6 text-amber-300/40 text-[7px] pointer-events-none">✦</span>
+
+                    {/* Title (Selectable & dynamic from admin) */}
+                    <div className="relative z-10 flex items-center justify-center gap-1 text-center">
+                      <span className="text-amber-400 text-xs xs:text-sm font-black shrink-0 drop-shadow-[0_0_6px_rgba(251,191,36,0.75)] select-none">✦</span>
+                      <h3
+                        className="text-xs xs:text-sm font-black text-white leading-tight tracking-tight drop-shadow truncate select-text cursor-text"
+                        style={{ color: heroSettings?.styles?.authorTagline?.color || undefined }}
+                      >
+                        {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').includes(' за ') ? (
+                          <>
+                            <span>{hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[0]}</span>{" "}
+                            <span className="text-amber-400 font-black drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
+                              за {hero.authorName.replace(/^✨\s*/, '').replace(/^✦\s*/, '').split(' за ')[1]}
+                            </span>
+                          </>
+                        ) : (
+                          hero.authorName.replace(/^✨\s*/, '')
+                        )}
+                      </h3>
+                    </div>
+
+                    {/* Subtitle (Selectable & dynamic from admin) */}
+                    <p
+                      className="relative z-10 text-[9px] xs:text-[10px] font-medium text-slate-300/90 mt-1 text-center leading-tight max-w-[94%] mx-auto line-clamp-2 select-text cursor-text"
+                      style={{ color: heroSettings?.styles?.authorTagline?.secondaryColor || undefined }}
+                    >
+                      {hero.authorRole}
+                    </p>
+
+                    {/* Bottom divider line with center diamond star */}
+                    <div className="relative z-10 flex items-center justify-center mt-2.5 pt-0.5 pointer-events-none select-none">
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[90px]" />
+                      <span className="text-amber-400 text-[8px] px-1.5 leading-none font-bold drop-shadow-[0_0_5px_rgba(251,191,36,0.7)]">✦</span>
+                      <div className="h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent flex-1 max-w-[90px]" />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
 
           {/* Core Stats bar - dynamic stats */}
           <div
-            className="relative z-30 mt-6 lg:-mt-24 grid grid-cols-1 md:grid-cols-3 border border-white/10 rounded-3xl bg-[#141210]/90 backdrop-blur-xl overflow-hidden shadow-xl shadow-black/40 hero-anim-zoom"
+            className="relative z-30 mt-6 lg:-mt-24 grid grid-cols-1 md:grid-cols-3 border border-slate-200/80 dark:border-white/10 rounded-3xl bg-white/90 dark:bg-[#141210]/90 backdrop-blur-xl overflow-hidden shadow-xl shadow-slate-200/60 dark:shadow-black/40 hero-anim-zoom"
             style={{
               animationDelay: "0.55s",
               fontFamily: heroSettings?.styles?.stats?.fontFamily || undefined,
@@ -1299,22 +1686,22 @@ export function HomePage() {
             {dynamicStats.map(({ icon: Icon, value, label }, index) => (
               <div
                 key={label + index}
-                className={`flex items-center gap-4 px-8 py-6 text-left transition-colors hover:bg-white/5
-                  ${index < 2 ? "border-b md:border-b-0 md:border-r border-white/10" : ""}
+                className={`flex items-center gap-4 px-8 py-6 text-left transition-colors hover:bg-amber-50/60 dark:hover:bg-white/5
+                  ${index < 2 ? "border-b md:border-b-0 md:border-r border-slate-200/80 dark:border-white/10" : ""}
                 `}
               >
-                <div className="h-12 w-12 rounded-2xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center shrink-0">
+                <div className="h-12 w-12 rounded-2xl bg-amber-400/10 text-amber-500 border border-amber-400/20 flex items-center justify-center shrink-0">
                   <Icon className="h-6 w-6" />
                 </div>
                 <div>
                   <div
-                    className="text-xl font-black text-white leading-tight"
+                    className="text-xl font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.stats?.color || undefined }}
                   >
                     {value}
                   </div>
                   <div
-                    className="text-xs font-semibold text-slate-400 mt-1"
+                    className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1"
                     style={{ color: heroSettings?.styles?.stats?.secondaryColor || undefined }}
                   >
                     {label}
@@ -1326,23 +1713,23 @@ export function HomePage() {
 
         </div>
 
-        {/* Dark blend zone: hides any poster overflow below the stats bar */}
-        <div className="absolute inset-x-0 bottom-12 h-44 bg-gradient-to-t from-[#08070a] via-[#08070a]/80 to-transparent pointer-events-none z-20" />
+        {/* Blend zone: hides any poster overflow below the stats bar */}
+        <div className="absolute inset-x-0 bottom-12 h-44 bg-gradient-to-t from-amber-50/95 via-stone-100/70 to-transparent dark:from-[#08070a] dark:via-[#08070a]/80 dark:to-transparent pointer-events-none z-20" />
 
-        {/* Marquee ticker (dark) - dynamic items */}
+        {/* Marquee ticker - light/dark adaptive */}
         <div
-          className="absolute bottom-0 inset-x-0 z-10 border-t border-white/10 bg-black/70 backdrop-blur-md py-3.5 overflow-hidden"
+          className="absolute bottom-0 inset-x-0 z-10 border-t border-slate-200/60 dark:border-white/10 bg-white/80 dark:bg-black/70 backdrop-blur-md py-3.5 overflow-hidden"
           style={{ fontFamily: heroSettings?.styles?.marquee?.fontFamily || undefined }}
         >
           <div className="marquee-track flex whitespace-nowrap items-center gap-10 w-max">
             {[...dynamicMarquee, ...dynamicMarquee].map((marqueeItem, marqueeIdx) => (
               <span
                 key={marqueeIdx}
-                className="flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-400"
+                className="flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400"
                 style={{ color: heroSettings?.styles?.marquee?.color || undefined }}
               >
                 {marqueeItem}
-                <span className="text-amber-500/80 text-sm">✦</span>
+                <span className="text-amber-500 dark:text-amber-500/80 text-sm">✦</span>
               </span>
             ))}
           </div>

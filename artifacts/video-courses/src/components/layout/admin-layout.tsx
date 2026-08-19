@@ -52,7 +52,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const SidebarContent = () => (
     <>
       <div className="h-16 flex items-center gap-3 px-4 font-bold text-white tracking-tight border-b border-slate-800 shrink-0">
-        <img src="/n13.jpg" alt="CMS Logo" className="h-9 w-auto max-w-[100px] object-contain shrink-0 filter drop-shadow" />
+        <img src="/n13.webp" alt="CMS Logo" className="h-9 w-auto max-w-[100px] object-contain shrink-0 filter drop-shadow" />
         <span className="bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent font-black text-sm tracking-wider">
           CMS АДМИН
         </span>

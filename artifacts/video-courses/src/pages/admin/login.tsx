@@ -38,7 +38,7 @@ export function AdminLogin() {
 
       <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-2xl transition-colors">
         <div className="flex flex-col items-center mb-8">
-          <img src="/n13.jpg" alt="CMS Logo" className="h-28 sm:h-32 w-auto max-w-[220px] object-contain mb-4 filter drop-shadow-xl" />
+          <img src="/n13.webp" alt="CMS Logo" className="h-28 sm:h-32 w-auto max-w-[220px] object-contain mb-4 filter drop-shadow-xl" />
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Панель управления CMS</h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Авторизация в системе управления</p>
         </div>
