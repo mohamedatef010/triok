@@ -1,4 +1,4 @@
-import { useState, useRef, Fragment, useEffect, useCallback } from "react";
+import { useState, useRef, Fragment, useEffect, useCallback, useMemo } from "react";
 import { useSEO } from "@/hooks/use-seo";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -227,20 +227,24 @@ function MagicFloatItem({ type, size }: { type: string; size: number }) {
   );
 }
 
+/* ── Stable dust particles (fixed seed so they never re-generate on re-render/scroll) ── */
+const DUST_PARTICLES_DESKTOP = Array.from({ length: 30 }, (_, i) => ({
+  id: i,
+  left: `${((i * 37 + 13) % 100)}%`,
+  top: `${((i * 53 + 7) % 100)}%`,
+  size: 1 + (i % 3) * 0.7,
+  duration: 8 + (i % 8) * 2,
+  delay: (i % 8),
+  opacity: 0.15 + (i % 4) * 0.06,
+}));
+const DUST_PARTICLES_MOBILE = DUST_PARTICLES_DESKTOP.slice(0, 0); // none on mobile — saves GPU
+
 /* ── Ambient Dust Particle Component ── */
 function DustParticles() {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  const particleCount = isMobile ? 8 : 30;
+  const particles = isMobile ? DUST_PARTICLES_MOBILE : DUST_PARTICLES_DESKTOP;
 
-  const particles = Array.from({ length: particleCount }, (_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    top: `${Math.random() * 100}%`,
-    size: 1 + Math.random() * 2,
-    duration: 8 + Math.random() * 16,
-    delay: Math.random() * 8,
-    opacity: 0.15 + Math.random() * 0.25,
-  }));
+  if (particles.length === 0) return null;
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -812,11 +816,47 @@ export function HomePage() {
           backface-visibility: hidden;
         }
         @media (max-width: 768px) {
+          /* ── Mobile Performance: disable all heavy GPU effects ── */
           .film-grain { display: none !important; }
-          .magic-float { will-change: auto !important; }
-          .hero-img-container { will-change: auto !important; transform: none !important; }
-          .parallax-layer { will-change: auto !important; transform: none !important; }
+          .magic-float { display: none !important; }
+          .dust-particle { display: none !important; }
+          .stage-beam { display: none !important; }
+          .light-pulse { animation: none !important; }
+          .slow-spin { animation: none !important; }
+          .slow-spin-reverse { animation: none !important; }
+          .btn-shine::after { display: none !important; }
+          .hero-img-breath { animation: none !important; }
+          .hero-img-container {
+            will-change: auto !important;
+            transform: none !important;
+            transition: none !important;
+          }
+          .parallax-layer {
+            will-change: auto !important;
+            transform: none !important;
+            transition: none !important;
+          }
           .hero-section { perspective: none !important; }
+          /* Keep entrance animations but remove filter:blur on mobile (very expensive) */
+          .hero-anim, .hero-anim-up, .hero-anim-left, .hero-anim-right, .hero-anim-down, .hero-anim-zoom {
+            animation-duration: 0.4s !important;
+          }
+          .hero-anim { animation-name: heroFadeUpMobile !important; }
+          .hero-anim-up { animation-name: heroFadeUpMobile !important; }
+          .hero-anim-left { animation-name: heroFadeUpMobile !important; }
+          .hero-anim-right { animation-name: heroFadeUpMobile !important; }
+          .hero-anim-down { animation-name: heroFadeUpMobile !important; }
+          .hero-anim-zoom { animation-name: heroFadeUpMobile !important; }
+          .hero-chip-entry { animation-duration: 0.35s !important; }
+          .float-chip.hero-chip-entry {
+            animation: heroFadeUpMobile 0.35s cubic-bezier(.16,1,.3,1) forwards,
+                       floatYAnim 6s ease-in-out 0.5s infinite !important;
+          }
+        }
+        /* Lightweight mobile entrance (no blur filter) */
+        @keyframes heroFadeUpMobile {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
         @media (max-width: 1023px) {
           .mobile-hero-img-mask {
@@ -1052,11 +1092,16 @@ export function HomePage() {
                     src="/n13.webp"
                     alt="Background text"
                     className="absolute z-0 -top-8 sm:-top-12 left-1/2 -translate-x-1/2 -rotate-6 max-w-full h-auto object-contain pointer-events-none"
+                    loading="eager"
+                    decoding="async"
                   />
                   <img
                     src={HERO_IMAGE_SRC}
                     alt={hero.authorName}
                     className="relative z-10 max-h-[110%] w-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] mobile-hero-img-mask"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
                   />
                 </div>
 

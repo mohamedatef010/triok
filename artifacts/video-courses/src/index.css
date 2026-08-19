@@ -940,6 +940,8 @@ button {
 
 /* Mobile & Touch Performance Boost (60 FPS Smooth Scroll & Instant Native Rendering) */
 @media (max-width: 768px) {
+  /* ── CRITICAL: all animated elements must be VISIBLE immediately on mobile ── */
+  /* When animation is disabled, opacity stays at its final value (1), not initial (0) */
   .sr,
   .sr-fade-up,
   .sr-fade-left,
@@ -948,14 +950,7 @@ button {
   .sr-blur,
   .sr-clip,
   .sr-scale,
-  .sr-card,
-  .hero-anim,
-  .hero-anim-up,
-  .hero-anim-left,
-  .hero-anim-right,
-  .hero-anim-down,
-  .hero-anim-zoom,
-  .hero-chip-entry {
+  .sr-card {
     opacity: 1 !important;
     filter: none !important;
     transform: none !important;
@@ -963,8 +958,33 @@ button {
     transition: none !important;
     animation: none !important;
     will-change: auto !important;
-    backface-visibility: visible !important;
-    transform-style: flat !important;
+  }
+  /* hero-anim classes: show immediately without blur/transform cost */
+  .hero-anim,
+  .hero-anim-up,
+  .hero-anim-left,
+  .hero-anim-right,
+  .hero-anim-down,
+  .hero-anim-zoom {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+  /* hero-chip-entry: show chips without entrance animation */
+  .hero-chip-entry {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    /* Keep float animation only (no entrance) */
+    animation: floatYAnim 6s ease-in-out infinite !important;
+    will-change: transform !important;
+  }
+  /* float-chip combined: just float, no entrance */
+  .float-chip.hero-chip-entry {
+    animation: floatYAnim 6s ease-in-out infinite !important;
+    opacity: 1 !important;
   }
   .sr.sr-visible {
     opacity: 1 !important;
@@ -977,6 +997,8 @@ button {
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
+    /* Smooth native scroll */
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Ensure all page-level containers don't overflow */
@@ -988,6 +1010,11 @@ button {
   /* Completely disable Preloader on mobile devices */
   #page-preloader {
     display: none !important;
+  }
+
+  /* content-visibility: speed up off-screen section paint on scroll-back */
+  section {
+    contain: layout style;
   }
 }
 
