@@ -84,6 +84,30 @@ export function EventsGallerySection() {
     setLightboxIndex((prev) => (prev === filteredPhotos.length - 1 ? 0 : (prev ?? 0) + 1));
   }, [lightboxIndex, filteredPhotos.length]);
 
+  // Lightbox touch-swipe navigation for mobile screens
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 45;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    if (isLeftSwipe) handleNext();
+    if (isRightSwipe) handlePrev();
+  };
+
   useEffect(() => {
     if (lightboxIndex === null) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -125,11 +149,10 @@ export function EventsGallerySection() {
             <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
               <button
                 onClick={() => setSelectedTag('all')}
-                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold tracking-wide transition-all ${
-                  selectedTag === 'all'
+                className={`px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold tracking-wide transition-all ${selectedTag === 'all'
                     ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/25 scale-105'
                     : 'bg-white dark:bg-[#14121a] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40'
-                }`}
+                  }`}
               >
                 Все фото ({photos.length})
               </button>
@@ -137,11 +160,10 @@ export function EventsGallerySection() {
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(tag)}
-                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold tracking-wide transition-all ${
-                    selectedTag.toLowerCase() === tag.toLowerCase()
+                  className={`px-4 py-2 rounded-full text-xs sm:text-sm font-extrabold tracking-wide transition-all ${selectedTag.toLowerCase() === tag.toLowerCase()
                       ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/25 scale-105'
                       : 'bg-white dark:bg-[#14121a] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40'
-                  }`}
+                    }`}
                 >
                   {tag}
                 </button>
@@ -247,19 +269,22 @@ export function EventsGallerySection() {
         )}
       </div>
 
-      {/* Fullscreen Interactive Lightbox Modal */}
+      {/* Fullscreen Interactive Lightbox Modal (Optimized for Mobile & Desktop) */}
       {lightboxIndex !== null && filteredPhotos[lightboxIndex] && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-6 animate-in fade-in duration-300 select-none"
           onClick={() => setLightboxIndex(null)}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
-          {/* Close Button */}
+          {/* Close Button - Responsive & Touch Friendly */}
           <button
             onClick={() => setLightboxIndex(null)}
-            className="absolute top-5 right-5 z-20 h-11 w-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md"
+            className="absolute top-3 right-3 sm:top-5 sm:right-5 z-30 h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-black/60 sm:bg-white/10 hover:bg-black/80 sm:hover:bg-white/20 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10 shadow-lg"
             aria-label="Закрыть"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
 
           {/* Navigation Buttons */}
@@ -270,80 +295,84 @@ export function EventsGallerySection() {
                   e.stopPropagation();
                   handlePrev();
                 }}
-                className="absolute left-4 z-20 h-12 w-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition backdrop-blur-md"
+                className="absolute left-2 sm:left-4 z-30 h-9 w-9 sm:h-12 sm:w-12 rounded-full bg-black/60 sm:bg-white/10 hover:bg-black/80 sm:hover:bg-white/25 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10 shadow-lg"
                 aria-label="Предыдущее фото"
               >
-                <ChevronLeft className="h-7 w-7" />
+                <ChevronLeft className="h-5 w-5 sm:h-7 sm:w-7" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleNext();
                 }}
-                className="absolute right-4 z-20 h-12 w-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition backdrop-blur-md"
+                className="absolute right-2 sm:right-4 z-30 h-9 w-9 sm:h-12 sm:w-12 rounded-full bg-black/60 sm:bg-white/10 hover:bg-black/80 sm:hover:bg-white/25 text-white flex items-center justify-center transition backdrop-blur-md border border-white/10 shadow-lg"
                 aria-label="Следующее фото"
               >
-                <ChevronRight className="h-7 w-7" />
+                <ChevronRight className="h-5 w-5 sm:h-7 sm:w-7" />
               </button>
             </>
           )}
 
           {/* Lightbox Main Box */}
           <div
-            className="relative max-w-5xl w-full max-h-[92vh] flex flex-col rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl"
+            className="relative max-w-5xl w-full max-h-[94dvh] sm:max-h-[92vh] flex flex-col rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950 border border-white/10 shadow-2xl my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Image View Area */}
-            <div className="relative flex-1 bg-black flex items-center justify-center min-h-[300px] max-h-[68vh] overflow-hidden">
+            <div className="relative flex-1 bg-black flex items-center justify-center min-h-[180px] xs:min-h-[220px] sm:min-h-[300px] max-h-[52dvh] sm:max-h-[68vh] p-1 sm:p-2 overflow-hidden">
               <img
                 src={filteredPhotos[lightboxIndex].imageUrl}
                 alt={filteredPhotos[lightboxIndex].title}
-                className="max-w-full max-h-[68vh] w-auto h-auto object-contain"
+                className="max-w-full max-h-[52dvh] sm:max-h-[68vh] w-auto h-auto object-contain rounded-lg sm:rounded-none"
               />
             </div>
 
             {/* Photo Metadata Footer */}
-            <div className="p-6 bg-slate-900 border-t border-white/10 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
+            <div className="p-3.5 sm:p-6 bg-slate-900/95 backdrop-blur-md border-t border-white/10 text-white flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 max-h-[40dvh] sm:max-h-none overflow-y-auto">
+              <div className="space-y-1 sm:space-y-1.5 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-3">
                   {filteredPhotos[lightboxIndex].tag && (
-                    <span className="px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] sm:text-xs font-bold">
                       {filteredPhotos[lightboxIndex].tag}
                     </span>
                   )}
                   {filteredPhotos[lightboxIndex].location && (
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-amber-400" />
-                      {filteredPhotos[lightboxIndex].location}
+                    <span className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-amber-400 shrink-0" />
+                      <span className="truncate">{filteredPhotos[lightboxIndex].location}</span>
                     </span>
                   )}
                   {filteredPhotos[lightboxIndex].eventDate && (
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-amber-400" />
-                      {filteredPhotos[lightboxIndex].eventDate}
+                    <span className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1">
+                      <Calendar className="h-3 w-3 text-amber-400 shrink-0" />
+                      <span>{filteredPhotos[lightboxIndex].eventDate}</span>
                     </span>
                   )}
                 </div>
 
-                <h3 className="text-xl font-bold">{filteredPhotos[lightboxIndex].title}</h3>
+                <h3 className="text-base sm:text-xl font-bold line-clamp-1 sm:line-clamp-none">
+                  {filteredPhotos[lightboxIndex].title}
+                </h3>
 
                 {filteredPhotos[lightboxIndex].description && (
-                  <p className="text-sm text-slate-300 leading-relaxed max-w-2xl">
+                  <p className="text-xs sm:text-sm text-slate-300/90 leading-relaxed max-w-2xl line-clamp-2 sm:line-clamp-none">
                     {filteredPhotos[lightboxIndex].description}
                   </p>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs font-bold text-slate-400 px-3 py-1.5 rounded-lg bg-slate-800">
+              <div className="flex items-center justify-between sm:justify-end gap-2.5 sm:gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                <span className="text-xs font-bold text-slate-400 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-slate-800">
                   {lightboxIndex + 1} / {filteredPhotos.length}
                 </span>
                 <Button
                   size="sm"
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl"
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs sm:text-sm h-8 sm:h-9 px-3 sm:px-4"
                   asChild
                 >
-                  <Link href="/contacts">Заказать шоу</Link>
+                  <Link href={sectionData.ctaLink || '/contacts'}>
+                    {sectionData.ctaText || 'Заказать шоу'}
+                  </Link>
                 </Button>
               </div>
             </div>

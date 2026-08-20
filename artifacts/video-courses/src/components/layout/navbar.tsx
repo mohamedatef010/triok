@@ -456,10 +456,13 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost" size="icon"
-                  className="nav-icon-btn rounded-full"
+                  className="nav-icon-btn rounded-full relative"
                   title="Ещё"
                 >
                   <MoreHorizontal className="h-[19px] w-[19px]" />
+                  {cart.count > 0 && (
+                    <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-amber-500 border-2 border-background shadow-sm animate-in zoom-in-50 duration-200" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" sideOffset={8} className="w-56 rounded-2xl shadow-2xl border-border bg-popover/98 backdrop-blur-2xl p-2 z-[99999]">
