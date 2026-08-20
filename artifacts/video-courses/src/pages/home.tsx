@@ -947,7 +947,7 @@ export function HomePage() {
         ref={heroSectionRef}
         onMouseMove={handleHeroMouseMove}
         onMouseLeave={handleHeroMouseLeave}
-        className="hero-section relative min-h-[94vh] lg:min-h-[860px] flex items-center overflow-hidden pt-24 pb-24 bg-gradient-to-b from-amber-50/90 via-stone-100 to-amber-50/70 dark:from-[#0d0b14] dark:via-[#0a0908] dark:to-[#0f0a08] text-slate-900 dark:text-white border-b border-amber-500/20 dark:border-amber-500/10"
+        className="hero-section relative min-h-0 lg:min-h-[860px] flex items-start lg:items-center overflow-hidden pt-6 sm:pt-12 lg:pt-24 pb-16 sm:pb-20 lg:pb-24 bg-gradient-to-b from-amber-50/90 via-stone-100 to-amber-50/70 dark:from-[#0d0b14] dark:via-[#0a0908] dark:to-[#0f0a08] text-slate-900 dark:text-white border-b border-amber-500/20 dark:border-amber-500/10"
       >
 
         {/* Realistic layered background with depth (dark mode extra layer) */}
@@ -1063,29 +1063,30 @@ export function HomePage() {
             <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start lg:mb-28">
 
               {/* Category badges - updated texts */}
-              <div className="flex flex-wrap items-center gap-2 mb-7 hero-anim-down" style={{ animationDelay: "0.05s" }}>
+              <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-7 hero-anim-down" style={{ animationDelay: "0.05s" }}>
                 {hero.badge1 && (
                   <span
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 rounded-lg shadow-lg shadow-amber-500/20"
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[11px] sm:text-xs font-black sm:font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 rounded-full sm:rounded-lg shadow-md shadow-amber-500/25 border border-amber-300/50 sm:border-transparent transition-all"
                     style={{
                       fontFamily: heroSettings?.styles?.badge1?.fontFamily || undefined,
                       color: heroSettings?.styles?.badge1?.color || undefined,
                       background: heroSettings?.styles?.badge1?.bgColor || undefined,
                     }}
                   >
-                    <Sparkles className="h-3.5 w-3.5" /> {hero.badge1}
+                    <Sparkles className="hidden sm:inline-block h-3.5 w-3.5" />
+                    <span>{hero.badge1}</span>
                   </span>
                 )}
                 {hero.badge2 && (
                   <span
-                    className="px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider bg-white/80 border border-slate-200/80 text-slate-700 dark:bg-white/5 dark:border-white/15 dark:text-slate-200 rounded-lg shadow-sm backdrop-blur-sm"
+                    className="inline-flex items-center justify-center px-3.5 py-1.5 text-[11px] sm:text-xs font-black sm:font-extrabold uppercase tracking-wider bg-white/90 dark:bg-amber-400/[0.08] border border-slate-300/80 dark:border-amber-400/25 text-slate-800 dark:text-amber-300 rounded-full sm:rounded-lg shadow-sm backdrop-blur-md transition-all"
                     style={{
                       fontFamily: heroSettings?.styles?.badge2?.fontFamily || undefined,
                       color: heroSettings?.styles?.badge2?.color || undefined,
                       background: heroSettings?.styles?.badge2?.bgColor || undefined,
                     }}
                   >
-                    {hero.badge2}
+                    <span>{hero.badge2}</span>
                   </span>
                 )}
               </div>
@@ -1154,7 +1155,7 @@ export function HomePage() {
             <div className="lg:col-span-6 xl:col-span-7 relative hero-anim-right lg:-ml-6 xl:-ml-10" style={{ animationDelay: "0.3s" }}>
               <div
                 ref={heroImageRef}
-                className="hero-img-container relative mx-auto max-w-[900px] h-[420px] sm:h-[520px] lg:h-[720px] xl:h-[780px]"
+                className="hero-img-container relative mx-auto max-w-[900px] h-[450px] xs:h-[480px] sm:h-[520px] lg:h-[720px] xl:h-[780px]"
               >
 
                 {/* Soft golden aura behind image */}
@@ -1213,7 +1214,7 @@ export function HomePage() {
 
                   {/* Faint soft guide track */}
                   <path
-                    d="M 20 28 C 12 45, 14 56, 22 68 C 30 82, 38 93, 50 93 C 62 93, 70 82, 78 66 C 86 54, 88 43, 80 26"
+                    d="M 14 42 C 8 52, 10 60, 16 67 C 26 82, 36 94, 50 94 C 64 94, 74 82, 84 67 C 90 60, 92 52, 86 41"
                     fill="none"
                     className="stroke-amber-500/15 dark:stroke-amber-400/10"
                     strokeWidth="0.6"
@@ -1222,7 +1223,7 @@ export function HomePage() {
 
                   {/* Active Glowing Drawn Line (Dark Mode) */}
                   <path
-                    d="M 20 28 C 12 45, 14 56, 22 68 C 30 82, 38 93, 50 93 C 62 93, 70 82, 78 66 C 86 54, 88 43, 80 26"
+                    d="M 14 42 C 8 52, 10 60, 16 67 C 26 82, 36 94, 50 94 C 64 94, 74 82, 84 67 C 90 60, 92 52, 86 41"
                     fill="none"
                     pathLength={100}
                     stroke="url(#mobileOrbitGradDark)"
@@ -1236,7 +1237,7 @@ export function HomePage() {
 
                   {/* Active Glowing Drawn Line (Light Mode) */}
                   <path
-                    d="M 20 28 C 12 45, 14 56, 22 68 C 30 82, 38 93, 50 93 C 62 93, 70 82, 78 66 C 86 54, 88 43, 80 26"
+                    d="M 14 42 C 8 52, 10 60, 16 67 C 26 82, 36 94, 50 94 C 64 94, 74 82, 84 67 C 90 60, 92 52, 86 41"
                     fill="none"
                     pathLength={100}
                     stroke="url(#mobileOrbitGradLight)"
@@ -1251,32 +1252,32 @@ export function HomePage() {
                   {/* Soft connecting node dots at each card with staggered delays */}
                   {/* Node 1: Card 5 (Mid-Left) */}
                   <g className="transition-all duration-400 ease-out delay-[120ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
-                    <circle cx="20" cy="28" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
-                    <circle cx="20" cy="28" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                    <circle cx="14" cy="42" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="14" cy="42" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
                   </g>
 
                   {/* Node 2: Card 4 (Bottom-Left) */}
                   <g className="transition-all duration-400 ease-out delay-[320ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
-                    <circle cx="22" cy="68" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
-                    <circle cx="22" cy="68" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                    <circle cx="16" cy="67" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="16" cy="67" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
                   </g>
 
                   {/* Node 3: Card 1 (Bottom-Center) */}
                   <g className="transition-all duration-400 ease-out delay-[520ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
-                    <circle cx="50" cy="93" r="1.6" className="fill-amber-500 dark:fill-amber-300" />
-                    <circle cx="50" cy="93" r="3.2" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                    <circle cx="50" cy="94" r="1.6" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="50" cy="94" r="3.2" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
                   </g>
 
                   {/* Node 4: Card 3 (Bottom-Right) */}
                   <g className="transition-all duration-400 ease-out delay-[720ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
-                    <circle cx="78" cy="66" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
-                    <circle cx="78" cy="66" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                    <circle cx="84" cy="67" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="84" cy="67" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
                   </g>
 
                   {/* Node 5: Card 2 (Mid-Right) */}
                   <g className="transition-all duration-400 ease-out delay-[920ms]" style={{ opacity: mobileOrbitProgress >= 0.5 ? 1 : 0.15 }}>
-                    <circle cx="80" cy="26" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
-                    <circle cx="80" cy="26" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
+                    <circle cx="86" cy="41" r="1.4" className="fill-amber-500 dark:fill-amber-300" />
+                    <circle cx="86" cy="41" r="2.8" className="stroke-amber-500/30 dark:stroke-amber-400/30 fill-none stroke-[0.5]" />
                   </g>
                 </svg>
 
@@ -1284,7 +1285,7 @@ export function HomePage() {
 
                 {/* 1. Bottom-Center on mobile / Top-Right on desktop: "10+" */}
                 <div
-                  className="float-chip hero-chip-entry absolute bottom-4 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 px-2.5 py-1.5 xs:px-4 xs:py-3 flex items-center gap-1.5 xs:gap-2.5 rotate-2 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
+                  className="float-chip hero-chip-entry absolute bottom-1.5 xs:bottom-2.5 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 px-2.5 py-1.5 xs:px-4 xs:py-2.5 flex items-center gap-1.5 xs:gap-2.5 rotate-1 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
                   style={{
                     animation: `heroChipEntrance 0.95s 0.5s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
@@ -1309,27 +1310,27 @@ export function HomePage() {
 
                 {/* 2. Mid-Right: Experience → Video lessons */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[100px] right-0 xs:right-2 z-30 w-28 xs:w-32 sm:w-44 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
+                  className="float-chip hero-chip-entry absolute top-[190px] xs:top-[195px] right-0 xs:right-1 sm:right-2 z-30 w-[118px] xs:w-[130px] sm:w-44 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
                   style={{
                     animation: `heroChipEntrance 0.95s 0.8s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.4s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
                   <div
-                    className="text-xs xs:text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 leading-none mb-0.5 xs:mb-1"
+                    className="text-[11px] xs:text-xs sm:text-base font-black text-amber-600 dark:text-amber-400 leading-none mb-0.5 xs:mb-1"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit2Title}
                   </div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
+                    className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit2Subtitle}
                   </div>
                   {hero.orbit2Desc && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
+                      className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit2Desc}
@@ -1339,22 +1340,22 @@ export function HomePage() {
 
                 {/* 3. Bottom-Right: Quick Start */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[260px] right-0 xs:right-2 z-30 w-32 xs:w-38 sm:w-52 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
+                  className="float-chip hero-chip-entry absolute top-[305px] xs:top-[315px] right-0 xs:right-1 sm:right-2 z-30 w-[122px] xs:w-[136px] sm:w-52 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.05s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.7s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
-                  <div className="text-xs xs:text-sm mb-0.5 xs:mb-1">✨</div>
+                  <div className="text-[11px] xs:text-xs sm:text-sm mb-0.5">✨</div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
+                    className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit3Title}
                   </div>
                   {hero.orbit3Desc && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
+                      className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit3Desc}
@@ -1364,20 +1365,20 @@ export function HomePage() {
 
                 {/* 4. Bottom-Left: Free Trial */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[270px] left-0 xs:left-2 z-30 w-32 xs:w-36 sm:w-48 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 -rotate-3 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
+                  className="float-chip hero-chip-entry absolute top-[305px] xs:top-[315px] left-0 xs:left-1 sm:left-2 z-30 w-[118px] xs:w-[130px] sm:w-48 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 -rotate-2 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.35s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 3s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
                   <div
-                    className="text-xs xs:text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 leading-none mb-0.5 xs:mb-1"
+                    className="text-[11px] xs:text-xs sm:text-base font-black text-emerald-600 dark:text-emerald-400 leading-none mb-0.5 xs:mb-1"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit4Title}
                   </div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
+                    className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                   >
                     {hero.orbit4Subtitle}
@@ -1386,24 +1387,24 @@ export function HomePage() {
 
                 {/* 5. Mid-Left: Community */}
                 <div
-                  className="float-chip hero-chip-entry absolute top-[110px] left-0 xs:left-2 z-30 w-28 xs:w-32 sm:w-40 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2.5 xs:p-3 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
+                  className="float-chip hero-chip-entry absolute top-[195px] xs:top-[200px] left-0 xs:left-1 sm:left-2 z-30 w-[115px] xs:w-[126px] sm:w-40 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
                   style={{
                     animation: `heroChipEntrance 0.95s 1.2s cubic-bezier(.16,1,.3,1) forwards, floatYAnim 5s 2.85s ease-in-out infinite`,
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
-                  <div className="h-6 w-6 xs:h-7 w-7 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-1 xs:mb-2 shrink-0">
-                    <Users className="h-3.5 w-3.5 xs:h-4 w-4" />
+                  <div className="h-5 w-5 xs:h-6 xs:w-6 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-0.5 xs:mb-1.5 shrink-0">
+                    <Users className="h-3 w-3 xs:h-3.5 xs:w-3.5" />
                   </div>
                   <div
-                    className="text-[10px] xs:text-xs font-black text-slate-900 dark:text-white leading-tight"
+                    className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit5Title}
                   </div>
                   {hero.orbit5Desc && (
                     <div
-                      className="text-[8px] xs:text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5"
+                      className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit5Desc}
@@ -1486,7 +1487,7 @@ export function HomePage() {
                           <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G" />
                         </filter>
                       </defs>
-                      
+
                     </svg>
 
                     {/* Bottom Golden Glow Flare */}

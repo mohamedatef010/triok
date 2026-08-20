@@ -116,8 +116,13 @@ export function Navbar() {
   }, [searchQuery]);
 
   const openSearch = () => {
-    setSearchOpen(true);
-    setTimeout(() => searchInputRef.current?.focus(), 50);
+    setSearchOpen((prev) => {
+      const next = !prev;
+      if (next) {
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -273,10 +278,10 @@ export function Navbar() {
 
             {/* Expandable search overlay */}
             {searchOpen && (
-              <div className="absolute right-0 top-full mt-3 w-[min(380px,calc(100vw-2rem))] rounded-2xl bg-background/98 dark:bg-slate-950/98 border border-border/60 shadow-2xl shadow-black/20 backdrop-blur-xl overflow-hidden z-[1001]">
+              <div className="fixed inset-x-3 top-[76px] sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-3 w-auto sm:w-[380px] max-w-[calc(100vw-1.5rem)] sm:max-w-none rounded-2xl bg-background/98 dark:bg-slate-950/98 border border-border/80 shadow-2xl shadow-black/30 backdrop-blur-2xl overflow-hidden z-[99999] animate-in fade-in-0 zoom-in-95 duration-150">
                 {/* Input row */}
-                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-                  <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div className="flex items-center gap-2 px-3.5 sm:px-4 py-3 border-b border-border/50 bg-muted/20">
+                  <Search className="h-4 w-4 text-amber-500 shrink-0" />
                   <input
                     ref={searchInputRef}
                     value={searchQuery}
@@ -285,15 +290,19 @@ export function Navbar() {
                     className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground/60"
                     onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
                   />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground transition-colors">
+                  {searchQuery ? (
+                    <button onClick={() => setSearchQuery("")} className="p-1 text-muted-foreground hover:text-foreground transition-colors" title="Очистить">
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button onClick={() => setSearchOpen(false)} className="p-1 text-muted-foreground hover:text-foreground transition-colors sm:hidden" title="Закрыть">
                       <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
 
                 {/* Results */}
-                <div className="max-h-[340px] overflow-y-auto">
+                <div className="max-h-[min(380px,58vh)] sm:max-h-[340px] overflow-y-auto">
                   {searchLoading ? (
                     <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
                       <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mr-2" />
