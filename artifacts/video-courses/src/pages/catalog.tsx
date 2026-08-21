@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { useDebounce } from "@/hooks/use-debounce";
+import { formatDuration } from "@/lib/utils";
 
 export function CatalogPage() {
   useSEO({
@@ -133,37 +134,44 @@ export function CatalogPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
-            {videoList.map((video, vIdx) => (
-              <Link 
-                key={video.id} 
-                href={`/video/${video.id}`} 
-                data-sr-delay={String([0, 80, 160, 240][vIdx % 4])}
-                className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-sm hover:shadow-xl overflow-hidden transition-all duration-300"
-              >
-                <div className="relative aspect-video overflow-hidden bg-slate-950">
-                  <img 
-                    src={video.thumbnailUrl || undefined} 
-                    alt={video.title}
-                    loading="lazy"
-                    decoding="async"
-                    className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-108"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300 flex items-center justify-center">
-                    <div className="h-13 w-13 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-400/40 group-hover:scale-110 transition-transform duration-300">
-                      <Play className="h-6 w-6 fill-current ml-0.5" />
+            {videoList.map((video, vIdx) => {
+              const durationText = formatDuration(video.durationSeconds) || formatDuration(video.duration);
+              return (
+                <Link 
+                  key={video.id} 
+                  href={`/video/${video.id}`} 
+                  data-sr-delay={String([0, 80, 160, 240][vIdx % 4])}
+                  className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-sm hover:shadow-xl overflow-hidden transition-all duration-300"
+                >
+                  <div className="relative aspect-video overflow-hidden bg-slate-950">
+                    <img 
+                      src={video.thumbnailUrl || undefined} 
+                      alt={video.title}
+                      loading="lazy"
+                      decoding="async"
+                      className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-108"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="h-13 w-13 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-400/40 group-hover:scale-110 transition-transform duration-300">
+                        <Play className="h-6 w-6 fill-current ml-0.5" />
+                      </div>
                     </div>
+                    {video.categoryName && (
+                      <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md text-amber-400 text-[11px] font-bold px-2.5 py-1 rounded-md border border-amber-400/30">
+                        {video.categoryName}
+                      </div>
+                    )}
+                    {durationText && (
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] font-semibold text-white/90 bg-slate-950/70 backdrop-blur-md px-2 py-0.5 rounded-md border border-white/10">
+                        <Clock className="h-3 w-3 text-amber-400" /> {durationText}
+                      </div>
+                    )}
                   </div>
-                  {video.categoryName && (
-                    <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md text-amber-400 text-[11px] font-bold px-2.5 py-1 rounded-md border border-amber-400/30">
-                      {video.categoryName}
-                    </div>
-                  )}
-                </div>
-                <div className="p-5 flex flex-col justify-between flex-grow">
-                  <div>
-                    <h3 className="font-bold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-200 mb-2">
-                      {video.title}
-                    </h3>
+                  <div className="p-5 flex flex-col justify-between flex-grow">
+                    <div>
+                      <h3 className="font-bold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-200 mb-2">
+                        {video.title}
+                      </h3>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                       <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
                         <Star className="h-3.5 w-3.5 fill-current mr-1 text-amber-400" />
@@ -189,7 +197,8 @@ export function CatalogPage() {
                   </div>
                 </div>
               </Link>
-            ))}
+            );
+          })}
           </div>
 
           {/* Pagination */}

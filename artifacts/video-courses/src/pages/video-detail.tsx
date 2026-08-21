@@ -40,15 +40,7 @@ import { VideoReviewModal } from "@/components/video-review-modal";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactPlayer from "react-player";
 
-function formatDuration(seconds?: number | null): string | null {
-  if (!seconds) return null;
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) {
-    return `${h}ч ${m}мин`;
-  }
-  return `${m}мин`;
-}
+import { formatDuration } from "@/lib/utils";
 
 export function VideoDetailPage() {
   const [, params] = useRoute("/video/:id");
@@ -169,11 +161,17 @@ export function VideoDetailPage() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef<ReactPlayer>(null);
+  const [playerDuration, setPlayerDuration] = useState<number | null>(null);
   const [showPurchaseOverlay, setShowPurchaseOverlay] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const mainBuyButtonRef = useRef<HTMLDivElement>(null);
+
+  const effectiveDurationSeconds = (video?.durationSeconds && video.durationSeconds > 0)
+    ? video.durationSeconds
+    : playerDuration;
+  const displayDuration = formatDuration(effectiveDurationSeconds) || formatDuration((video as any)?.duration);
 
   // Reliable fallback video URLs (hosted on W3C)
   const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
@@ -417,11 +415,11 @@ export function VideoDetailPage() {
                     )}
                   </div>
 
-                  {Boolean((video as any).duration || video.durationSeconds) && (
+                  {displayDuration && (
                     <div className="absolute bottom-3 left-3">
                       <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 shadow-md">
                         <Clock className="h-3.5 w-3.5 text-amber-400" />
-                        {(video as any).duration || formatDuration(video.durationSeconds)}
+                        {displayDuration}
                       </span>
                     </div>
                   )}
@@ -449,6 +447,11 @@ export function VideoDetailPage() {
                   height="100%"
                   className="bg-black object-contain absolute top-0 left-0"
                   onProgress={handleTimeUpdate}
+                  onDuration={(d) => {
+                    if (d && d > 0 && (!video?.durationSeconds || video.durationSeconds === 0)) {
+                      setPlayerDuration(Math.round(d));
+                    }
+                  }}
                   onEnded={handleEnded}
                   onError={() => setVideoError(true)}
                   config={{ file: { forceHLS: playerUrl.includes(".m3u8"), attributes: { controlsList: 'nodownload', preload: 'metadata' } } }}
@@ -474,15 +477,12 @@ export function VideoDetailPage() {
                   </span>
 
                   {/* Duration — only if actually set and > 0 */}
-                  {(() => {
-                    const dur = (video as any).duration || formatDuration(video.durationSeconds);
-                    return dur && dur !== "0мин" && dur !== "0ч 0мин" ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/80 text-muted-foreground text-xs font-semibold border border-border/60">
-                        <Clock className="h-3 w-3 text-amber-500" />
-                        {dur}
-                      </span>
-                    ) : null;
-                  })()}
+                  {displayDuration && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/80 text-muted-foreground text-xs font-semibold border border-border/60">
+                      <Clock className="h-3 w-3 text-amber-500" />
+                      {displayDuration}
+                    </span>
+                  )}
 
                   {/* Reviews count — only if > 0 */}
                   {reviewCountNumber > 0 && (
@@ -767,7 +767,7 @@ export function VideoDetailPage() {
           {relatedList.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {relatedList.slice(0, 3).map((item: any) => {
-                const itemDuration = item.duration || formatDuration(item.durationSeconds);
+                const itemDuration = formatDuration(item.durationSeconds) || formatDuration(item.duration);
                 return (
                   <div key={item.id} className="group rounded-2xl sm:rounded-3xl bg-card/90 dark:bg-card/70 border border-border/80 shadow-sm p-3.5 sm:p-4 flex flex-col justify-between hover:border-amber-400/40 transition-all hover:shadow-lg">
                     <div className="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden mb-3.5 bg-slate-950">
@@ -837,7 +837,7 @@ export function VideoDetailPage() {
           {similarList.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {similarList.slice(0, 3).map((item: any) => {
-                const itemDuration = item.duration || formatDuration(item.durationSeconds);
+                const itemDuration = formatDuration(item.durationSeconds) || formatDuration(item.duration);
                 return (
                   <div key={item.id} className="group rounded-2xl sm:rounded-3xl bg-card/90 dark:bg-card/70 border border-border/80 shadow-sm p-3.5 sm:p-4 flex flex-col justify-between hover:border-amber-400/40 transition-all hover:shadow-lg">
                     <div className="relative aspect-video rounded-xl sm:rounded-2xl overflow-hidden mb-3.5 bg-slate-950">

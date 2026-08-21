@@ -295,15 +295,7 @@ function SpiralConnector({ active = false }: { active?: boolean }) {
   );
 }
 
-function formatDuration(seconds?: number | null): string | null {
-  if (!seconds) return null;
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) {
-    return `${h}ч ${m}мин`;
-  }
-  return `${m}мин`;
-}
+import { formatDuration } from "@/lib/utils";
 
 /** Minimal line-art top hat for the hero CTA */
 function CtaTrickIcon({ className }: { className?: string }) {
@@ -653,7 +645,7 @@ export function HomePage() {
 
   /* ── Course card renderer (shared between mobile grid & desktop spiral flow) ── */
   const renderCourseCard = (video: any) => {
-    const durationText = video.duration || formatDuration(video.durationSeconds);
+    const durationText = formatDuration(video.durationSeconds) || formatDuration(video.duration);
     return (
       <>
         {/* Thumbnail / Video Preview Overlay */}
