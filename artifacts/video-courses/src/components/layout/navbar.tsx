@@ -126,40 +126,28 @@ export function Navbar() {
   };
 
   useEffect(() => {
-    let lastScrollY = window.scrollY;
-    let ticking = false;
+    let lastScrollY = typeof window !== "undefined" ? window.scrollY : 0;
 
     const onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-          const isMobile = window.innerWidth < 640;
+      const currentScrollY = window.scrollY;
 
-          setScrolled(currentScrollY > 8);
+      setScrolled(currentScrollY > 8);
 
-          if (isMobile) {
-            if (currentScrollY <= 40) {
-              setVisible(true);
-            } else {
-              const diff = currentScrollY - lastScrollY;
-              if (diff > 6) {
-                // Scrolling down on mobile: hide navbar
-                setVisible(false);
-              } else if (diff < -6) {
-                // Scrolling up on mobile: show navbar
-                setVisible(true);
-              }
-            }
-          } else {
-            // Desktop and tablet: always visible
-            setVisible(true);
-          }
-
-          lastScrollY = Math.max(0, currentScrollY);
-          ticking = false;
-        });
-        ticking = true;
+      if (currentScrollY <= 30) {
+        // At the top of the page: always visible
+        setVisible(true);
+      } else {
+        const diff = currentScrollY - lastScrollY;
+        if (diff > 4) {
+          // Scrolling DOWN: hide navbar smoothly
+          setVisible(false);
+        } else if (diff < -4) {
+          // Scrolling UP: show navbar smoothly
+          setVisible(true);
+        }
       }
+
+      lastScrollY = Math.max(0, currentScrollY);
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -168,13 +156,13 @@ export function Navbar() {
 
   return (
     <>
-      {/* Mobile-only spacer so fixed navbar doesn't cover top content on mobile */}
-      <div className="h-[72px] sm:hidden pointer-events-none" aria-hidden="true" />
+      {/* 72px Spacer so the fixed navbar doesn't overlap the top content on any screen */}
+      <div className="h-[72px] w-full pointer-events-none" aria-hidden="true" />
 
       <header
         className={`
-          fixed top-0 left-0 right-0 sm:sticky sm:top-0 z-[1000] w-full border-b transition-transform duration-300 ease-in-out
-          ${visible ? "translate-y-0" : "-translate-y-full sm:translate-y-0"}
+          fixed top-0 left-0 right-0 z-[1000] w-full border-b transition-transform duration-300 ease-in-out
+          ${visible ? "translate-y-0" : "-translate-y-full"}
           ${scrolled
             ? "bg-background/85 shadow-lg shadow-black/5 backdrop-blur-xl border-border/80"
             : "bg-background/70 backdrop-blur-md border-border/40"
