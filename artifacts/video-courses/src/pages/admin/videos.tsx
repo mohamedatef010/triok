@@ -398,76 +398,93 @@ export function AdminVideos() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl sm:text-3xl font-bold tracking-tight">Видео и курсы</h1>
-        <Button onClick={() => setIsOpen(true)} size="sm" className="shrink-0">
-          <Plus className="h-4 w-4 sm:mr-2" />
-          <span className="hidden sm:inline">Добавить курс</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+              <Film className="h-6 w-6" />
+            </div>
+            <span>Видео и курсы</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Загрузка новых видеокурсов, настройка скидок и управление каталогом
+          </p>
+        </div>
+
+        <Button
+          onClick={() => setIsOpen(true)}
+          size="sm"
+          className="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold shadow-md shadow-amber-500/20 text-xs shrink-0 w-fit"
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
+          <span>Добавить курс</span>
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-        <Table className="min-w-[700px]">
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Название</TableHead>
-              <TableHead>Цена</TableHead>
-              <TableHead>Скидка</TableHead>
-              <TableHead>Превью (сек)</TableHead>
-              <TableHead>Просмотры</TableHead>
-              <TableHead className="text-right">Действия</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.videos.map((v) => (
-              <TableRow key={v.id}>
-                <TableCell>{v.id}</TableCell>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-3">
-                    <img src={v.thumbnailUrl || undefined} alt="" className="w-12 h-8 object-cover rounded bg-muted" />
-                    <span className="line-clamp-1">{v.title}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{v.price} ₽</TableCell>
-                <TableCell>
-                  {v.discountPrice ? (
-                    <div className="flex flex-col">
-                      <span className="text-primary font-bold">{v.discountPrice} ₽</span>
-                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
-                        -{Math.round((1 - v.discountPrice / v.price) * 100)}%
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell>{(v as any).previewDurationSeconds || "Авто"}</TableCell>
-                <TableCell>{v.viewCount}</TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handlePreviewDuration(v.id)} title="Длительность превью">
-                      <Clock className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDiscount(v.id, v.price, v.discountPrice)} title="Скидка %">
-                      <Percent className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10" onClick={() => handleDelete(v.id)} title="Удалить">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <Table className="min-w-[750px]">
+            <TableHeader className="bg-slate-50/80 dark:bg-slate-950/50">
+              <TableRow className="border-b border-slate-200/80 dark:border-slate-800/80">
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 w-16">ID</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Название курса</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Цена</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Скидка</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Превью (сек)</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Просмотры</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 text-right pr-6">Действия</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {data?.videos.map((v) => (
+                <TableRow key={v.id} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <TableCell className="font-bold text-xs text-amber-600 dark:text-amber-400">#{v.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <img src={v.thumbnailUrl || undefined} alt="" className="w-14 h-9 object-cover rounded-lg bg-slate-800 shrink-0 border border-slate-200/60 dark:border-slate-800" />
+                      <span className="line-clamp-1 text-xs font-bold text-slate-900 dark:text-white">{v.title}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs font-semibold">{v.price} ₽</TableCell>
+                  <TableCell>
+                    {v.discountPrice ? (
+                      <div className="flex flex-col">
+                        <span className="text-amber-500 font-bold text-xs">{v.discountPrice} ₽</span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                          -{Math.round((1 - v.discountPrice / v.price) * 100)}%
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 text-xs">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-slate-600 dark:text-slate-400">{(v as any).previewDurationSeconds || "Авто"}</TableCell>
+                  <TableCell className="text-xs font-medium text-slate-600 dark:text-slate-400">{v.viewCount}</TableCell>
+                  <TableCell className="text-right pr-6">
+                    <div className="flex justify-end gap-1.5">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handlePreviewDuration(v.id)} title="Длительность превью">
+                        <Clock className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handleDiscount(v.id, v.price, v.discountPrice)} title="Скидка %">
+                        <Percent className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-500/10" onClick={() => handleDelete(v.id)} title="Удалить">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {data && data.total > data.limit && (
-        <div className="flex justify-between items-center bg-white dark:bg-card p-4 border rounded-xl">
-          <Button variant="outline" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Назад</Button>
-          <span className="text-sm font-medium">Страница {page} из {Math.ceil(data.total / data.limit)}</span>
-          <Button variant="outline" disabled={page >= Math.ceil(data.total / data.limit)} onClick={() => setPage(p => p + 1)}>Вперед</Button>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-sm">
+          <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold">Назад</Button>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Страница <span className="text-amber-500 font-bold">{page}</span> из {Math.ceil(data.total / data.limit)}</span>
+          <Button variant="outline" size="sm" disabled={page >= Math.ceil(data.total / data.limit)} onClick={() => setPage(p => p + 1)} className="rounded-xl border-slate-200 dark:border-slate-800 text-xs font-semibold">Вперед</Button>
         </div>
       )}
 
