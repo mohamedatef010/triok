@@ -109,7 +109,7 @@ export function Navbar() {
           const json = await res.json();
           setSearchResults((json.videos ?? json).slice(0, 6));
         }
-      } catch {}
+      } catch { }
       setSearchLoading(false);
     }, 280);
     return () => clearTimeout(timer);
@@ -127,31 +127,60 @@ export function Navbar() {
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
+    let ticking = false;
+
     const onScroll = () => {
-      const currentScrollY = window.scrollY;
-      setScrolled(currentScrollY > 8);
-      if (currentScrollY > lastScrollY && currentScrollY > 90) {
-        setVisible(false);
-      } else {
-        setVisible(true);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const isMobile = window.innerWidth < 640;
+
+          setScrolled(currentScrollY > 8);
+
+          if (isMobile) {
+            if (currentScrollY <= 40) {
+              setVisible(true);
+            } else {
+              const diff = currentScrollY - lastScrollY;
+              if (diff > 6) {
+                // Scrolling down on mobile: hide navbar
+                setVisible(false);
+              } else if (diff < -6) {
+                // Scrolling up on mobile: show navbar
+                setVisible(true);
+              }
+            }
+          } else {
+            // Desktop and tablet: always visible
+            setVisible(true);
+          }
+
+          lastScrollY = Math.max(0, currentScrollY);
+          ticking = false;
+        });
+        ticking = true;
       }
-      lastScrollY = currentScrollY;
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   return (
-    <header
-      className={`
-        sticky top-0 z-[1000] w-full border-b transition-transform duration-300 ease-in-out
-        ${visible ? "translate-y-0" : "-translate-y-full"}
-        ${scrolled
-          ? "bg-background/85 shadow-lg shadow-black/5 backdrop-blur-xl border-border/80"
-          : "bg-background/70 backdrop-blur-md border-border/40"
-        }
-      `}
-    >
+    <>
+      {/* Mobile-only spacer so fixed navbar doesn't cover top content on mobile */}
+      <div className="h-[72px] sm:hidden pointer-events-none" aria-hidden="true" />
+
+      <header
+        className={`
+          fixed top-0 left-0 right-0 sm:sticky sm:top-0 z-[1000] w-full border-b transition-transform duration-300 ease-in-out
+          ${visible ? "translate-y-0" : "-translate-y-full sm:translate-y-0"}
+          ${scrolled
+            ? "bg-background/85 shadow-lg shadow-black/5 backdrop-blur-xl border-border/80"
+            : "bg-background/70 backdrop-blur-md border-border/40"
+          }
+        `}
+      >
       <div className="container mx-auto flex h-[72px] items-center px-4 relative">
 
         {/* ── LEFT: Hamburger Menu ── */}
@@ -171,7 +200,7 @@ export function Navbar() {
                   Меню
                 </SheetTitle>
               </SheetHeader>
-              
+
               <div className="mt-8 flex flex-col gap-8 pb-10">
                 {/* Тема оформления (Mobile friendly) */}
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-muted/60 border border-border/60">
@@ -201,7 +230,7 @@ export function Navbar() {
                   <Link href="/catalog" className="text-base font-bold hover:text-amber-500 transition-colors">Каталог</Link>
                   <Link href="/#about" className="text-base font-bold hover:text-amber-500 transition-colors">Обо мне</Link>
                   <Link href="/#events-gallery" className="text-base font-bold hover:text-amber-500 transition-colors">Мероприятия</Link>
-                  
+
                   <div className="mt-2 flex flex-col gap-3 pl-4 border-l-2 border-border/40">
                     <span className="text-sm font-semibold text-muted-foreground">Личные данные</span>
                     <Link href="/profile" className="text-base font-bold hover:text-amber-500 transition-colors">Личный кабинет</Link>
@@ -220,36 +249,36 @@ export function Navbar() {
                   <Link href="/requisites" className="text-base font-bold hover:text-amber-500 transition-colors">Реквизиты</Link>
                 </div>
 
-                 {/* Контакты */}
-                 <div className="flex flex-col gap-3">
-                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Контакты</h4>
-                   {phoneHref ? (
-                     <a href={phoneHref} className="text-lg font-black text-foreground hover:text-amber-500 transition-colors">{phone}</a>
-                   ) : (
-                     <span className="text-lg font-bold text-muted-foreground">{phone}</span>
-                   )}
-                   {emailHref ? (
-                     <a href={emailHref} className="text-base font-bold text-muted-foreground hover:text-amber-500 transition-colors">{email}</a>
-                   ) : (
-                     <span className="text-base font-medium text-muted-foreground/80">{email}</span>
-                   )}
+                {/* Контакты */}
+                <div className="flex flex-col gap-3">
+                  <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Контакты</h4>
+                  {phoneHref ? (
+                    <a href={phoneHref} className="text-lg font-black text-foreground hover:text-amber-500 transition-colors">{phone}</a>
+                  ) : (
+                    <span className="text-lg font-bold text-muted-foreground">{phone}</span>
+                  )}
+                  {emailHref ? (
+                    <a href={emailHref} className="text-base font-bold text-muted-foreground hover:text-amber-500 transition-colors">{email}</a>
+                  ) : (
+                    <span className="text-base font-medium text-muted-foreground/80">{email}</span>
+                  )}
 
-                   {!siteLoading && siteData?.socialLinks && (
-                     <div className="flex flex-wrap gap-2 pt-2">
-                       {SOCIAL_PLATFORMS.map(({ key, label, Icon, color, bg, border, hoverBg, hoverBorder }) => {
-                         const url = (siteData.socialLinks as Record<string, string>)[key];
-                         if (!url) return null;
-                         return (
-                           <button key={key} type="button" aria-label={label} title={label}
-                             onClick={(e) => { e.stopPropagation(); openSocialLink(url, key); }}
-                             className={`h-9 w-9 rounded-xl ${bg} border ${border} flex items-center justify-center ${hoverBg} ${hoverBorder} transition-colors`}>
-                             <Icon className={`h-4 w-4 ${color}`} />
-                           </button>
-                         );
-                       })}
-                     </div>
-                   )}
-                 </div>
+                  {!siteLoading && siteData?.socialLinks && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {SOCIAL_PLATFORMS.map(({ key, label, Icon, color, bg, border, hoverBg, hoverBorder }) => {
+                        const url = (siteData.socialLinks as Record<string, string>)[key];
+                        if (!url) return null;
+                        return (
+                          <button key={key} type="button" aria-label={label} title={label}
+                            onClick={(e) => { e.stopPropagation(); openSocialLink(url, key); }}
+                            className={`h-9 w-9 rounded-xl ${bg} border ${border} flex items-center justify-center ${hoverBg} ${hoverBorder} transition-colors`}>
+                            <Icon className={`h-4 w-4 ${color}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -367,7 +396,7 @@ export function Navbar() {
               title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
             >
               {theme === "dark"
-                ? <Sun  className="h-[19px] w-[19px] text-amber-400 transition-transform duration-300 hover:rotate-45" />
+                ? <Sun className="h-[19px] w-[19px] text-amber-400 transition-transform duration-300 hover:rotate-45" />
                 : <Moon className="h-[19px] w-[19px] text-slate-700 transition-transform duration-300 hover:-rotate-12" />
               }
             </Button>
@@ -418,7 +447,7 @@ export function Navbar() {
                         {user?.name?.charAt(0) ?? "U"}
                       </div>
                       <div className="flex flex-col leading-none">
-                        {user?.name  && <p className="text-sm font-bold">{user.name}</p>}
+                        {user?.name && <p className="text-sm font-bold">{user.name}</p>}
                         {user?.email && <p className="text-xs text-muted-foreground truncate max-w-[140px] mt-0.5">{user.email}</p>}
                       </div>
                     </div>
@@ -556,6 +585,7 @@ export function Navbar() {
         </div>
       </div>
     </header>
+    </>
   );
 }
 

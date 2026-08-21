@@ -82,7 +82,7 @@ export function InteractiveMagicSurpriseModal({
   const userStorageKey = user ? `magic_game_attempts_${user.id}` : "magic_game_attempts_guest";
 
   // Fetch active promo code settings configured by Admin
-  const { data: promoSettings } = useQuery({
+  const { data: promoSettings, isLoading: promoLoading } = useQuery({
     queryKey: ["site-settings", "game_promocode"],
     queryFn: async () => {
       const res = await fetch("/api/site-settings/game_promocode");
@@ -94,9 +94,12 @@ export function InteractiveMagicSurpriseModal({
     staleTime: 60000,
   });
 
-  const promoCode = (promoSettings?.isActive !== false && promoSettings?.code) ? promoSettings.code : "MAGIC20";
-  const discountLabel = promoSettings?.discountType === "fixed" 
-    ? `-${promoSettings?.discountAmount || 500} ₽` 
+  // Game is considered enabled only when admin explicitly saved it with isActive=true and a real code
+  const isGameEnabled = !promoLoading && promoSettings?.isActive === true && !!promoSettings?.code;
+
+  const promoCode = promoSettings?.code || "";
+  const discountLabel = promoSettings?.discountType === "fixed"
+    ? `-${promoSettings?.discountAmount || 500} ₽`
     : `-${promoSettings?.discountPercent || 20}%`;
 
   // Load user attempts on modal open
@@ -283,6 +286,41 @@ export function InteractiveMagicSurpriseModal({
           ) : (
             /* ──────── LOGGED IN USER GAME AREA ──────── */
             <>
+              {/* ── Loading state while fetching promo settings ── */}
+              {promoLoading ? (
+                <div className="text-center py-12 space-y-4 animate-in fade-in">
+                  <div className="h-14 w-14 rounded-full border-4 border-amber-400/30 border-t-amber-400 animate-spin mx-auto" />
+                  <p className="text-slate-300 text-sm font-semibold">Загружаем настройки игры...</p>
+                </div>
+              ) : !isGameEnabled ? (
+                /* ── Game NOT enabled by admin ── */
+                <div className="text-center py-6 space-y-6 animate-in fade-in">
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto shadow-lg">
+                    <span className="text-3xl sm:text-4xl">🎩</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[11px] font-black uppercase tracking-wider">
+                      <Sparkles className="h-3.5 w-3.5" /> Скоро
+                    </div>
+                    <h3 className="text-xl xs:text-2xl sm:text-3xl font-black text-white leading-tight">
+                      Игра скоро появится!
+                    </h3>
+                    <p className="text-xs xs:text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
+                      Администратор ещё не активировал промокод для интерактивной игры. Загляните позже — скоро вас ждёт приятный сюрприз! 🎁
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={onClose}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 text-sm font-bold text-white transition-all"
+                  >
+                    Понятно, вернуться позже
+                  </button>
+                </div>
+              ) : (
+              /* ──────── ACTUAL GAME (admin enabled it) ──────── */
+              <>
               {/* Header Title & Attempts Indicator */}
               <div className="text-center space-y-2">
                 <div className="flex flex-wrap items-center justify-center gap-2">
@@ -534,8 +572,11 @@ export function InteractiveMagicSurpriseModal({
                   </Button>
                 </div>
               )}
+              </>
+              )}
             </>
           )}
+
 
         </div>
       </div>
