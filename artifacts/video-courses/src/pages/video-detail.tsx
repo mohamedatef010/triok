@@ -477,9 +477,6 @@ export function VideoDetailPage() {
                     {video.categoryName || "Фокусы"}
                   </span>
 
-                  {/* Trick Difficulty 5-Circle Badge */}
-                  <TrickDifficultyBadge difficulty={video.difficulty} size="sm" showIcon />
-
                   {/* Duration — only if actually set and > 0 */}
                   {displayDuration && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/80 text-muted-foreground text-xs font-semibold border border-border/60">
@@ -522,8 +519,8 @@ export function VideoDetailPage() {
 
                   <span className="text-muted-foreground/40 hidden sm:inline">•</span>
 
-                  {/* Detailed difficulty rating indicator */}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold">
+                  {/* Single, clean difficulty rating indicator */}
+                  <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground font-semibold">
                     <span>Сложность:</span>
                     <TrickDifficultyBadge difficulty={video.difficulty} size="xs" showIcon={false} />
                   </div>

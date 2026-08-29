@@ -4,8 +4,6 @@ import { Zap, Flame, Sparkles, Award, ShieldAlert } from "lucide-react";
 export interface DifficultyConfig {
   level: number;
   labelRu: string;
-  labelAr: string;
-  labelEn: string;
   descriptionRu: string;
   colorClass: string;
   bgClass: string;
@@ -19,66 +17,56 @@ export const DIFFICULTY_LEVELS: Record<number, DifficultyConfig> = {
   1: {
     level: 1,
     labelRu: "Легкий",
-    labelAr: "مبتدئ",
-    labelEn: "Beginner",
     descriptionRu: "Подходит для новичков, без сложной ловкости рук",
-    colorClass: "text-emerald-500 dark:text-emerald-400",
-    bgClass: "bg-emerald-500/10",
+    colorClass: "text-emerald-600 dark:text-emerald-400",
+    bgClass: "bg-emerald-500/10 dark:bg-emerald-500/15",
     borderClass: "border-emerald-500/30",
-    dotActiveBg: "bg-emerald-500 shadow-emerald-500/50",
-    dotGlow: "shadow-[0_0_8px_rgba(16,185,129,0.7)]",
+    dotActiveBg: "bg-emerald-500",
+    dotGlow: "shadow-[0_0_6px_rgba(16,185,129,0.5)]",
     icon: Sparkles,
   },
   2: {
     level: 2,
     labelRu: "Базовый",
-    labelAr: "سهل",
-    labelEn: "Easy",
     descriptionRu: "Простые движения, требуется немного практики",
-    colorClass: "text-teal-500 dark:text-teal-400",
-    bgClass: "bg-teal-500/10",
+    colorClass: "text-teal-600 dark:text-teal-400",
+    bgClass: "bg-teal-500/10 dark:bg-teal-500/15",
     borderClass: "border-teal-500/30",
-    dotActiveBg: "bg-teal-500 shadow-teal-500/50",
-    dotGlow: "shadow-[0_0_8px_rgba(20,184,166,0.7)]",
+    dotActiveBg: "bg-teal-500",
+    dotGlow: "shadow-[0_0_6px_rgba(20,184,166,0.5)]",
     icon: Zap,
   },
   3: {
     level: 3,
     labelRu: "Средний",
-    labelAr: "متوسط",
-    labelEn: "Intermediate",
     descriptionRu: "Требует отработки моторики и тайминга",
-    colorClass: "text-amber-500 dark:text-amber-400",
-    bgClass: "bg-amber-500/10",
+    colorClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-500/10 dark:bg-amber-500/15",
     borderClass: "border-amber-500/30",
-    dotActiveBg: "bg-amber-400 shadow-amber-400/50",
-    dotGlow: "shadow-[0_0_8px_rgba(251,191,36,0.7)]",
+    dotActiveBg: "bg-amber-500",
+    dotGlow: "shadow-[0_0_6px_rgba(245,158,11,0.5)]",
     icon: Flame,
   },
   4: {
     level: 4,
     labelRu: "Сложный",
-    labelAr: "متقدم",
-    labelEn: "Advanced",
     descriptionRu: "Продвинутая техника и уверенный контроль зрителя",
-    colorClass: "text-orange-500 dark:text-orange-400",
-    bgClass: "bg-orange-500/10",
+    colorClass: "text-orange-600 dark:text-orange-400",
+    bgClass: "bg-orange-500/10 dark:bg-orange-500/15",
     borderClass: "border-orange-500/30",
-    dotActiveBg: "bg-orange-500 shadow-orange-500/50",
-    dotGlow: "shadow-[0_0_8px_rgba(249,115,22,0.7)]",
+    dotActiveBg: "bg-orange-500",
+    dotGlow: "shadow-[0_0_6px_rgba(249,115,22,0.5)]",
     icon: Award,
   },
   5: {
     level: 5,
     labelRu: "Профи",
-    labelAr: "محترف",
-    labelEn: "Master",
     descriptionRu: "Высшее мастерство иллюзии, виртуозная ловкость",
-    colorClass: "text-rose-500 dark:text-rose-400",
-    bgClass: "bg-rose-500/10",
+    colorClass: "text-rose-600 dark:text-rose-400",
+    bgClass: "bg-rose-500/10 dark:bg-rose-500/15",
     borderClass: "border-rose-500/30",
-    dotActiveBg: "bg-rose-500 shadow-rose-500/50",
-    dotGlow: "shadow-[0_0_10px_rgba(244,63,94,0.8)]",
+    dotActiveBg: "bg-rose-500",
+    dotGlow: "shadow-[0_0_8px_rgba(244,63,94,0.6)]",
     icon: ShieldAlert,
   },
 };
@@ -116,21 +104,21 @@ export function TrickDifficultyBadge({
     xs: "w-1.5 h-1.5",
     sm: "w-2 h-2",
     md: "w-2.5 h-2.5",
-    lg: "w-3.5 h-3.5",
+    lg: "w-3 h-3",
   };
 
   const badgePadding = {
-    xs: "px-1.5 py-0.5 text-[10px]",
-    sm: "px-2 py-0.5 text-xs",
-    md: "px-2.5 py-1 text-xs",
-    lg: "px-3 py-1.5 text-sm",
+    xs: "px-2 py-0.5 text-[11px]",
+    sm: "px-2.5 py-1 text-xs",
+    md: "px-3 py-1.5 text-xs",
+    lg: "px-3.5 py-2 text-sm",
   };
 
   const gapClasses = {
-    xs: "gap-1",
-    sm: "gap-1.5",
-    md: "gap-2",
-    lg: "gap-2.5",
+    xs: "gap-1.5",
+    sm: "gap-2",
+    md: "gap-2.5",
+    lg: "gap-3",
   };
 
   return (
@@ -138,19 +126,19 @@ export function TrickDifficultyBadge({
       className={`inline-flex items-center ${gapClasses[size]} rounded-full font-bold transition-all border backdrop-blur-md ${config.bgClass} ${config.borderClass} ${config.colorClass} ${badgePadding[size]} ${className}`}
       title={`Сложность: ${currentLevel}/5 · ${config.labelRu}`}
     >
-      {showIcon && <Icon className={size === "lg" ? "h-4 w-4" : "h-3 w-3"} />}
+      {showIcon && <Icon className={size === "lg" ? "h-4 w-4" : "h-3.5 w-3.5"} />}
 
-      {/* 5 Stylish Dots */}
+      {/* 5 Indicator Dots */}
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((dot) => {
           const isActive = dot <= currentLevel;
           return (
             <span
               key={dot}
-              className={`rounded-full transition-all duration-300 ${dotSizeClasses[size]} ${
+              className={`rounded-full transition-all duration-200 ${dotSizeClasses[size]} ${
                 isActive
                   ? `${config.dotActiveBg} ${config.dotGlow}`
-                  : "bg-muted-foreground/20 dark:bg-muted-foreground/30 border border-muted-foreground/30"
+                  : "bg-slate-300 dark:bg-slate-700/80"
               }`}
             />
           );
@@ -159,13 +147,13 @@ export function TrickDifficultyBadge({
 
       {/* Text label & score */}
       {showLabel && (
-        <span className="font-semibold tracking-tight">
+        <span className="font-bold tracking-tight">
           {config.labelRu}
         </span>
       )}
 
       {showScore && (
-        <span className="text-[10px] sm:text-xs opacity-75 font-mono">
+        <span className="text-[10px] sm:text-xs opacity-75 font-semibold font-mono">
           ({currentLevel}/5)
         </span>
       )}
