@@ -199,13 +199,13 @@ export function TrickDifficultySelector({
     <div className={`grid gap-2.5 ${className}`}>
       <div className="flex items-center justify-between">
         <label className="text-sm font-semibold flex items-center gap-2">
-          <span>🎯 مستوى صعوبة الخدعة (Сложность трюка)</span>
+          <span>🎯 Сложность трюка</span>
           <span className="text-xs text-amber-500 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-            {activeLevel} من 5
+            {activeLevel} из 5
           </span>
         </label>
         <span className={`text-xs font-bold transition-colors ${config.colorClass}`}>
-          {config.labelRu} · {config.labelAr}
+          {config.labelRu}
         </span>
       </div>
 
@@ -230,7 +230,7 @@ export function TrickDifficultySelector({
                 className={`relative group flex items-center justify-center transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                   isCurrentTarget ? "scale-115" : "hover:scale-110"
                 }`}
-                title={`${level}/5 - ${itemConfig.labelRu} (${itemConfig.labelAr})`}
+                title={`${level}/5 — ${itemConfig.labelRu}`}
               >
                 <div
                   className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all duration-300 border-2 ${
@@ -249,7 +249,7 @@ export function TrickDifficultySelector({
         {/* Dynamic description box */}
         <div className="text-xs text-muted-foreground text-center sm:text-right font-medium">
           <span className="block text-slate-700 dark:text-slate-300 font-bold">
-            {config.labelRu} ({config.labelAr}) — {config.level}/5
+            {config.labelRu} — {config.level}/5
           </span>
           <span className="text-[11px] opacity-80">{config.descriptionRu}</span>
         </div>

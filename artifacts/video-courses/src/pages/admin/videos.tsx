@@ -216,7 +216,7 @@ export function AdminVideos() {
 
   const handleDifficultyChange = async (id: number, currentDiff: number = 1) => {
     const val = prompt(
-      `🎯 Выберите уровень сложности трюка (от 1 до 5):\n1 = مبتدئ / Легкий\n2 = سهل / Базовый\n3 = متوسط / Средний\n4 = متقدم / Сложный\n5 = محترف / Профи\n\nТекущий уровень: ${currentDiff}/5`,
+      `🎯 Выберите уровень сложности трюка (от 1 до 5):\n1 = Легкий\n2 = Базовый\n3 = Средний\n4 = Сложный\n5 = Профи\n\nТекущий уровень: ${currentDiff}/5`,
       String(currentDiff || 1)
     );
     if (val === null) return;
