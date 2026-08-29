@@ -34,6 +34,7 @@ import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { Card, CardContent } from "@/components/ui/card";
 import { EventsGallerySection } from "@/components/events-gallery-section";
 import { InteractiveMagicSurpriseModal } from "@/components/interactive-magic-surprise-modal";
+import { TrickDifficultyBadge } from "@/components/ui/trick-difficulty";
 
 /* ── Visual assets ──
    n1.webp has crisp alpha transparency and fast loading */
@@ -701,13 +702,13 @@ export function HomePage() {
               </h3>
             </Link>
 
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-4">
               <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
                 <Star className="h-3.5 w-3.5 fill-current mr-1 text-amber-400" />
                 <span>{video.averageRating ? Number(video.averageRating).toFixed(1) : "0.0"}</span>
               </div>
               <span className="text-muted-foreground">•</span>
-              <span>{video.reviewCount ?? 0} отзывов</span>
+              <TrickDifficultyBadge difficulty={video.difficulty} size="xs" showScore={false} />
             </div>
           </div>
 

@@ -16,6 +16,7 @@ import {
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatDuration } from "@/lib/utils";
+import { TrickDifficultyBadge } from "@/components/ui/trick-difficulty";
 
 export function CatalogPage() {
   useSEO({
@@ -172,13 +173,13 @@ export function CatalogPage() {
                       <h3 className="font-bold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-200 mb-2">
                         {video.title}
                       </h3>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-4">
                       <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
                         <Star className="h-3.5 w-3.5 fill-current mr-1 text-amber-400" />
                         <span className="text-foreground">{video.averageRating ? Number(video.averageRating).toFixed(1) : "0.0"}</span>
                       </div>
                       <span>•</span>
-                      <span>{video.reviewCount ?? 0} отзывов</span>
+                      <TrickDifficultyBadge difficulty={video.difficulty} size="xs" showScore={false} />
                     </div>
                   </div>
 

@@ -42,8 +42,10 @@ import {
   Film,
   Image as ImageIcon,
   X,
+  Gauge,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { TrickDifficultyBadge, TrickDifficultySelector } from "@/components/ui/trick-difficulty";
 
 type ThumbnailSource = "url" | "file";
 type PreviewVideoSource = "url" | "file";
@@ -133,6 +135,7 @@ export function AdminVideos() {
     previewDurationSeconds: "",
     videoUrl: "",
     previewVideoUrl: "",
+    difficulty: 1,
   });
 
   const [uploadStep, setUploadStep] = useState<UploadStep>("idle");
@@ -140,7 +143,7 @@ export function AdminVideos() {
 
   // --- Handlers ---
   const resetDialog = () => {
-    setFormData({ title: "", price: "", discountPercent: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "" });
+    setFormData({ title: "", price: "", discountPercent: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "", difficulty: 1 });
     setSelectedFile(null);
     setThumbnailFile(null);
     if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
@@ -209,6 +212,23 @@ export function AdminVideos() {
     invalidateVideoCaches();
     refetch();
     toast({ title: dp ? `Превью: ${dp} сек` : "Превью: авто" });
+  };
+
+  const handleDifficultyChange = async (id: number, currentDiff: number = 1) => {
+    const val = prompt(
+      `🎯 Выберите уровень сложности трюка (от 1 до 5):\n1 = مبتدئ / Легкий\n2 = سهل / Базовый\n3 = متوسط / Средний\n4 = متقدم / Сложный\n5 = محترف / Профи\n\nТекущий уровень: ${currentDiff}/5`,
+      String(currentDiff || 1)
+    );
+    if (val === null) return;
+    const diff = Number(val.trim());
+    if (isNaN(diff) || diff < 1 || diff > 5) {
+      toast({ title: "Введите число от 1 до 5", variant: "destructive" });
+      return;
+    }
+    await updateMut.mutateAsync({ id, data: { difficulty: diff } });
+    invalidateVideoCaches();
+    refetch();
+    toast({ title: `✅ Уровень сложности установлен: ${diff}/5` });
   };
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -297,6 +317,7 @@ export function AdminVideos() {
           description: formData.description || undefined,
           previewDurationSeconds: formData.previewDurationSeconds ? Number(formData.previewDurationSeconds) : undefined,
           categoryId: resolvedCategoryId,
+          difficulty: formData.difficulty || 1,
           isPublished: true,
           isFeatured: true,
           // Full course video URL (shown only to buyers in their profile)
@@ -430,6 +451,7 @@ export function AdminVideos() {
                 <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Название курса</TableHead>
                 <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Цена</TableHead>
                 <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Скидка</TableHead>
+                <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Сложность</TableHead>
                 <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Превью (сек)</TableHead>
                 <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400">Просмотры</TableHead>
                 <TableHead className="font-bold text-xs uppercase text-slate-500 dark:text-slate-400 text-right pr-6">Действия</TableHead>
@@ -458,10 +480,16 @@ export function AdminVideos() {
                       <span className="text-slate-400 text-xs">-</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <TrickDifficultyBadge size="xs" difficulty={v.difficulty} />
+                  </TableCell>
                   <TableCell className="text-xs text-slate-600 dark:text-slate-400">{(v as any).previewDurationSeconds || "Авто"}</TableCell>
                   <TableCell className="text-xs font-medium text-slate-600 dark:text-slate-400">{v.viewCount}</TableCell>
                   <TableCell className="text-right pr-6">
                     <div className="flex justify-end gap-1.5">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handleDifficultyChange(v.id, v.difficulty)} title="Уровень сложности (1-5)">
+                        <Gauge className="h-4 w-4 text-amber-500" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handlePreviewDuration(v.id)} title="Длительность превью">
                         <Clock className="h-4 w-4" />
                       </Button>
@@ -624,6 +652,13 @@ export function AdminVideos() {
                 />
               </div>
             </div>
+
+            {/* Trick Difficulty Selector (1 to 5 circles) */}
+            <TrickDifficultySelector
+              value={formData.difficulty}
+              onChange={(diff) => setFormData({ ...formData, difficulty: diff })}
+              disabled={isWorking}
+            />
 
             {/* Thumbnail source selector */}
             <div className="grid gap-3">

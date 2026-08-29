@@ -25,6 +25,11 @@ export interface VideoUpdate {
   discountPrice?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  difficulty?: number;
   isFeatured?: boolean;
   isPublished?: boolean;
 }

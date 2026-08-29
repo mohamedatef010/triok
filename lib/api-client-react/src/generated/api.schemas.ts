@@ -105,6 +105,11 @@ export interface Video {
   categoryId?: number | null;
   /** @nullable */
   categoryName?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  difficulty?: number;
   viewCount: number;
   averageRating: number;
   reviewCount: number;
@@ -134,6 +139,11 @@ export interface VideoDetail {
   categoryId?: number | null;
   /** @nullable */
   categoryName?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  difficulty?: number;
   viewCount: number;
   averageRating: number;
   reviewCount: number;
@@ -164,6 +174,11 @@ export interface VideoInput {
   discountPrice?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  difficulty?: number;
   isFeatured?: boolean;
   isPublished?: boolean;
 }
@@ -187,6 +202,11 @@ export interface VideoUpdate {
   discountPrice?: number | null;
   /** @nullable */
   categoryId?: number | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  difficulty?: number;
   isFeatured?: boolean;
   isPublished?: boolean;
 }

@@ -39,6 +39,7 @@ export const videosTable = pgTable("videos", {
   categoryId: integer("category_id").references(() => categoriesTable.id, {
     onDelete: "set null",
   }),
+  difficulty: integer("difficulty").notNull().default(1),
   viewCount: integer("view_count").notNull().default(0),
   isFeatured: boolean("is_featured").notNull().default(false),
   isPublished: boolean("is_published").notNull().default(true),

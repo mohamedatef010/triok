@@ -112,6 +112,11 @@ export const UpdateMeResponse = zod.object({
 /**
  * @summary Get list of purchased videos for current user
  */
+export const getMyPurchasedVideosResponseDifficultyDefault = 1;
+export const getMyPurchasedVideosResponseDifficultyMax = 5;
+
+
+
 export const GetMyPurchasedVideosResponseItem = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -124,6 +129,7 @@ export const GetMyPurchasedVideosResponseItem = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(getMyPurchasedVideosResponseDifficultyMax).default(getMyPurchasedVideosResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -208,6 +214,11 @@ export const ListVideosQueryParams = zod.object({
   "limit": zod.coerce.number().int().optional()
 })
 
+export const listVideosResponseVideosItemDifficultyDefault = 1;
+export const listVideosResponseVideosItemDifficultyMax = 5;
+
+
+
 export const ListVideosResponse = zod.object({
   "videos": zod.array(zod.object({
   "id": zod.int(),
@@ -221,6 +232,7 @@ export const ListVideosResponse = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(listVideosResponseVideosItemDifficultyMax).default(listVideosResponseVideosItemDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -240,6 +252,9 @@ export const ListVideosResponse = zod.object({
 
 export const createVideoBodyPriceMin = 0;
 
+export const createVideoBodyDifficultyDefault = 1;
+export const createVideoBodyDifficultyMax = 5;
+
 
 
 export const CreateVideoBody = zod.object({
@@ -253,9 +268,15 @@ export const CreateVideoBody = zod.object({
   "price": zod.number().min(createVideoBodyPriceMin),
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
+  "difficulty": zod.int().min(1).max(createVideoBodyDifficultyMax).default(createVideoBodyDifficultyDefault),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional()
 })
+
+export const createVideoResponseDifficultyDefault = 1;
+export const createVideoResponseDifficultyMax = 5;
+
+
 
 export const CreateVideoResponse = zod.object({
   "id": zod.int(),
@@ -269,6 +290,7 @@ export const CreateVideoResponse = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(createVideoResponseDifficultyMax).default(createVideoResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -281,6 +303,11 @@ export const CreateVideoResponse = zod.object({
 /**
  * @summary Get featured/top videos for homepage hero
  */
+export const getFeaturedVideosResponseDifficultyDefault = 1;
+export const getFeaturedVideosResponseDifficultyMax = 5;
+
+
+
 export const GetFeaturedVideosResponseItem = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -293,6 +320,7 @@ export const GetFeaturedVideosResponseItem = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(getFeaturedVideosResponseDifficultyMax).default(getFeaturedVideosResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -326,6 +354,11 @@ export const GetVideoParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
+export const getVideoResponseDifficultyDefault = 1;
+export const getVideoResponseDifficultyMax = 5;
+
+
+
 export const GetVideoResponse = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -339,6 +372,7 @@ export const GetVideoResponse = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(getVideoResponseDifficultyMax).default(getVideoResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -356,6 +390,10 @@ export const UpdateVideoParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
+export const updateVideoBodyDifficultyMax = 5;
+
+
+
 export const UpdateVideoBody = zod.object({
   "title": zod.string().optional(),
   "description": zod.string().nullish(),
@@ -367,9 +405,15 @@ export const UpdateVideoBody = zod.object({
   "price": zod.number().optional(),
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
+  "difficulty": zod.int().min(1).max(updateVideoBodyDifficultyMax).optional(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional()
 })
+
+export const updateVideoResponseDifficultyDefault = 1;
+export const updateVideoResponseDifficultyMax = 5;
+
+
 
 export const UpdateVideoResponse = zod.object({
   "id": zod.int(),
@@ -383,6 +427,7 @@ export const UpdateVideoResponse = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(updateVideoResponseDifficultyMax).default(updateVideoResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -422,6 +467,11 @@ export const GetRelatedVideosParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
+export const getRelatedVideosResponseDifficultyDefault = 1;
+export const getRelatedVideosResponseDifficultyMax = 5;
+
+
+
 export const GetRelatedVideosResponseItem = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -434,6 +484,7 @@ export const GetRelatedVideosResponseItem = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(getRelatedVideosResponseDifficultyMax).default(getRelatedVideosResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -451,6 +502,11 @@ export const GetSimilarVideosParams = zod.object({
   "id": zod.coerce.number().int()
 })
 
+export const getSimilarVideosResponseDifficultyDefault = 1;
+export const getSimilarVideosResponseDifficultyMax = 5;
+
+
+
 export const GetSimilarVideosResponseItem = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -463,6 +519,7 @@ export const GetSimilarVideosResponseItem = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(getSimilarVideosResponseDifficultyMax).default(getSimilarVideosResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -657,6 +714,11 @@ export const RemoveFromCartResponse = zod.object({
 /**
  * @summary Get current user favorites
  */
+export const getFavoritesResponseDifficultyDefault = 1;
+export const getFavoritesResponseDifficultyMax = 5;
+
+
+
 export const GetFavoritesResponseItem = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -669,6 +731,7 @@ export const GetFavoritesResponseItem = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(getFavoritesResponseDifficultyMax).default(getFavoritesResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -901,6 +964,11 @@ export const AdminListVideosQueryParams = zod.object({
   "limit": zod.coerce.number().int().optional()
 })
 
+export const adminListVideosResponseVideosItemDifficultyDefault = 1;
+export const adminListVideosResponseVideosItemDifficultyMax = 5;
+
+
+
 export const AdminListVideosResponse = zod.object({
   "videos": zod.array(zod.object({
   "id": zod.int(),
@@ -914,6 +982,7 @@ export const AdminListVideosResponse = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(adminListVideosResponseVideosItemDifficultyMax).default(adminListVideosResponseVideosItemDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),
@@ -938,6 +1007,11 @@ export const SetVideoDiscountBody = zod.object({
   "discountPrice": zod.number().nullish()
 })
 
+export const setVideoDiscountResponseDifficultyDefault = 1;
+export const setVideoDiscountResponseDifficultyMax = 5;
+
+
+
 export const SetVideoDiscountResponse = zod.object({
   "id": zod.int(),
   "title": zod.string(),
@@ -950,6 +1024,7 @@ export const SetVideoDiscountResponse = zod.object({
   "discountPrice": zod.number().nullish(),
   "categoryId": zod.int().nullish(),
   "categoryName": zod.string().nullish(),
+  "difficulty": zod.int().min(1).max(setVideoDiscountResponseDifficultyMax).default(setVideoDiscountResponseDifficultyDefault),
   "viewCount": zod.int(),
   "averageRating": zod.number(),
   "reviewCount": zod.int(),

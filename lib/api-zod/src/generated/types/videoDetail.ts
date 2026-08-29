@@ -27,6 +27,11 @@ export interface VideoDetail {
   categoryId?: number | null;
   /** @nullable */
   categoryName?: string | null;
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  difficulty?: number;
   viewCount: number;
   averageRating: number;
   reviewCount: number;

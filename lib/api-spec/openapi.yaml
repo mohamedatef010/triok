@@ -1133,6 +1133,11 @@ components:
           type: ["integer", "null"]
         categoryName:
           type: ["string", "null"]
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 1
         viewCount:
           type: integer
         averageRating:
@@ -1175,6 +1180,11 @@ components:
           type: ["integer", "null"]
         categoryName:
           type: ["string", "null"]
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 1
         viewCount:
           type: integer
         averageRating:
@@ -1217,6 +1227,11 @@ components:
           type: ["number", "null"]
         categoryId:
           type: ["integer", "null"]
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
+          default: 1
         isFeatured:
           type: boolean
         isPublished:
@@ -1245,6 +1260,10 @@ components:
           type: ["number", "null"]
         categoryId:
           type: ["integer", "null"]
+        difficulty:
+          type: integer
+          minimum: 1
+          maximum: 5
         isFeatured:
           type: boolean
         isPublished:

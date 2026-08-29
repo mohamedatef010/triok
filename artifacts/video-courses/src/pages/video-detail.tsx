@@ -41,6 +41,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import ReactPlayer from "react-player";
 
 import { formatDuration } from "@/lib/utils";
+import { TrickDifficultyBadge } from "@/components/ui/trick-difficulty";
 
 export function VideoDetailPage() {
   const [, params] = useRoute("/video/:id");
@@ -476,6 +477,9 @@ export function VideoDetailPage() {
                     {video.categoryName || "Фокусы"}
                   </span>
 
+                  {/* Trick Difficulty 5-Circle Badge */}
+                  <TrickDifficultyBadge difficulty={video.difficulty} size="sm" showIcon />
+
                   {/* Duration — only if actually set and > 0 */}
                   {displayDuration && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-muted/80 text-muted-foreground text-xs font-semibold border border-border/60">
@@ -498,8 +502,8 @@ export function VideoDetailPage() {
                   {video.title}
                 </h1>
 
-                {/* Rating & Reviews pill */}
-                <div className="flex items-center gap-2.5 mb-4 sm:mb-5">
+                {/* Rating & Reviews pill + Difficulty info */}
+                <div className="flex flex-wrap items-center gap-2.5 mb-4 sm:mb-5">
                   <button 
                     onClick={scrollToReviews}
                     className="inline-flex items-center gap-1.5 bg-amber-400/15 dark:bg-amber-400/10 px-2.5 py-1 rounded-xl border border-amber-400/30 text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-black hover:bg-amber-400/25 transition-colors cursor-pointer"
@@ -515,6 +519,14 @@ export function VideoDetailPage() {
                     <MessageSquare className="h-3.5 w-3.5" />
                     <span>{displayVideo?.reviewCount ?? 0} отзывов</span>
                   </button>
+
+                  <span className="text-muted-foreground/40 hidden sm:inline">•</span>
+
+                  {/* Detailed difficulty rating indicator */}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold">
+                    <span>Сложность:</span>
+                    <TrickDifficultyBadge difficulty={video.difficulty} size="xs" showIcon={false} />
+                  </div>
                 </div>
 
                 {/* Price Block */}
@@ -541,7 +553,7 @@ export function VideoDetailPage() {
                         -{discountPercent}% Скидка
                       </span>
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">
-                        Экономия {video.price - video.discountPrice} ₽
+                        Экономия {video.discountPrice ? (video.price - Number(video.discountPrice)) : 0} ₽
                       </span>
                     </div>
                   )}

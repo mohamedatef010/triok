@@ -61,6 +61,7 @@ async function buildVideoRow(video: typeof videosTable.$inferSelect, catName: st
     discountPrice: video.discountPrice != null ? Number(video.discountPrice) : null,
     categoryId: video.categoryId ?? null,
     categoryName: catName,
+    difficulty: video.difficulty ?? 1,
     viewCount: video.viewCount,
     averageRating: Math.round(avg * 10) / 10,
     reviewCount: videoReviews.length,
@@ -94,6 +95,7 @@ async function buildVideoListRow(video: typeof videosTable.$inferSelect, catName
     discountPrice: video.discountPrice != null ? Number(video.discountPrice) : null,
     categoryId: video.categoryId ?? null,
     categoryName: catName,
+    difficulty: video.difficulty ?? 1,
     viewCount: video.viewCount,
     averageRating: Math.round((avg ?? 0) * 10) / 10,
     reviewCount: count ?? 0,
@@ -161,6 +163,7 @@ router.post("/videos", requireAdmin, async (req, res): Promise<void> => {
       price: String(data.price),
       discountPrice: data.discountPrice != null ? String(data.discountPrice) : null,
       categoryId: data.categoryId ?? null,
+      difficulty: data.difficulty ?? 1,
       isFeatured: data.isFeatured ?? false,
       isPublished: data.isPublished ?? true,
     })
@@ -234,6 +237,7 @@ router.patch("/videos/:id", requireAdmin, async (req, res): Promise<void> => {
   if (data.price != null) updates.price = String(data.price);
   if ("discountPrice" in data) updates.discountPrice = data.discountPrice != null ? String(data.discountPrice) : undefined;
   if ("categoryId" in data) updates.categoryId = data.categoryId ?? undefined;
+  if (data.difficulty != null) updates.difficulty = data.difficulty;
   if (data.isFeatured != null) updates.isFeatured = data.isFeatured;
   if (data.isPublished != null) updates.isPublished = data.isPublished;
   const [video] = await db.update(videosTable).set(updates).where(eq(videosTable.id, params.data.id)).returning();

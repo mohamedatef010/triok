@@ -39,6 +39,7 @@ router.get("/favorites", requireAuth, async (req, res): Promise<void> => {
         discountPrice: video.discountPrice != null ? Number(video.discountPrice) : null,
         categoryId: video.categoryId ?? null,
         categoryName: catMap.get(video.categoryId ?? -1) ?? null,
+        difficulty: video.difficulty ?? 1,
         viewCount: video.viewCount,
         averageRating: Math.round((avg ?? 0) * 10) / 10,
         reviewCount: count ?? 0,
