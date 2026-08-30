@@ -391,44 +391,89 @@ export function HomePage() {
     refetchOnMount: true,
   });
 
-  const hero = {
-    badge1: heroSettings?.badge1 || "Искусство удивлять",
-    badge2: heroSettings?.badge2 || "С трудоустройством",
-    heading: heroSettings?.heading || "Научись фокусам, которые действительно хочется показать друзьям",
-    subheading: heroSettings?.subheading || "Научись эффектным фокусам, раскрывай секреты иллюзионного искусства и удивляй друзей и близких. Понятные пошаговые уроки от профессионального фокусника.",
-    ctaPrimaryText: heroSettings?.ctaPrimaryText || "Смотри секрет трюка",
-    ctaPrimaryLink: heroSettings?.ctaPrimaryLink || "/catalog",
-    ctaSecondaryText: heroSettings?.ctaSecondaryText || "Хочешь удивить друзей?",
-    orbit1Value: heroSettings?.orbit1Value || "10+",
-    orbit1Label: heroSettings?.orbit1Label || "лет в мире иллюзий",
-    orbit2Title: heroSettings?.orbit2Title || "Видеоуроки",
-    orbit2Subtitle: heroSettings?.orbit2Subtitle || "понятно и пошагово",
-    orbit2Desc: heroSettings?.orbit2Desc || "Практический опыт выступлений и обучения",
-    orbit3Title: heroSettings?.orbit3Title || "Первый фокус",
-    orbit3Desc: heroSettings?.orbit3Desc || "Научись своему первому эффектному фокусу",
-    orbit4Title: heroSettings?.orbit4Title || "Бесплатно",
-    orbit4Subtitle: heroSettings?.orbit4Subtitle || "Попробуй первый урок",
-    orbit5Title: heroSettings?.orbit5Title || "Для всех",
-    orbit5Desc: heroSettings?.orbit5Desc || "от новичков до увлечённых магией",
-    authorName: heroSettings?.authorName || "✨ Первый трюк за 15 минут",
-    authorRole: heroSettings?.authorRole || "понятный разбор секрета без сложного реквизита",
-    stat1Value: heroSettings?.stat1Value || "15 минут на трюк",
-    stat1Label: heroSettings?.stat1Label || "пошаговое объяснение и легкий старт с нуля",
-    stat2Value: heroSettings?.stat2Value || "HD и 2 ракурса",
-    stat2Label: heroSettings?.stat2Label || "крупные планы: вид со стороны и глазами фокусника",
-    stat3Value: heroSettings?.stat3Value || "Доступ навсегда",
-    stat3Label: heroSettings?.stat3Label || "учись 24/7 в удобном темпе с любого устройства",
+  const getHeroField = (field: string, fallback: string): string => {
+    if (!heroSettings || typeof heroSettings !== "object") return fallback;
+    if (field in heroSettings) return heroSettings[field] ?? "";
+    return fallback;
   };
 
-  const dynamicMarquee = (heroSettings?.marqueeItemsText
-    ? heroSettings.marqueeItemsText.split(",").map((s: string) => s.trim()).filter(Boolean)
-    : null) || MARQUEE_ITEMS;
+  const hero = {
+    badge1: getHeroField("badge1", "Искусство удивлять"),
+    badge2: getHeroField("badge2", "С трудоустройством"),
+    heading: getHeroField("heading", "Научись фокусам, которые действительно хочется показать друзьям"),
+    subheading: getHeroField("subheading", "Научись эффектным фокусам, раскрывай секреты иллюзионного искусства и удивляй друзей и близких. Понятные пошаговые уроки от профессионального фокусника."),
+    ctaPrimaryText: getHeroField("ctaPrimaryText", "Смотри секрет трюка"),
+    ctaPrimaryLink: getHeroField("ctaPrimaryLink", "/catalog"),
+    ctaSecondaryText: getHeroField("ctaSecondaryText", "Хочешь удивить друзей?"),
+    orbit1Value: getHeroField("orbit1Value", "10+"),
+    orbit1Label: getHeroField("orbit1Label", "лет в мире иллюзий"),
+    orbit2Title: getHeroField("orbit2Title", "Видеоуроки"),
+    orbit2Subtitle: getHeroField("orbit2Subtitle", "понятно и пошагово"),
+    orbit2Desc: getHeroField("orbit2Desc", "Практический опыт выступлений и обучения"),
+    orbit3Title: getHeroField("orbit3Title", "Первый фокус"),
+    orbit3Desc: getHeroField("orbit3Desc", "Научись своему первому эффектному фокусу"),
+    orbit4Title: getHeroField("orbit4Title", "Бесплатно"),
+    orbit4Subtitle: getHeroField("orbit4Subtitle", "Попробуй первый урок"),
+    orbit5Title: getHeroField("orbit5Title", "Для всех"),
+    orbit5Desc: getHeroField("orbit5Desc", "от новичков до увлечённых магией"),
+    authorName: getHeroField("authorName", "✨ Первый трюк за 15 минут"),
+    authorRole: getHeroField("authorRole", "понятный разбор секрета без сложного реквизита"),
+    stat1Value: getHeroField("stat1Value", "15 минут на трюк"),
+    stat1Label: getHeroField("stat1Label", "пошаговое объяснение и легкий старт с нуля"),
+    stat2Value: getHeroField("stat2Value", "HD и 2 ракурса"),
+    stat2Label: getHeroField("stat2Label", "крупные планы: вид со стороны и глазами фокусника"),
+    stat3Value: getHeroField("stat3Value", "Доступ навсегда"),
+    stat3Label: getHeroField("stat3Label", "учись 24/7 в удобном темпе с любого устройства"),
+  };
+
+  const hasAnyOrbitCard = Boolean(
+    hero.orbit1Value || hero.orbit1Label ||
+    hero.orbit2Title || hero.orbit2Subtitle || hero.orbit2Desc ||
+    hero.orbit3Title || hero.orbit3Desc ||
+    hero.orbit4Title || hero.orbit4Subtitle ||
+    hero.orbit5Title || hero.orbit5Desc
+  );
+
+  const dynamicMarquee = (heroSettings !== undefined && heroSettings !== null)
+    ? (heroSettings?.marqueeItemsText ? heroSettings.marqueeItemsText.split(",").map((s: string) => s.trim()).filter(Boolean) : [])
+    : MARQUEE_ITEMS;
 
   const dynamicStats = [
     { icon: Zap, value: hero.stat1Value, label: hero.stat1Label },
     { icon: Video, value: hero.stat2Value, label: hero.stat2Label },
     { icon: ShieldCheck, value: hero.stat3Value, label: hero.stat3Label },
-  ];
+  ].filter((s) => Boolean(s.value || s.label));
+
+  // Visibility of each section on the home page (managed by admin in /admm/hero-section)
+  const sectionsVisibility = {
+    hero: heroSettings?.sectionsVisibility?.hero !== false && heroSettings?.hidden !== true,
+    featured_courses: heroSettings?.sectionsVisibility?.featured_courses !== false,
+    about: heroSettings?.sectionsVisibility?.about !== false,
+    social_videos: heroSettings?.sectionsVisibility?.social_videos !== false,
+    events_gallery: heroSettings?.sectionsVisibility?.events_gallery !== false,
+    reviews: heroSettings?.sectionsVisibility?.reviews !== false,
+  };
+
+  // Helper to apply custom text styles, fonts, colors, text alignment and movement/offsets
+  const getElementStyle = (key: string, extraStyles: React.CSSProperties = {}): React.CSSProperties => {
+    const st = heroSettings?.styles?.[key];
+    if (!st) return extraStyles;
+    const transformParts: string[] = [];
+    if (extraStyles.transform) transformParts.push(extraStyles.transform);
+    if (st.offsetX || st.offsetY) {
+      transformParts.push(`translate(${st.offsetX || 0}px, ${st.offsetY || 0}px)`);
+    }
+    return {
+      ...extraStyles,
+      fontFamily: st.fontFamily || extraStyles.fontFamily || undefined,
+      color: st.color || extraStyles.color || undefined,
+      background: st.bgColor || extraStyles.background || undefined,
+      textAlign: st.textAlign || extraStyles.textAlign || undefined,
+      transform: transformParts.length > 0 ? transformParts.join(" ") : undefined,
+      marginTop: st.marginTop ? `${st.marginTop}px` : extraStyles.marginTop || undefined,
+      marginBottom: st.marginBottom ? `${st.marginBottom}px` : extraStyles.marginBottom || undefined,
+    };
+  };
 
   // Only show real videos added by admin via API
   const displayVideos = apiVideos;
@@ -936,6 +981,7 @@ export function HomePage() {
       `}</style>
 
       {/* ── Hero Section (Enhanced Realistic Dark Magic-Show) ── */}
+      {sectionsVisibility.hero && (
       <section
         ref={heroSectionRef}
         onMouseMove={handleHeroMouseMove}
@@ -1053,10 +1099,27 @@ export function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
             {/* ── Left Column: value proposition (bottom margin = safe zone for the stats bar) ── */}
-            <div className="lg:col-span-6 xl:col-span-5 text-left flex flex-col items-start lg:mb-28">
+            <div
+              className={`lg:col-span-6 xl:col-span-5 flex flex-col lg:mb-28 ${
+                heroSettings?.styles?.heading?.textAlign === "center"
+                  ? "items-center text-center"
+                  : heroSettings?.styles?.heading?.textAlign === "right"
+                  ? "items-end text-right"
+                  : "items-start text-left"
+              }`}
+            >
 
               {/* Category badges - updated texts */}
-              <div className="flex flex-wrap items-center gap-2 mb-4 sm:mb-7 hero-anim-down" style={{ animationDelay: "0.05s" }}>
+              <div
+                className={`flex flex-wrap items-center gap-2 mb-4 sm:mb-7 hero-anim-down ${
+                  heroSettings?.styles?.badge1?.textAlign === "center"
+                    ? "justify-center"
+                    : heroSettings?.styles?.badge1?.textAlign === "right"
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+                style={getElementStyle("badge1", { animationDelay: "0.05s" })}
+              >
                 {hero.badge1 && (
                   <span
                     className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[11px] sm:text-xs font-black sm:font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-slate-950 rounded-full sm:rounded-lg shadow-md shadow-amber-500/25 border border-amber-300/50 sm:border-transparent transition-all"
@@ -1085,31 +1148,38 @@ export function HomePage() {
               </div>
 
               {/* Massive, High-Impact Typography - dynamic heading */}
+              {hero.heading && (
               <h1
-                className="text-4xl md:text-5xl lg:text-[58px] xl:text-[64px] font-black text-slate-900 dark:text-white tracking-tight leading-[1.08] mb-6 hero-anim-left"
-                style={{
-                  animationDelay: "0.15s",
-                  fontFamily: heroSettings?.styles?.heading?.fontFamily || undefined,
-                  color: heroSettings?.styles?.heading?.color || undefined,
-                }}
+                className="text-4xl md:text-5xl lg:text-[58px] xl:text-[64px] font-black text-slate-900 dark:text-white tracking-tight leading-[1.08] mb-6 hero-anim-left w-full"
+                style={getElementStyle("heading", { animationDelay: "0.15s" })}
               >
                 {hero.heading}
               </h1>
+              )}
 
               {/* Benefit subtext - dynamic */}
+              {hero.subheading && (
               <p
-                className="text-lg md:text-xl text-slate-600 dark:text-slate-300/90 mb-9 max-w-xl leading-relaxed font-medium hero-anim-left"
-                style={{
-                  animationDelay: "0.25s",
-                  fontFamily: heroSettings?.styles?.subheading?.fontFamily || undefined,
-                  color: heroSettings?.styles?.subheading?.color || undefined,
-                }}
+                className="text-lg md:text-xl text-slate-600 dark:text-slate-300/90 mb-9 max-w-xl leading-relaxed font-medium hero-anim-left w-full"
+                style={getElementStyle("subheading", { animationDelay: "0.25s" })}
               >
                 {hero.subheading}
               </p>
+              )}
 
               {/* Bold CTAs - dynamic button text */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10 hero-anim-up" style={{ animationDelay: "0.35s" }}>
+              {(hero.ctaPrimaryText || hero.ctaSecondaryText) && (
+              <div
+                className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mb-10 hero-anim-up ${
+                  heroSettings?.styles?.ctaPrimary?.textAlign === "center"
+                    ? "justify-center"
+                    : heroSettings?.styles?.ctaPrimary?.textAlign === "right"
+                    ? "justify-end"
+                    : "justify-start"
+                }`}
+                style={getElementStyle("ctaPrimary", { animationDelay: "0.35s" })}
+              >
+                {hero.ctaPrimaryText && (
                 <Button
                   size="lg"
                   className="btn-shine h-14 px-8 rounded-xl font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:opacity-90 shadow-xl shadow-amber-500/25 transition-all text-base border-none"
@@ -1126,6 +1196,8 @@ export function HomePage() {
                     <ArrowRight className="h-4 w-4 shrink-0 opacity-70" />
                   </Link>
                 </Button>
+                )}
+                {hero.ctaSecondaryText && (
                 <Button
                   size="lg" variant="outline"
                   className="h-14 px-8 rounded-xl bg-white/60 text-slate-900 border-slate-300/80 hover:bg-amber-400/15 hover:border-amber-500/50 dark:bg-transparent dark:text-white dark:border-white/25 dark:hover:bg-amber-400/10 dark:hover:border-amber-400/60 shadow-sm transition-all text-base font-bold backdrop-blur-sm cursor-pointer"
@@ -1138,7 +1210,9 @@ export function HomePage() {
                 >
                   <Play className="h-4 w-4 mr-2 text-amber-400 fill-current" /> {hero.ctaSecondaryText}
                 </Button>
+                )}
               </div>
+              )}
 
             </div>
 
@@ -1277,6 +1351,7 @@ export function HomePage() {
                 {/* ── 5 BALANCED FLOATING ORBIT CARDS (dynamic texts) ── */}
 
                 {/* 1. Bottom-Center on mobile / Top-Right on desktop: "10+" */}
+                {(hero.orbit1Value || hero.orbit1Label) && (
                 <div
                   className="float-chip hero-chip-entry absolute bottom-1.5 xs:bottom-2.5 left-1/2 -translate-x-1/2 z-30 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 px-2.5 py-1.5 xs:px-4 xs:py-2.5 flex items-center gap-1.5 xs:gap-2.5 rotate-1 md:bottom-auto md:top-10 lg:top-12 md:left-auto md:-translate-x-0 md:right-0 lg:right-6"
                   style={{
@@ -1286,22 +1361,24 @@ export function HomePage() {
                 >
                   <Star className="h-3.5 w-3.5 xs:h-5 w-5 text-amber-500 dark:text-amber-400 fill-current" />
                   <div className="leading-tight">
-                    <div
+                    {hero.orbit1Value && <div
                       className="text-xs xs:text-sm font-black text-slate-900 dark:text-white"
                       style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                     >
                       {hero.orbit1Value}
-                    </div>
-                    <div
+                    </div>}
+                    {hero.orbit1Label && <div
                       className="text-[8px] xs:text-[10px] font-semibold text-slate-500 dark:text-slate-400"
                       style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                     >
                       {hero.orbit1Label}
-                    </div>
+                    </div>}
                   </div>
                 </div>
+                )}
 
                 {/* 2. Mid-Right: Experience → Video lessons */}
+                {(hero.orbit2Title || hero.orbit2Subtitle || hero.orbit2Desc) && (
                 <div
                   className="float-chip hero-chip-entry absolute top-[190px] xs:top-[195px] right-0 xs:right-1 sm:right-2 z-30 w-[118px] xs:w-[130px] sm:w-44 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 -rotate-1 md:top-[210px] lg:top-[230px] md:right-0 lg:right-6"
                   style={{
@@ -1309,18 +1386,18 @@ export function HomePage() {
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
-                  <div
+                  {hero.orbit2Title && <div
                     className="text-[11px] xs:text-xs sm:text-base font-black text-amber-600 dark:text-amber-400 leading-none mb-0.5 xs:mb-1"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit2Title}
-                  </div>
-                  <div
+                  </div>}
+                  {hero.orbit2Subtitle && <div
                     className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit2Subtitle}
-                  </div>
+                  </div>}
                   {hero.orbit2Desc && (
                     <div
                       className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
@@ -1330,8 +1407,10 @@ export function HomePage() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* 3. Bottom-Right: Quick Start */}
+                {(hero.orbit3Title || hero.orbit3Desc) && (
                 <div
                   className="float-chip hero-chip-entry absolute top-[305px] xs:top-[315px] right-0 xs:right-1 sm:right-2 z-30 w-[122px] xs:w-[136px] sm:w-52 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 rotate-2 md:top-[400px] lg:top-[440px] sm:right-[50px]"
                   style={{
@@ -1340,12 +1419,12 @@ export function HomePage() {
                   }}
                 >
                   <div className="text-[11px] xs:text-xs sm:text-sm mb-0.5">✨</div>
-                  <div
+                  {hero.orbit3Title && <div
                     className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit3Title}
-                  </div>
+                  </div>}
                   {hero.orbit3Desc && (
                     <div
                       className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 xs:mt-1"
@@ -1355,8 +1434,10 @@ export function HomePage() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* 4. Bottom-Left: Free Trial */}
+                {(hero.orbit4Title || hero.orbit4Subtitle) && (
                 <div
                   className="float-chip hero-chip-entry absolute top-[305px] xs:top-[315px] left-0 xs:left-1 sm:left-2 z-30 w-[118px] xs:w-[130px] sm:w-48 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 -rotate-2 md:top-[440px] lg:top-[480px] sm:left-[-20px]"
                   style={{
@@ -1364,21 +1445,23 @@ export function HomePage() {
                     fontFamily: heroSettings?.styles?.orbitCards?.fontFamily || undefined,
                   }}
                 >
-                  <div
+                  {hero.orbit4Title && <div
                     className="text-[11px] xs:text-xs sm:text-base font-black text-emerald-600 dark:text-emerald-400 leading-none mb-0.5 xs:mb-1"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit4Title}
-                  </div>
-                  <div
+                  </div>}
+                  {hero.orbit4Subtitle && <div
                     className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.secondaryColor || undefined }}
                   >
                     {hero.orbit4Subtitle}
-                  </div>
+                  </div>}
                 </div>
+                )}
 
                 {/* 5. Mid-Left: Community */}
+                {(hero.orbit5Title || hero.orbit5Desc) && (
                 <div
                   className="float-chip hero-chip-entry absolute top-[195px] xs:top-[200px] left-0 xs:left-1 sm:left-2 z-30 w-[115px] xs:w-[126px] sm:w-40 rounded-xl sm:rounded-2xl bg-white/90 dark:bg-[#151310]/95 backdrop-blur-xl border border-amber-400/40 dark:border-amber-500/30 shadow-xl shadow-amber-500/10 dark:shadow-black/50 p-2 xs:p-2.5 sm:p-3.5 rotate-2 md:top-[210px] lg:top-[240px] sm:left-[-20px] lg:left-[20px] xl:left-[40px]"
                   style={{
@@ -1389,12 +1472,12 @@ export function HomePage() {
                   <div className="h-5 w-5 xs:h-6 xs:w-6 rounded-lg bg-amber-400/10 border border-amber-400/20 text-amber-500 dark:text-amber-400 flex items-center justify-center mb-0.5 xs:mb-1.5 shrink-0">
                     <Users className="h-3 w-3 xs:h-3.5 xs:w-3.5" />
                   </div>
-                  <div
+                  {hero.orbit5Title && <div
                     className="text-[9px] xs:text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight"
                     style={{ color: heroSettings?.styles?.orbitCards?.color || undefined }}
                   >
                     {hero.orbit5Title}
-                  </div>
+                  </div>}
                   {hero.orbit5Desc && (
                     <div
                       className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5"
@@ -1404,17 +1487,18 @@ export function HomePage() {
                     </div>
                   )}
                 </div>
+                )}
 
               </div>
 
               {/* Hero value guarantee luxury badge - Desktop only (Pure CSS & SVG with 3D Perspective & Light/Dark Mode) */}
+              {(hero.authorName || hero.authorRole) && (
               <div
                 ref={desktopBadgeRef}
                 className="absolute bottom-6 lg:bottom-10 xl:bottom-14 left-1/2 -translate-x-1/2 z-40 hidden lg:block w-full max-w-[440px] xl:max-w-[480px] hero-anim-up [perspective:1000px]"
-                style={{
+                style={getElementStyle("authorTagline", {
                   animationDelay: "0.45s",
-                  fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined,
-                }}
+                })}
               >
                 <div className="relative pt-12 [transform:perspective(1000px)_rotateX(7deg)] transition-transform duration-300 hover:[transform:perspective(1000px)_rotateX(3deg)]">
                   {/* Top Center Circular Medallion with Wand (Enlarged & Adaptive) */}
@@ -1532,14 +1616,16 @@ export function HomePage() {
                   </div>
                 </div>
               </div>
+              )}
 
             </div>
 
             {/* Hero value guarantee luxury badge — Mobile only (Pure CSS & SVG with 3D Perspective & Light/Dark Mode) */}
+            {(hero.authorName || hero.authorRole) && (
             <div
               ref={mobileBadgeRef}
               className="flex lg:hidden flex-col items-center mt-2 mb-2 mx-auto w-full max-w-[340px] xs:max-w-[370px] [perspective:900px]"
-              style={{ fontFamily: heroSettings?.styles?.authorTagline?.fontFamily || undefined }}
+              style={getElementStyle("authorTagline")}
             >
               <div className="relative w-full pt-10 [transform:perspective(900px)_rotateX(6deg)]">
                 {/* Top Center Circular Medallion with Wand (Enlarged & Adaptive) */}
@@ -1660,16 +1746,17 @@ export function HomePage() {
                 </div>
               </div>
             </div>
+            )}
 
           </div>
 
           {/* Core Stats bar - dynamic stats */}
+          {dynamicStats.length > 0 && (
           <div
             className="relative z-30 mt-6 lg:-mt-24 grid grid-cols-1 md:grid-cols-3 border border-slate-200/80 dark:border-white/10 rounded-3xl bg-white/90 dark:bg-[#141210]/90 backdrop-blur-xl overflow-hidden shadow-xl shadow-slate-200/60 dark:shadow-black/40 hero-anim-zoom"
-            style={{
+            style={getElementStyle("stats", {
               animationDelay: "0.55s",
-              fontFamily: heroSettings?.styles?.stats?.fontFamily || undefined,
-            }}
+            })}
           >
             {dynamicStats.map(({ icon: Icon, value, label }, index) => (
               <div
@@ -1698,6 +1785,7 @@ export function HomePage() {
               </div>
             ))}
           </div>
+          )}
 
         </div>
 
@@ -1705,9 +1793,10 @@ export function HomePage() {
         <div className="absolute inset-x-0 bottom-12 h-44 bg-gradient-to-t from-amber-50/95 via-stone-100/70 to-transparent dark:from-[#08070a] dark:via-[#08070a]/80 dark:to-transparent pointer-events-none z-20" />
 
         {/* Marquee ticker - light/dark adaptive */}
+        {dynamicMarquee.length > 0 && (
         <div
           className="absolute bottom-0 inset-x-0 z-10 border-t border-slate-200/60 dark:border-white/10 bg-white/80 dark:bg-black/70 backdrop-blur-md py-3.5 overflow-hidden"
-          style={{ fontFamily: heroSettings?.styles?.marquee?.fontFamily || undefined }}
+          style={getElementStyle("marquee")}
         >
           <div className="marquee-track flex whitespace-nowrap items-center gap-10 w-max">
             {[...dynamicMarquee, ...dynamicMarquee].map((marqueeItem, marqueeIdx) => (
@@ -1722,10 +1811,13 @@ export function HomePage() {
             ))}
           </div>
         </div>
+        )}
 
       </section>
+      )}
 
       {/* ── Featured Video Courses Grid (Sequential spiral storytelling on desktop) ── */}
+      {sectionsVisibility.featured_courses && (
       <section className="py-24 bg-background relative">
         <div className="container px-4 mx-auto">
 
@@ -1806,18 +1898,19 @@ export function HomePage() {
           )}
         </div>
       </section>
+      )}
 
       {/* ── Storytelling "About Author" Section (Light, Personal Conversation) ── */}
-      <AboutSection />
+      {sectionsVisibility.about && <AboutSection />}
 
       {/* ── NEW SECTION: Social Media Videos ── */}
-      <SocialVideosSection />
+      {sectionsVisibility.social_videos && <SocialVideosSection />}
 
       {/* ── NEW SECTION: Event Photos Gallery ── */}
-      <EventsGallerySection />
+      {sectionsVisibility.events_gallery && <EventsGallerySection />}
 
       {/* ── Free Trial CTA Banner (Light, mouse-follow interactive) ── */}
-      <ReviewsSection />
+      {sectionsVisibility.reviews && <ReviewsSection />}
 
       {/* ── Interactive Demo Video Modal ── */}
       {activePreviewVideo && (

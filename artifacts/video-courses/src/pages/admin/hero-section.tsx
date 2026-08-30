@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/states";
-import { Save, RefreshCw, Sparkles, LayoutTemplate, Star, MessageSquare, Layers, Award, ArrowRight, RotateCcw, Palette, Type } from "lucide-react";
+import {
+  Save, RefreshCw, Sparkles, LayoutTemplate, Star, MessageSquare, Layers, Award,
+  ArrowRight, RotateCcw, Palette, Type, Trash2, X, Move, AlignLeft, AlignCenter,
+  AlignRight, ArrowLeftRight, ArrowUpDown, Eye, EyeOff, Film, Camera, Play
+} from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -41,9 +45,15 @@ export interface TextStyleItem {
   fontFamily?: string;
   bgColor?: string;
   secondaryColor?: string;
+  textAlign?: "left" | "center" | "right";
+  offsetX?: number;
+  offsetY?: number;
+  marginTop?: number;
+  marginBottom?: number;
 }
 
 export interface HeroSectionData {
+  hidden?: boolean;
   badge1: string;
   badge2: string;
   heading: string;
@@ -83,9 +93,18 @@ export interface HeroSectionData {
     stats?: TextStyleItem;
     marquee?: TextStyleItem;
   };
+  sectionsVisibility?: {
+    hero?: boolean;
+    featured_courses?: boolean;
+    about?: boolean;
+    social_videos?: boolean;
+    events_gallery?: boolean;
+    reviews?: boolean;
+  };
 }
 
 export const DEFAULT_HERO_DATA: HeroSectionData = {
+  hidden: false,
   badge1: "Искусство удивлять",
   badge2: "С трудоустройством",
   heading: "Научись фокусам, которые действительно хочется показать друзьям",
@@ -114,9 +133,17 @@ export const DEFAULT_HERO_DATA: HeroSectionData = {
   stat3Label: "учись 24/7 в удобном темпе с любого устройства",
   marqueeItemsText: "Фокусы, Иллюзии, Секреты магии, Карточные трюки, Ментальная магия, Пошаговые уроки, Мастер-классы, Удивляй друзей, Открывай мир иллюзий",
   styles: {},
+  sectionsVisibility: {
+    hero: true,
+    featured_courses: true,
+    about: true,
+    social_videos: true,
+    events_gallery: true,
+    reviews: true,
+  },
 };
 
-/** Reusable Style (Font & Color) Picker Component */
+/** Reusable Style (Font, Color & Movement/Position) Picker Component */
 function StylePicker({
   title,
   value,
@@ -124,6 +151,7 @@ function StylePicker({
   showBg = false,
   showSecondaryColor = false,
   secondaryColorLabel = "Второй цвет",
+  showPosition = true,
 }: {
   title: string;
   value?: TextStyleItem;
@@ -131,11 +159,24 @@ function StylePicker({
   showBg?: boolean;
   showSecondaryColor?: boolean;
   secondaryColorLabel?: string;
+  showPosition?: boolean;
 }) {
+  const [showAdvancedPos, setShowAdvancedPos] = useState(false);
   const currentFont = value?.fontFamily || "";
   const currentColor = value?.color || "";
   const currentBg = value?.bgColor || "";
   const currentSecondary = value?.secondaryColor || "";
+  const currentAlign = value?.textAlign || "left";
+  const currentOffsetX = value?.offsetX ?? 0;
+  const currentOffsetY = value?.offsetY ?? 0;
+
+  const hasPosOverrides = Boolean(
+    (value?.textAlign && value.textAlign !== "left") ||
+    value?.offsetX ||
+    value?.offsetY ||
+    value?.marginTop ||
+    value?.marginBottom
+  );
 
   return (
     <div className="p-3.5 rounded-xl border bg-amber-500/5 dark:bg-slate-900/60 border-amber-500/20 space-y-3">
@@ -144,15 +185,31 @@ function StylePicker({
           <Palette className="h-3.5 w-3.5" />
           {title}
         </span>
-        {(currentColor || currentFont || currentBg || currentSecondary) && (
-          <button
-            type="button"
-            onClick={() => onChange({})}
-            className="text-[11px] text-muted-foreground hover:text-destructive underline"
-          >
-            Сбросить стиль
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {showPosition && (
+            <button
+              type="button"
+              onClick={() => setShowAdvancedPos(!showAdvancedPos)}
+              className={`text-[11px] px-2 py-0.5 rounded border transition-colors flex items-center gap-1 ${
+                hasPosOverrides || showAdvancedPos
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-600 dark:text-amber-300 font-bold"
+                  : "bg-background border-input text-muted-foreground hover:text-foreground"
+              }`}
+              title="Настройка смещения и выравнивания текста"
+            >
+              <Move className="h-3 w-3" /> Позиция {hasPosOverrides && "•"}
+            </button>
+          )}
+          {(currentColor || currentFont || currentBg || currentSecondary || hasPosOverrides) && (
+            <button
+              type="button"
+              onClick={() => onChange({})}
+              className="text-[11px] text-muted-foreground hover:text-destructive underline"
+            >
+              Сбросить стиль
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -194,7 +251,7 @@ function StylePicker({
           </div>
         </div>
 
-        {/* Secondary color (for subtitles/labels if requested) */}
+        {/* Secondary color */}
         {showSecondaryColor && (
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">{secondaryColorLabel}</label>
@@ -238,6 +295,124 @@ function StylePicker({
           </div>
         )}
       </div>
+
+      {/* Position and Movement Controls */}
+      {showPosition && (showAdvancedPos || hasPosOverrides) && (
+        <div className="pt-2 border-t border-amber-500/20 space-y-3 bg-amber-500/[0.03] p-3 rounded-lg">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span className="flex items-center gap-1.5">
+              <Move className="h-3.5 w-3.5 text-amber-500" />
+              Позиция, смещение и выравнивание (تحريك ومحاذاة النص)
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange({ ...value, textAlign: undefined, offsetX: undefined, offsetY: undefined, marginTop: undefined, marginBottom: undefined })}
+              className="text-[10px] text-muted-foreground hover:text-destructive underline"
+            >
+              Сбросить позицию
+            </button>
+          </div>
+
+          {/* Alignment */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-medium text-muted-foreground">Выравнивание (Alignment)</label>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant={currentAlign === "left" ? "default" : "outline"}
+                size="sm"
+                className={`h-7 px-3 text-xs gap-1 ${currentAlign === "left" ? "bg-amber-500 text-slate-950 hover:bg-amber-600" : ""}`}
+                onClick={() => onChange({ ...value, textAlign: "left" })}
+              >
+                <AlignLeft className="h-3.5 w-3.5" /> Слева
+              </Button>
+              <Button
+                type="button"
+                variant={currentAlign === "center" ? "default" : "outline"}
+                size="sm"
+                className={`h-7 px-3 text-xs gap-1 ${currentAlign === "center" ? "bg-amber-500 text-slate-950 hover:bg-amber-600" : ""}`}
+                onClick={() => onChange({ ...value, textAlign: "center" })}
+              >
+                <AlignCenter className="h-3.5 w-3.5" /> По центру
+              </Button>
+              <Button
+                type="button"
+                variant={currentAlign === "right" ? "default" : "outline"}
+                size="sm"
+                className={`h-7 px-3 text-xs gap-1 ${currentAlign === "right" ? "bg-amber-500 text-slate-950 hover:bg-amber-600" : ""}`}
+                onClick={() => onChange({ ...value, textAlign: "right" })}
+              >
+                <AlignRight className="h-3.5 w-3.5" /> Справа
+              </Button>
+            </div>
+          </div>
+
+          {/* Horizontal & Vertical Offsets */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Shift X */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-medium text-muted-foreground flex items-center gap-1">
+                  <ArrowLeftRight className="h-3 w-3 text-amber-500" /> Смещение X (← влево / вправо →)
+                </span>
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{currentOffsetX}px</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min="-150"
+                  max="150"
+                  step="2"
+                  value={currentOffsetX}
+                  onChange={(e) => onChange({ ...value, offsetX: Number(e.target.value) })}
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-amber-500"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  title="Сбросить X на 0"
+                  onClick={() => onChange({ ...value, offsetX: 0 })}
+                >
+                  0
+                </Button>
+              </div>
+            </div>
+
+            {/* Shift Y */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-medium text-muted-foreground flex items-center gap-1">
+                  <ArrowUpDown className="h-3 w-3 text-amber-500" /> Смещение Y (↑ вверх / вниз ↓)
+                </span>
+                <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">{currentOffsetY}px</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min="-100"
+                  max="100"
+                  step="2"
+                  value={currentOffsetY}
+                  onChange={(e) => onChange({ ...value, offsetY: Number(e.target.value) })}
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-amber-500"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-xs text-muted-foreground hover:text-foreground shrink-0"
+                  title="Сбросить Y на 0"
+                  onClick={() => onChange({ ...value, offsetY: 0 })}
+                >
+                  0
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick Color Presets */}
       <div className="flex items-center gap-1.5 flex-wrap pt-1">
@@ -362,6 +537,90 @@ export function AdminHeroSection() {
         </div>
       </div>
 
+      {/* Sections Visibility Manager (إخفاء وإظهار أقسام الموقع) */}
+      <Card className="border shadow-sm border-amber-500/30 bg-amber-500/[0.02]">
+        <CardHeader className="pb-4 border-b bg-amber-500/10">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Eye className="h-5 w-5 text-amber-500" />
+              Управление видимостью секций сайта (إخفاء وإظهار الأقسام)
+            </CardTitle>
+            <CardDescription className="text-xs mt-1">
+              Включайте или отключайте любые секции сайта. Отключенная секция полностью исчезает со страницы и не оставляет пустого места (высота 0px).
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { key: "hero", label: "Главный экран (Hero Section)", icon: LayoutTemplate, desc: "Первый экран с постером и заголовком" },
+              { key: "featured_courses", label: "Каталог видеокурсов", icon: Film, desc: "Сетка курсов и мастер-классов" },
+              { key: "about", label: "Обо мне / История мастера", icon: Award, desc: "Блок с фото и биографией" },
+              { key: "social_videos", label: "Соцсети (YouTube & TikTok)", icon: Play, desc: "Видеоролики с внешних платформ" },
+              { key: "events_gallery", label: "Галерея мероприятий", icon: Camera, desc: "Фотографии с выступлений и шоу" },
+              { key: "reviews", label: "Отзывы и шоу для праздника", icon: Star, desc: "Отзывы клиентов и блок заказа шоу" },
+            ].map(({ key, label, icon: Icon, desc }) => {
+              const isVisible = data.sectionsVisibility?.[key as keyof NonNullable<HeroSectionData["sectionsVisibility"]>] !== false && (key !== "hero" || data.hidden !== true);
+              return (
+                <div
+                  key={key}
+                  className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-3 ${
+                    isVisible
+                      ? "bg-background border-slate-200 dark:border-slate-800 shadow-sm"
+                      : "bg-red-500/5 border-red-500/30 opacity-80"
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold">
+                        <Icon className={`h-4 w-4 ${isVisible ? "text-amber-500" : "text-red-400"}`} />
+                        <span>{label}</span>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                        isVisible
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                      }`}>
+                        {isVisible ? "Активна" : "Скрыта"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-tight">{desc}</p>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant={isVisible ? "outline" : "destructive"}
+                    size="sm"
+                    className="w-full text-xs h-8 gap-1.5 font-medium"
+                    onClick={() => {
+                      const nextVal = !isVisible;
+                      setData((prev) => ({
+                        ...prev,
+                        hidden: key === "hero" ? !nextVal : prev.hidden,
+                        sectionsVisibility: {
+                          ...prev.sectionsVisibility,
+                          [key]: nextVal,
+                        },
+                      }));
+                    }}
+                  >
+                    {isVisible ? (
+                      <>
+                        <EyeOff className="h-3.5 w-3.5 text-red-500" /> Скрыть секцию
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-3.5 w-3.5" /> Показать секцию
+                      </>
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Main Proposition & Badges */}
       <Card className="border shadow-sm">
         <CardHeader className="pb-4 border-b bg-muted/20">
@@ -377,14 +636,27 @@ export function AdminHeroSection() {
           {/* Top Badges */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3 p-3.5 rounded-xl border bg-muted/10">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold">Бейдж 1 (Текст)</label>
-                <Input
-                  value={data.badge1}
-                  onChange={(e) => setData({ ...data, badge1: e.target.value })}
-                  placeholder="Искусство удивлять"
-                />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 mr-2">
+                  <label className="text-xs font-semibold">Бейдж 1 (Текст)</label>
+                  <Input
+                    value={data.badge1}
+                    onChange={(e) => setData({ ...data, badge1: e.target.value })}
+                    placeholder="Искусство удивлять"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 mt-5"
+                  title="Удалить Бейдж 1 (будет скрыт на сайте)"
+                  onClick={() => setData({ ...data, badge1: "" })}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
+              {!data.badge1 && <p className="text-[11px] text-red-400 font-medium">⚠ Скрыт на сайте</p>}
               <StylePicker
                 title="Шрифт и цвет Бейджа 1"
                 value={data.styles?.badge1}
@@ -394,14 +666,27 @@ export function AdminHeroSection() {
             </div>
 
             <div className="space-y-3 p-3.5 rounded-xl border bg-muted/10">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold">Бейдж 2 (Текст)</label>
-                <Input
-                  value={data.badge2}
-                  onChange={(e) => setData({ ...data, badge2: e.target.value })}
-                  placeholder="С трудоустройством"
-                />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 mr-2">
+                  <label className="text-xs font-semibold">Бейдж 2 (Текст)</label>
+                  <Input
+                    value={data.badge2}
+                    onChange={(e) => setData({ ...data, badge2: e.target.value })}
+                    placeholder="С трудоустройством"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 mt-5"
+                  title="Удалить Бейдж 2 (будет скрыт на сайте)"
+                  onClick={() => setData({ ...data, badge2: "" })}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
+              {!data.badge2 && <p className="text-[11px] text-red-400 font-medium">⚠ Скрыт на сайте</p>}
               <StylePicker
                 title="Шрифт и цвет Бейджа 2"
                 value={data.styles?.badge2}
@@ -413,20 +698,33 @@ export function AdminHeroSection() {
 
           {/* Heading H1 */}
           <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
-            <div className="space-y-1">
-              <label className="text-sm font-semibold">Главный заголовок H1 <span className="text-red-500">*</span></label>
-              <Textarea
-                rows={2}
-                value={data.heading}
-                onChange={(e) => setData({ ...data, heading: e.target.value })}
-                placeholder="Научись фокусам, которые действительно хочется показать друзьям"
-                className="resize-none font-semibold text-base"
-                style={{
-                  fontFamily: data.styles?.heading?.fontFamily || undefined,
-                  color: data.styles?.heading?.color || undefined,
-                }}
-              />
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1 flex-1">
+                <label className="text-sm font-semibold">Главный заголовок H1 <span className="text-red-500">*</span></label>
+                <Textarea
+                  rows={2}
+                  value={data.heading}
+                  onChange={(e) => setData({ ...data, heading: e.target.value })}
+                  placeholder="Научись фокусам, которые действительно хочется показать друзьям"
+                  className="resize-none font-semibold text-base"
+                  style={{
+                    fontFamily: data.styles?.heading?.fontFamily || undefined,
+                    color: data.styles?.heading?.color || undefined,
+                  }}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 mt-6"
+                title="Удалить заголовок (будет скрыт на сайте)"
+                onClick={() => setData({ ...data, heading: "" })}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
+            {!data.heading && <p className="text-[11px] text-red-400 font-medium">⚠ Заголовок скрыт на сайте</p>}
             <StylePicker
               title="Шрифт и цвет главного заголовка"
               value={data.styles?.heading}
@@ -436,20 +734,33 @@ export function AdminHeroSection() {
 
           {/* Subheading */}
           <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
-            <div className="space-y-1">
-              <label className="text-sm font-semibold">Подзаголовок / Описание</label>
-              <Textarea
-                rows={3}
-                value={data.subheading}
-                onChange={(e) => setData({ ...data, subheading: e.target.value })}
-                placeholder="Научись эффектным фокусам, раскрывай секреты иллюзионного искусства..."
-                className="resize-none"
-                style={{
-                  fontFamily: data.styles?.subheading?.fontFamily || undefined,
-                  color: data.styles?.subheading?.color || undefined,
-                }}
-              />
+            <div className="flex items-start justify-between gap-2">
+              <div className="space-y-1 flex-1">
+                <label className="text-sm font-semibold">Подзаголовок / Описание</label>
+                <Textarea
+                  rows={3}
+                  value={data.subheading}
+                  onChange={(e) => setData({ ...data, subheading: e.target.value })}
+                  placeholder="Научись эффектным фокусам, раскрывай секреты иллюзионного искусства..."
+                  className="resize-none"
+                  style={{
+                    fontFamily: data.styles?.subheading?.fontFamily || undefined,
+                    color: data.styles?.subheading?.color || undefined,
+                  }}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 mt-6"
+                title="Удалить описание (будет скрыто на сайте)"
+                onClick={() => setData({ ...data, subheading: "" })}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             </div>
+            {!data.subheading && <p className="text-[11px] text-red-400 font-medium">⚠ Описание скрыто на сайте</p>}
             <StylePicker
               title="Шрифт и цвет подзаголовка"
               value={data.styles?.subheading}
@@ -460,14 +771,27 @@ export function AdminHeroSection() {
           {/* Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold">Основная кнопка (Текст)</label>
-                <Input
-                  value={data.ctaPrimaryText}
-                  onChange={(e) => setData({ ...data, ctaPrimaryText: e.target.value })}
-                  placeholder="Смотри секрет трюка"
-                />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 mr-2">
+                  <label className="text-xs font-semibold">Основная кнопка (Текст)</label>
+                  <Input
+                    value={data.ctaPrimaryText}
+                    onChange={(e) => setData({ ...data, ctaPrimaryText: e.target.value })}
+                    placeholder="Смотри секрет трюка"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 mt-5"
+                  title="Удалить основную кнопку"
+                  onClick={() => setData({ ...data, ctaPrimaryText: "" })}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
+              {!data.ctaPrimaryText && <p className="text-[11px] text-red-400 font-medium">⚠ Скрыта на сайте</p>}
               <div className="space-y-1">
                 <label className="text-xs font-semibold">Ссылка</label>
                 <Input
@@ -485,14 +809,27 @@ export function AdminHeroSection() {
             </div>
 
             <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold">Вторая кнопка (Интерактив)</label>
-                <Input
-                  value={data.ctaSecondaryText}
-                  onChange={(e) => setData({ ...data, ctaSecondaryText: e.target.value })}
-                  placeholder="Хочешь удивить друзей?"
-                />
+              <div className="flex items-center justify-between">
+                <div className="space-y-1 flex-1 mr-2">
+                  <label className="text-xs font-semibold">Вторая кнопка (Интерактив)</label>
+                  <Input
+                    value={data.ctaSecondaryText}
+                    onChange={(e) => setData({ ...data, ctaSecondaryText: e.target.value })}
+                    placeholder="Хочешь удивить друзей?"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 mt-5"
+                  title="Удалить вторую кнопку"
+                  onClick={() => setData({ ...data, ctaSecondaryText: "" })}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
+              {!data.ctaSecondaryText && <p className="text-[11px] text-red-400 font-medium">⚠ Скрыта на сайте</p>}
               <StylePicker
                 title="Шрифт и цвет второй кнопки"
                 value={data.styles?.ctaSecondary}
@@ -528,9 +865,22 @@ export function AdminHeroSection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Card 1 */}
             <div className="p-3.5 rounded-xl border bg-muted/10 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 fill-current" /> Карточка 1 (Опыт / Звезда)
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5">
+                  <Star className="h-3.5 w-3.5 fill-current" /> Карточка 1 (Опыт / Звезда)
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  title="Удалить карточку 1 целиком"
+                  onClick={() => setData({ ...data, orbit1Value: "", orbit1Label: "" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
+              {(!data.orbit1Value && !data.orbit1Label) && <p className="text-[11px] text-red-400 font-medium">⚠ Карточка скрыта на сайте</p>}
               <Input
                 value={data.orbit1Value}
                 onChange={(e) => setData({ ...data, orbit1Value: e.target.value })}
@@ -546,9 +896,22 @@ export function AdminHeroSection() {
 
             {/* Card 2 */}
             <div className="p-3.5 rounded-xl border bg-muted/10 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
-                Карточка 2 (Видеоуроки)
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                  Карточка 2 (Видеоуроки)
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  title="Удалить карточку 2 целиком"
+                  onClick={() => setData({ ...data, orbit2Title: "", orbit2Subtitle: "", orbit2Desc: "" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
+              {(!data.orbit2Title && !data.orbit2Subtitle && !data.orbit2Desc) && <p className="text-[11px] text-red-400 font-medium">⚠ Карточка скрыта на сайте</p>}
               <Input
                 value={data.orbit2Title}
                 onChange={(e) => setData({ ...data, orbit2Title: e.target.value })}
@@ -570,9 +933,22 @@ export function AdminHeroSection() {
 
             {/* Card 3 */}
             <div className="p-3.5 rounded-xl border bg-muted/10 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
-                Карточка 3 (✨ Первый фокус)
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                  Карточка 3 (✨ Первый фокус)
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  title="Удалить карточку 3 целиком"
+                  onClick={() => setData({ ...data, orbit3Title: "", orbit3Desc: "" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
+              {(!data.orbit3Title && !data.orbit3Desc) && <p className="text-[11px] text-red-400 font-medium">⚠ Карточка скрыта на сайте</p>}
               <Input
                 value={data.orbit3Title}
                 onChange={(e) => setData({ ...data, orbit3Title: e.target.value })}
@@ -589,9 +965,22 @@ export function AdminHeroSection() {
 
             {/* Card 4 */}
             <div className="p-3.5 rounded-xl border bg-muted/10 space-y-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
-                Карточка 4 (Бесплатно)
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                  Карточка 4 (Бесплатно)
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  title="Удалить карточку 4 целиком"
+                  onClick={() => setData({ ...data, orbit4Title: "", orbit4Subtitle: "" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
+              {(!data.orbit4Title && !data.orbit4Subtitle) && <p className="text-[11px] text-red-400 font-medium">⚠ Карточка скрыта на сайте</p>}
               <Input
                 value={data.orbit4Title}
                 onChange={(e) => setData({ ...data, orbit4Title: e.target.value })}
@@ -607,9 +996,22 @@ export function AdminHeroSection() {
 
             {/* Card 5 */}
             <div className="p-3.5 rounded-xl border bg-muted/10 space-y-2 sm:col-span-2">
-              <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
-                Карточка 5 (Для всех)
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                  Карточка 5 (Для всех)
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  title="Удалить карточку 5 целиком"
+                  onClick={() => setData({ ...data, orbit5Title: "", orbit5Desc: "" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
+              {(!data.orbit5Title && !data.orbit5Desc) && <p className="text-[11px] text-red-400 font-medium">⚠ Карточка скрыта на сайте</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Input
                   value={data.orbit5Title}
@@ -624,6 +1026,31 @@ export function AdminHeroSection() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Delete all 5 orbit cards at once */}
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => {
+                if (confirm("Удалить все 5 плавающих бейджей вокруг фото? Они будут скрыты на сайте.")) {
+                  setData({
+                    ...data,
+                    orbit1Value: "", orbit1Label: "",
+                    orbit2Title: "", orbit2Subtitle: "", orbit2Desc: "",
+                    orbit3Title: "", orbit3Desc: "",
+                    orbit4Title: "", orbit4Subtitle: "",
+                    orbit5Title: "", orbit5Desc: "",
+                  });
+                  toast.info("Все 5 карточек очищены. Нажмите 'Сохранить' для применения.");
+                }
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Удалить все 5 бейджей
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -642,9 +1069,22 @@ export function AdminHeroSection() {
         <CardContent className="pt-6 space-y-6">
           {/* Guarantee Pill (formerly Author Tagline) */}
           <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
-            <div className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-2">
-              ✨ Гарантийный бейдж под постером
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                ✨ Гарантийный бейдж под постером
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                title="Удалить гарантийный бейдж (будет скрыт на сайте)"
+                onClick={() => setData({ ...data, authorName: "", authorRole: "" })}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Удалить бейдж
+              </Button>
             </div>
+            {(!data.authorName && !data.authorRole) && <p className="text-[11px] text-red-400 font-medium">⚠ Гарантийный бейдж скрыт на сайте</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-semibold">Главный УТП (жирный текст)</label>
@@ -674,12 +1114,35 @@ export function AdminHeroSection() {
 
           {/* Stats Bar */}
           <div className="space-y-3 p-4 rounded-xl border bg-muted/10">
-            <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
-              Три карточки преимуществ (внизу Hero)
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-bold uppercase tracking-wider text-amber-600">
+                Три карточки преимуществ (внизу Hero)
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                title="Удалить все три карточки статистики"
+                onClick={() => {
+                  if (confirm("Удалить все три карточки преимуществ? Они будут скрыты на сайте.")) {
+                    setData({ ...data, stat1Value: "", stat1Label: "", stat2Value: "", stat2Label: "", stat3Value: "", stat3Label: "" });
+                    toast.info("Карточки очищены. Нажмите 'Сохранить' для применения.");
+                  }
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Удалить все
+              </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="p-3 rounded-lg border bg-background space-y-1.5">
-                <label className="text-[11px] font-semibold text-amber-600">⚡ Карточка 1 — Заголовок</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-amber-600">⚡ Карточка 1 — Заголовок</label>
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600" title="Очистить карточку 1" onClick={() => setData({ ...data, stat1Value: "", stat1Label: "" })}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                {(!data.stat1Value && !data.stat1Label) && <p className="text-[10px] text-red-400">⚠ Скрыта</p>}
                 <Input
                   value={data.stat1Value}
                   onChange={(e) => setData({ ...data, stat1Value: e.target.value })}
@@ -695,7 +1158,13 @@ export function AdminHeroSection() {
               </div>
 
               <div className="p-3 rounded-lg border bg-background space-y-1.5">
-                <label className="text-[11px] font-semibold text-amber-600">🎥 Карточка 2 — Заголовок</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-amber-600">🎥 Карточка 2 — Заголовок</label>
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600" title="Очистить карточку 2" onClick={() => setData({ ...data, stat2Value: "", stat2Label: "" })}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                {(!data.stat2Value && !data.stat2Label) && <p className="text-[10px] text-red-400">⚠ Скрыта</p>}
                 <Input
                   value={data.stat2Value}
                   onChange={(e) => setData({ ...data, stat2Value: e.target.value })}
@@ -711,7 +1180,13 @@ export function AdminHeroSection() {
               </div>
 
               <div className="p-3 rounded-lg border bg-background space-y-1.5">
-                <label className="text-[11px] font-semibold text-amber-600">🛡 Карточка 3 — Заголовок</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-amber-600">🛡 Карточка 3 — Заголовок</label>
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-red-400 hover:text-red-600" title="Очистить карточку 3" onClick={() => setData({ ...data, stat3Value: "", stat3Label: "" })}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                {(!data.stat3Value && !data.stat3Label) && <p className="text-[10px] text-red-400">⚠ Скрыта</p>}
                 <Input
                   value={data.stat3Value}
                   onChange={(e) => setData({ ...data, stat3Value: e.target.value })}
@@ -751,7 +1226,20 @@ export function AdminHeroSection() {
         </CardHeader>
         <CardContent className="pt-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-semibold">Фразы через запятую</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold">Фразы через запятую</label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                title="Удалить бегущую строку (будет скрыта на сайте)"
+                onClick={() => setData({ ...data, marqueeItemsText: "" })}
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Удалить
+              </Button>
+            </div>
+            {!data.marqueeItemsText && <p className="text-[11px] text-red-400 font-medium">⚠ Бегущая строка скрыта на сайте</p>}
             <Textarea
               rows={3}
               value={data.marqueeItemsText}
