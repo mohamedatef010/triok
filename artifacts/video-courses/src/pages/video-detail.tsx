@@ -10,6 +10,7 @@ import {
   useGetFeaturedVideos,
   useListReviews,
   useGetMyPurchasedVideos,
+  useRecordVideoView,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
@@ -162,6 +163,16 @@ export function VideoDetailPage() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef<ReactPlayer>(null);
+  const viewRecordedRef = useRef(false);
+  const recordView = useRecordVideoView();
+
+  const handleStartPlaying = () => {
+    if (!viewRecordedRef.current && id) {
+      viewRecordedRef.current = true;
+      recordView.mutate({ id });
+    }
+    setIsPlaying(true);
+  };
   const [playerDuration, setPlayerDuration] = useState<number | null>(null);
   const [showPurchaseOverlay, setShowPurchaseOverlay] = useState(false);
   const [videoError, setVideoError] = useState(false);
@@ -182,6 +193,7 @@ export function VideoDetailPage() {
     setIsPlaying(false);
     setShowPurchaseOverlay(false);
     setVideoError(false);
+    viewRecordedRef.current = false;
   }, [id]);
 
   // Track scroll to show mobile floating sticky purchase bar
@@ -391,7 +403,7 @@ export function VideoDetailPage() {
                       </div>
                     ) : (
                       <button 
-                        onClick={() => setIsPlaying(true)}
+                        onClick={handleStartPlaying}
                         className="group/play flex flex-col items-center gap-3 focus:outline-none cursor-pointer transform transition-transform active:scale-95"
                       >
                         {/* Play button circle */}
