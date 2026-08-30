@@ -302,7 +302,7 @@ function StylePicker({
           <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
             <span className="flex items-center gap-1.5">
               <Move className="h-3.5 w-3.5 text-amber-500" />
-              Позиция, смещение и выравнивание (تحريك ومحاذاة النص)
+              Позиция, смещение и выравнивание
             </span>
             <button
               type="button"
@@ -537,13 +537,13 @@ export function AdminHeroSection() {
         </div>
       </div>
 
-      {/* Sections Visibility Manager (إخفاء وإظهار أقسام الموقع) */}
+      {/* Sections Visibility Manager */}
       <Card className="border shadow-sm border-amber-500/30 bg-amber-500/[0.02]">
         <CardHeader className="pb-4 border-b bg-amber-500/10">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
               <Eye className="h-5 w-5 text-amber-500" />
-              Управление видимостью секций сайта (إخفاء وإظهار الأقسام)
+              Управление видимостью секций сайта
             </CardTitle>
             <CardDescription className="text-xs mt-1">
               Включайте или отключайте любые секции сайта. Отключенная секция полностью исчезает со страницы и не оставляет пустого места (высота 0px).

@@ -86,7 +86,7 @@ interface TrickDifficultyBadgeProps {
 }
 
 /**
- * شارة عرض مستوى صعوبة الخدعة من 5 دوائر (للزائرين وصفحات العرض)
+ * 5-dot Trick Difficulty Badge for public display
  */
 export function TrickDifficultyBadge({
   difficulty = 1,
@@ -169,7 +169,7 @@ interface TrickDifficultySelectorProps {
 }
 
 /**
- * مكون اختيار مستوى الصعوبة للأدمن (5 دوائر تفاعلية ذات تأثيرات بصرية جذابة)
+ * 5-dot Interactive Difficulty Selector for Admin
  */
 export function TrickDifficultySelector({
   value = 1,
