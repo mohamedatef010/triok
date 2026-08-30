@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useTheme } from "@/hooks/use-theme";
@@ -26,6 +26,25 @@ import {
   PanelLeft,
   Layers,
 } from "lucide-react";
+
+/** Maximum idle/inactivity time before automatic logout (30 minutes) */
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
+
+/** Validates whether an admin JWT token exists, has admin role, and is not expired */
+function checkAdminTokenValid(token: string | null): boolean {
+  if (!token) return false;
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return false;
+    const payload = JSON.parse(atob(parts[1]));
+    if (payload.role && payload.role !== "admin") return false;
+    if (!payload.exp) return true;
+    // Check if token has expired (with 10s buffer)
+    return payload.exp * 1000 > Date.now() + 10000;
+  } catch {
+    return false;
+  }
+}
 
 interface NavItem {
   href: string;
@@ -69,22 +88,86 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [location, setLocation] = useLocation();
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() => {
     if (typeof window !== "undefined") {
-      return Boolean(localStorage.getItem("admin_token"));
+      const token = localStorage.getItem("admin_token");
+      return checkAdminTokenValid(token);
     }
     return null;
   });
 
-  useEffect(() => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
-    if (!token) {
+  const forceLogout = useCallback((reason?: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_last_activity");
       setIsAuthenticated(false);
-      setLocation("/admm");
-    } else {
-      setIsAuthenticated(true);
+      window.location.href = "/admm";
     }
-  }, [location, setLocation]);
+  }, []);
+
+  // 1. Activity tracking (resets inactivity timer on any user interaction)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const recordActivity = () => {
+      localStorage.setItem("admin_last_activity", String(Date.now()));
+    };
+
+    // Record initial activity
+    if (!localStorage.getItem("admin_last_activity")) {
+      recordActivity();
+    }
+
+    const events = ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"];
+    let lastLogged = Date.now();
+    const handleEvent = () => {
+      const now = Date.now();
+      if (now - lastLogged > 5000) {
+        lastLogged = now;
+        recordActivity();
+      }
+    };
+
+    events.forEach((evt) => window.addEventListener(evt, handleEvent, { passive: true }));
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, handleEvent));
+    };
+  }, []);
+
+  // 2. Continuous session & inactivity verification loop (checks every 4 seconds)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const verifySession = () => {
+      const token = localStorage.getItem("admin_token");
+      if (!token || !checkAdminTokenValid(token)) {
+        forceLogout("expired_or_missing");
+        return false;
+      }
+
+      const lastActivity = Number(localStorage.getItem("admin_last_activity") || 0);
+      if (lastActivity && Date.now() - lastActivity > INACTIVITY_TIMEOUT_MS) {
+        forceLogout("inactive");
+        return false;
+      }
+
+      setIsAuthenticated(true);
+      return true;
+    };
+
+    verifySession();
+
+    const interval = setInterval(verifySession, 4000);
+    return () => clearInterval(interval);
+  }, [location, forceLogout]);
+
+  // 3. Verify user role from /api/auth/me if returned
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      forceLogout("forbidden_role");
+    }
+  }, [user, forceLogout]);
 
   // Find current active item title
   const allItems = navSections.flatMap((s) => s.items);
@@ -96,7 +179,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   if (isAuthenticated === false || isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 p-4">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 p-4 select-none">
         <div className="flex flex-col items-center gap-4 bg-slate-900/90 border border-slate-800 p-8 rounded-3xl shadow-2xl backdrop-blur-xl max-w-sm w-full text-center">
           <div className="relative">
             <div className="w-12 h-12 border-3 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
@@ -106,7 +189,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="space-y-1">
             <span className="text-sm font-semibold text-slate-200">Проверка доступа</span>
-            <p className="text-xs text-slate-500">Загрузка панели управления...</p>
+            <p className="text-xs text-slate-500">Перенаправление на страницу входа...</p>
           </div>
         </div>
       </div>
@@ -114,8 +197,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token");
-    window.location.href = "/admm";
+    forceLogout("user_logout");
   };
 
   const SidebarContent = ({ collapsed = false }: { collapsed?: boolean }) => (

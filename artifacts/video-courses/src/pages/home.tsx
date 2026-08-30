@@ -701,7 +701,7 @@ export function HomePage() {
           <img
             src={video.thumbnailUrl || "https://image.qwenlm.ai/public_source/2d826fc3-d8ca-4fdd-afe7-1a198c300694/19903dcea-c171-465f-b4af-c85e8b69b3a5.png"}
             alt={video.title}
-            className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-108"
+            className="object-contain w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
           />
 
           {/* Dark Vignette Gradient */}

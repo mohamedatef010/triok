@@ -6,7 +6,8 @@ import { eq, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { 
-  signAccessToken, 
+  signAccessToken,
+  signAdminAccessToken,
   signRefreshToken, 
   REFRESH_COOKIE_NAME, 
   refreshCookieOptions 
@@ -46,7 +47,7 @@ router.post("/admin/login", authLimiter, async (req, res): Promise<void> => {
     return;
   }
 
-  const token = signAccessToken({ userId: user.id, role: "admin" }, user.passwordHash);
+  const token = signAdminAccessToken({ userId: user.id, role: "admin" }, user.passwordHash);
   const refreshToken = signRefreshToken({ userId: user.id, role: "admin" }, user.passwordHash);
 
 

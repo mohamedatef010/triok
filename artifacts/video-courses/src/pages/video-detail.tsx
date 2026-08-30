@@ -369,7 +369,7 @@ export function VideoDetailPage() {
                   <img 
                     src={video.thumbnailUrl || undefined} 
                     alt={video.title} 
-                    className="w-full h-full object-cover filter brightness-[0.82] group-hover:scale-105 transition-transform duration-700 ease-out"
+                    className="w-full h-full object-contain filter brightness-[0.9] group-hover:scale-102 transition-transform duration-700 ease-out"
                   />
                   
                   {/* Subtle dark gradient overlay */}

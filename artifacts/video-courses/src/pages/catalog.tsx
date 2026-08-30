@@ -170,7 +170,7 @@ export function CatalogPage() {
                       alt={video.title}
                       loading="lazy"
                       decoding="async"
-                      className="object-cover w-full h-full transition-transform duration-700 ease-out group-hover:scale-108"
+                      className="object-contain w-full h-full transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-300 flex items-center justify-center">
                       <div className="h-13 w-13 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-400/40 group-hover:scale-110 transition-transform duration-300">

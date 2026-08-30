@@ -38,7 +38,7 @@ export function formatDuration(seconds?: number | string | null): string | null 
     return m > 0 ? `${h} ч ${m} мин` : `${h} ч`;
   }
   if (m > 0) {
-    return `${m} мин`;
+    return s > 0 ? `${m} мин ${s} сек` : `${m} мин`;
   }
   if (s > 0) {
     return `${s} сек`;

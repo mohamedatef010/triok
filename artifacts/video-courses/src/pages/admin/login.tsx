@@ -20,7 +20,18 @@ export function AdminLogin() {
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") : null;
     if (token) {
-      setLocation("/admm/dashboard");
+      try {
+        const parts = token.split(".");
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          if (payload.role === "admin" && (!payload.exp || payload.exp * 1000 > Date.now() + 10000)) {
+            setLocation("/admm/dashboard");
+            return;
+          }
+        }
+      } catch {}
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_last_activity");
     }
   }, [setLocation]);
 
@@ -30,6 +41,7 @@ export function AdminLogin() {
     try {
       const res = await loginMut.mutateAsync({ data: { username, password } });
       localStorage.setItem("admin_token", res.token);
+      localStorage.setItem("admin_last_activity", String(Date.now()));
       setLocation("/admm/dashboard");
     } catch (err: any) {
       setError(err.message || "Неверный логин или пароль");

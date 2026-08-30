@@ -363,6 +363,16 @@ export async function customFetch<T = unknown>(
   const response = await fetch(input, { ...init, method, headers });
 
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/admm") &&
+      window.location.pathname !== "/admm"
+    ) {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_last_activity");
+      window.location.href = "/admm";
+    }
     const errorData = await parseErrorBody(response, method);
     throw new ApiError(response, errorData, requestInfo);
   }

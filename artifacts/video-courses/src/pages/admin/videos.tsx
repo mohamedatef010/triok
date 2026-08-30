@@ -34,6 +34,7 @@ import {
   Trash2,
   Percent,
   Clock,
+  Timer,
   Upload,
   Link as LinkIcon,
   CheckCircle2,
@@ -46,6 +47,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TrickDifficultyBadge, TrickDifficultySelector } from "@/components/ui/trick-difficulty";
+import { formatDuration } from "@/lib/utils";
 
 type ThumbnailSource = "url" | "file";
 type PreviewVideoSource = "url" | "file";
@@ -132,6 +134,7 @@ export function AdminVideos() {
     discountPercent: "",
     thumbnailUrl: "",
     description: "",
+    durationSeconds: "",
     previewDurationSeconds: "",
     videoUrl: "",
     previewVideoUrl: "",
@@ -143,7 +146,7 @@ export function AdminVideos() {
 
   // --- Handlers ---
   const resetDialog = () => {
-    setFormData({ title: "", price: "", discountPercent: "", thumbnailUrl: "", description: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "", difficulty: 1 });
+    setFormData({ title: "", price: "", discountPercent: "", thumbnailUrl: "", description: "", durationSeconds: "", previewDurationSeconds: "", videoUrl: "", previewVideoUrl: "", difficulty: 1 });
     setSelectedFile(null);
     setThumbnailFile(null);
     if (thumbnailPreview) URL.revokeObjectURL(thumbnailPreview);
@@ -157,6 +160,24 @@ export function AdminVideos() {
     setUploadProgress(0);
     setVideoSource("file");
     setIsOpen(false);
+  };
+
+  const extractVideoDuration = (file: File) => {
+    try {
+      const v = document.createElement("video");
+      v.preload = "metadata";
+      v.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(v.src);
+        const dur = Math.round(v.duration);
+        if (dur > 0) {
+          setFormData(prev => ({
+            ...prev,
+            durationSeconds: prev.durationSeconds || String(dur),
+          }));
+        }
+      };
+      v.src = URL.createObjectURL(file);
+    } catch {}
   };
 
   const handleThumbnailFileSelect = (file: File) => {
@@ -204,6 +225,24 @@ export function AdminVideos() {
     toast({ title: `Скидка ${pct}% установлена! Новая цена: ${dp} ₽ (было ${currentPrice} ₽)` });
   };
 
+  const handleDuration = async (id: number, currentDur?: number | null) => {
+    const currentVal = currentDur ? String(currentDur) : "";
+    const val = prompt(
+      `⏱️ Введите длительность курса в секундах (например: 150 для 2 мин 30 сек, 300 для 5 мин):\nТекущее значение: ${currentDur ? formatDuration(currentDur) : "не задано"}\nОставьте пустым для сброса:`,
+      currentVal
+    );
+    if (val === null) return;
+    const dur = val.trim() ? Number(val.trim()) : null;
+    if (dur !== null && (isNaN(dur) || dur <= 0)) {
+      toast({ title: "Введите корректное число секунд", variant: "destructive" });
+      return;
+    }
+    await updateMut.mutateAsync({ id, data: { durationSeconds: dur } });
+    invalidateVideoCaches();
+    refetch();
+    toast({ title: dur ? `✅ Длительность: ${formatDuration(dur)}` : "Длительность сброшена" });
+  };
+
   const handlePreviewDuration = async (id: number) => {
     const val = prompt("Длительность превью (секунды). Оставьте пустым для авто (20% видео):");
     if (val === null) return;
@@ -237,6 +276,7 @@ export function AdminVideos() {
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("video/")) {
       setSelectedFile(file);
+      extractVideoDuration(file);
     } else {
       toast({ title: "Только видеофайлы", variant: "destructive" });
     }
@@ -244,7 +284,10 @@ export function AdminVideos() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setSelectedFile(file);
+    if (file) {
+      setSelectedFile(file);
+      extractVideoDuration(file);
+    }
   };
 
   const handleCreate = async () => {
@@ -315,6 +358,7 @@ export function AdminVideos() {
           discountPrice: calculatedDiscountPrice,
           thumbnailUrl: resolvedThumbnailUrl,
           description: formData.description || undefined,
+          durationSeconds: formData.durationSeconds ? Number(formData.durationSeconds) : undefined,
           previewDurationSeconds: formData.previewDurationSeconds ? Number(formData.previewDurationSeconds) : undefined,
           categoryId: resolvedCategoryId,
           difficulty: formData.difficulty || 1,
@@ -463,7 +507,7 @@ export function AdminVideos() {
                   <TableCell className="font-bold text-xs text-amber-600 dark:text-amber-400">#{v.id}</TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
-                      <img src={v.thumbnailUrl || undefined} alt="" className="w-14 h-9 object-cover rounded-lg bg-slate-800 shrink-0 border border-slate-200/60 dark:border-slate-800" />
+                      <img src={v.thumbnailUrl || undefined} alt="" className="w-14 h-9 object-contain rounded-lg bg-slate-800 shrink-0 border border-slate-200/60 dark:border-slate-800" />
                       <span className="line-clamp-1 text-xs font-bold text-slate-900 dark:text-white">{v.title}</span>
                     </div>
                   </TableCell>
@@ -489,6 +533,9 @@ export function AdminVideos() {
                     <div className="flex justify-end gap-1.5">
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handleDifficultyChange(v.id, v.difficulty)} title="Уровень сложности (1-5)">
                         <Gauge className="h-4 w-4 text-amber-500" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handleDuration(v.id, v.durationSeconds)} title={`Длительность курса (${v.durationSeconds ? formatDuration(v.durationSeconds) : "не задано"})`}>
+                        <Timer className="h-4 w-4 text-emerald-500" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handlePreviewDuration(v.id)} title="Длительность превью">
                         <Clock className="h-4 w-4" />
@@ -576,7 +623,7 @@ export function AdminVideos() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="grid gap-2">
                 <label className="text-sm font-semibold">Цена ₽ <span className="text-red-500">*</span></label>
                 <Input
@@ -600,13 +647,25 @@ export function AdminVideos() {
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold">Превью (секунды)</label>
+                <label className="text-sm font-semibold">Длительность (сек)</label>
+                <Input
+                  type="number"
+                  value={formData.durationSeconds}
+                  onChange={(e) => setFormData({ ...formData, durationSeconds: e.target.value })}
+                  placeholder="150 (авто)"
+                  disabled={isWorking}
+                  title="Общая длительность курса в секундах (например: 150 для 2 мин 30 сек)"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Превью (сек)</label>
                 <Input
                   type="number"
                   value={formData.previewDurationSeconds}
                   onChange={(e) => setFormData({ ...formData, previewDurationSeconds: e.target.value })}
-                  placeholder="180 (авто: 20%)"
+                  placeholder="180 (авто)"
                   disabled={isWorking}
+                  title="Длительность бесплатного превью (по умолчанию 20% видео)"
                 />
               </div>
             </div>
@@ -803,6 +862,7 @@ export function AdminVideos() {
                     const file = e.dataTransfer.files[0];
                     if (file && file.type.startsWith("video/")) {
                       setPreviewVideoFile(file);
+                      extractVideoDuration(file);
                     } else {
                       toast({ title: "Только видеофайлы", variant: "destructive" });
                     }
@@ -817,7 +877,7 @@ export function AdminVideos() {
                     ref={previewVideoInputRef}
                     type="file"
                     accept="video/*"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setPreviewVideoFile(f); }}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) { setPreviewVideoFile(f); extractVideoDuration(f); } }}
                     className="hidden"
                     disabled={isWorking}
                   />

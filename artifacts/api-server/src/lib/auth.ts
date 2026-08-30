@@ -54,6 +54,21 @@ export function signAccessToken(payload: JwtPayload, passwordHash?: string): str
 }
 
 /**
+ * Sign an Admin Access Token (24 hours for stable, uninterrupted admin work).
+ */
+export function signAdminAccessToken(payload: JwtPayload, passwordHash?: string): string {
+  const finalPayload: JwtPayload = {
+    ...payload,
+    role: "admin",
+    ...(passwordHash ? { pwfp: passwordFingerprint(passwordHash) } : {}),
+  };
+  return jwt.sign(finalPayload, JWT_SECRET, {
+    expiresIn: "24h",
+    algorithm: "HS256",
+  });
+}
+
+/**
  * Alias for backward compatibility
  */
 export const signToken = signAccessToken;
