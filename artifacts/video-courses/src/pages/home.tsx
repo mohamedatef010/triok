@@ -435,7 +435,9 @@ export function HomePage() {
   );
 
   const dynamicMarquee = (heroSettings !== undefined && heroSettings !== null)
-    ? (heroSettings?.marqueeItemsText ? heroSettings.marqueeItemsText.split(",").map((s: string) => s.trim()).filter(Boolean) : [])
+    ? ("marqueeItemsText" in (heroSettings || {})
+        ? (heroSettings.marqueeItemsText ? heroSettings.marqueeItemsText.split(/[,\n]/).map((s: string) => s.trim()).filter(Boolean) : [])
+        : MARQUEE_ITEMS)
     : MARQUEE_ITEMS;
 
   const dynamicStats = [
@@ -1799,14 +1801,22 @@ export function HomePage() {
           style={getElementStyle("marquee")}
         >
           <div className="marquee-track flex whitespace-nowrap items-center gap-10 w-max">
-            {[...dynamicMarquee, ...dynamicMarquee].map((marqueeItem, marqueeIdx) => (
+            {[...dynamicMarquee, ...dynamicMarquee, ...dynamicMarquee, ...dynamicMarquee].map((marqueeItem, marqueeIdx) => (
               <span
                 key={marqueeIdx}
                 className="flex items-center gap-10 text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400"
-                style={{ color: heroSettings?.styles?.marquee?.color || undefined }}
+                style={{
+                  fontFamily: heroSettings?.styles?.marquee?.fontFamily || undefined,
+                  color: heroSettings?.styles?.marquee?.color || undefined,
+                }}
               >
                 {marqueeItem}
-                <span className="text-amber-500 dark:text-amber-500/80 text-sm">✦</span>
+                <span
+                  className="text-amber-500 dark:text-amber-500/80 text-sm"
+                  style={{ color: heroSettings?.styles?.marquee?.secondaryColor || undefined }}
+                >
+                  ✦
+                </span>
               </span>
             ))}
           </div>

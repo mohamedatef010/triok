@@ -1216,28 +1216,55 @@ export function AdminHeroSection() {
       {/* Marquee Running Ticker */}
       <Card className="border shadow-sm">
         <CardHeader className="pb-4 border-b bg-muted/20">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-amber-500" />
-            Бегущая строка (Marquee Ticker)
-          </CardTitle>
-          <CardDescription>
-            Фразы, цвет и шрифт бегущей строки внизу первого блока
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold">Фразы через запятую</label>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-amber-500" />
+                Бегущая строка (Marquee Ticker)
+              </CardTitle>
+              <CardDescription>
+                Фразы, цвет, фон, цвет разделителя (✦) и шрифт бегущей строки внизу первого блока
+              </CardDescription>
+            </div>
+            {data.marqueeItemsText && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 gap-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                className="h-8 gap-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                 title="Удалить бегущую строку (будет скрыта на сайте)"
                 onClick={() => setData({ ...data, marqueeItemsText: "" })}
               >
-                <Trash2 className="h-3.5 w-3.5" /> Удалить
+                <Trash2 className="h-3.5 w-3.5" /> Удалить строку
               </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-5">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold">Фразы через запятую</label>
+              {!data.marqueeItemsText ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs text-amber-600 border-amber-400/40 hover:bg-amber-400/10"
+                  onClick={() => setData({ ...data, marqueeItemsText: DEFAULT_HERO_DATA.marqueeItemsText })}
+                >
+                  Восстановить фразы по умолчанию
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={() => setData({ ...data, marqueeItemsText: DEFAULT_HERO_DATA.marqueeItemsText })}
+                >
+                  Сбросить к исходным фразам
+                </Button>
+              )}
             </div>
             {!data.marqueeItemsText && <p className="text-[11px] text-red-400 font-medium">⚠ Бегущая строка скрыта на сайте</p>}
             <Textarea
@@ -1248,13 +1275,54 @@ export function AdminHeroSection() {
               style={{
                 fontFamily: data.styles?.marquee?.fontFamily || undefined,
                 color: data.styles?.marquee?.color || undefined,
+                backgroundColor: data.styles?.marquee?.bgColor || undefined,
               }}
             />
+            <p className="text-[11px] text-muted-foreground">
+              Введите фразы через запятую. Каждая фраза будет отделена символом ✦ в бегущей строке.
+            </p>
           </div>
+
+          {/* Live Preview */}
+          {data.marqueeItemsText && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-muted-foreground">Предпросмотр бегущей строки:</label>
+              <div
+                className="p-3.5 rounded-xl border overflow-hidden transition-all"
+                style={{
+                  backgroundColor: data.styles?.marquee?.bgColor || undefined,
+                  fontFamily: data.styles?.marquee?.fontFamily || undefined,
+                }}
+              >
+                <div className="flex items-center gap-6 overflow-x-auto text-xs font-extrabold uppercase tracking-widest py-1">
+                  {data.marqueeItemsText.split(/[,\n]/).map((s) => s.trim()).filter(Boolean).map((phrase, pIdx) => (
+                    <span
+                      key={pIdx}
+                      className="flex items-center gap-6 shrink-0 text-slate-600 dark:text-slate-300"
+                      style={{ color: data.styles?.marquee?.color || undefined }}
+                    >
+                      <span>{phrase}</span>
+                      <span
+                        className="text-amber-500 font-bold"
+                        style={{ color: data.styles?.marquee?.secondaryColor || undefined }}
+                      >
+                        ✦
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <StylePicker
-            title="Шрифт и цвет бегущей строки"
+            title="Шрифт, цвета и позиция бегущей строки"
             value={data.styles?.marquee}
             onChange={(st) => updateStyle("marquee", st)}
+            showBg
+            showSecondaryColor
+            secondaryColorLabel="Цвет разделителя (✦)"
+            showPosition
           />
         </CardContent>
       </Card>
