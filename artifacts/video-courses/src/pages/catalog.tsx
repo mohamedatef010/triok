@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSEO } from "@/hooks/use-seo";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListVideos, useListCategories, ListVideosSort } from "@workspace/api-client-react";
 import { Search, Filter, SlidersHorizontal, Play, Star, Sparkles, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -32,11 +32,31 @@ export function CatalogPage() {
     }
   });
 
+  const [location] = useLocation();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
-  const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
+  const [categoryId, setCategoryId] = useState<number | undefined>(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get("category") || params.get("categoryId");
+      if (cat && !isNaN(Number(cat))) return Number(cat);
+    }
+    return undefined;
+  });
   const [sort, setSort] = useState<ListVideosSort>("newest");
   const [page, setPage] = useState(1);
+
+  // Sync categoryId when URL parameters change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cat = params.get("category") || params.get("categoryId");
+    if (cat && !isNaN(Number(cat))) {
+      setCategoryId(Number(cat));
+      setPage(1);
+    } else if (cat === "all" || cat === "") {
+      setCategoryId(undefined);
+    }
+  }, [location]);
 
   const { data: categories } = useListCategories();
   const categoryList = Array.isArray(categories) ? categories : [];

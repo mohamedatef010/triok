@@ -20,6 +20,7 @@ import { useCart } from "@/hooks/use-cart";
 import { useFavorites } from "@/hooks/use-favorites";
 import { LogoWordmark } from "@/components/logo";
 import { useQuery } from "@tanstack/react-query";
+import { useListCategories } from "@workspace/api-client-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -73,6 +74,8 @@ export function Navbar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const { data: siteData, isLoading: siteLoading } = useSiteContacts();
   const { data: reqData, isLoading: reqLoading } = useRequisitesPhone();
+  const { data: categoriesData } = useListCategories();
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
   // Prefer phone from Реквизиты продавца (site_requisites), fallback to author_section, then 'Не указан'
   const rawPhone = (!reqLoading && reqData?.phone)
     ? reqData.phone
@@ -223,6 +226,27 @@ export function Navbar() {
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Верхнее меню</h4>
                   <Link href="/catalog" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Каталог</Link>
+
+                  {/* Доступные разделы / категории видеокурсов */}
+                  {categories.length > 0 && (
+                    <div className="flex flex-col gap-1.5 pl-3 py-1 my-0.5 border-l-2 border-amber-400/40 dark:border-amber-500/30">
+                      {categories.map((cat: any) => (
+                        <Link
+                          key={cat.id}
+                          href={`/catalog?category=${cat.id}`}
+                          onClick={() => setMenuOpen(false)}
+                          className="text-sm font-semibold text-muted-foreground hover:text-amber-500 transition-colors flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-amber-400/10 group"
+                        >
+                          <span className="group-hover:translate-x-0.5 transition-transform">{cat.name}</span>
+                          {typeof cat.videoCount === "number" && cat.videoCount > 0 && (
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground group-hover:bg-amber-500/20 group-hover:text-amber-500 transition-colors">
+                              {cat.videoCount}
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="mt-2 flex flex-col gap-3 pl-4 border-l-2 border-border/40">
                     <span className="text-sm font-semibold text-muted-foreground">Личные данные</span>
