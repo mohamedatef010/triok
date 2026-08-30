@@ -59,6 +59,8 @@ interface VideoResult {
 export function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuth();
+  const [location] = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const cart = useCart();
   const favs = useFavorites();
   const [scrolled, setScrolled] = useState(false);
@@ -85,6 +87,11 @@ export function Navbar() {
       : null;
   const email = rawEmail || "Не указан";
   const emailHref = rawEmail ? `mailto:${rawEmail}` : undefined;
+
+  // Close side menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location]);
 
   // Close on click outside
   useEffect(() => {
@@ -173,7 +180,7 @@ export function Navbar() {
 
         {/* ── LEFT: Hamburger Menu ── */}
         <div className="flex-1 flex items-center justify-start">
-          <Sheet>
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost" size="icon"
@@ -215,38 +222,36 @@ export function Navbar() {
                 {/* Верхнее меню */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Верхнее меню</h4>
-                  <Link href="/catalog" className="text-base font-bold hover:text-amber-500 transition-colors">Каталог</Link>
-                  <Link href="/#about" className="text-base font-bold hover:text-amber-500 transition-colors">Обо мне</Link>
-                  <Link href="/#events-gallery" className="text-base font-bold hover:text-amber-500 transition-colors">Мероприятия</Link>
+                  <Link href="/catalog" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Каталог</Link>
 
                   <div className="mt-2 flex flex-col gap-3 pl-4 border-l-2 border-border/40">
                     <span className="text-sm font-semibold text-muted-foreground">Личные данные</span>
-                    <Link href="/profile" className="text-base font-bold hover:text-amber-500 transition-colors">Личный кабинет</Link>
-                    <Link href="/cart" className="text-base font-bold hover:text-amber-500 transition-colors">Корзина</Link>
-                    <Link href="/compare" className="text-base font-bold hover:text-amber-500 transition-colors">Сравнение</Link>
+                    <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Личный кабинет</Link>
+                    <Link href="/cart" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Корзина</Link>
+                    <Link href="/compare" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Сравнение</Link>
                   </div>
                 </div>
 
                 {/* Помощь и информация */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Помощь и информация</h4>
-                  <Link href="/contacts" className="text-base font-bold hover:text-amber-500 transition-colors">Контакты</Link>
-                  <Link href="/delivery" className="text-base font-bold hover:text-amber-500 transition-colors">Получение цифрового товара</Link>
-                  <Link href="/help" className="text-base font-bold hover:text-amber-500 transition-colors">Возврат и помощь</Link>
-                  <Link href="/terms" className="text-base font-bold hover:text-amber-500 transition-colors">Публичная оферта</Link>
-                  <Link href="/requisites" className="text-base font-bold hover:text-amber-500 transition-colors">Реквизиты</Link>
+                  <Link href="/contacts" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Контакты</Link>
+                  <Link href="/delivery" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Получение цифрового товара</Link>
+                  <Link href="/help" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Возврат и помощь</Link>
+                  <Link href="/terms" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Публичная оферта</Link>
+                  <Link href="/requisites" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Реквизиты</Link>
                 </div>
 
                 {/* Контакты */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Контакты</h4>
                   {phoneHref ? (
-                    <a href={phoneHref} className="text-lg font-black text-foreground hover:text-amber-500 transition-colors">{phone}</a>
+                    <a href={phoneHref} onClick={() => setMenuOpen(false)} className="text-lg font-black text-foreground hover:text-amber-500 transition-colors">{phone}</a>
                   ) : (
                     <span className="text-lg font-bold text-muted-foreground">{phone}</span>
                   )}
                   {emailHref ? (
-                    <a href={emailHref} className="text-base font-bold text-muted-foreground hover:text-amber-500 transition-colors">{email}</a>
+                    <a href={emailHref} onClick={() => setMenuOpen(false)} className="text-base font-bold text-muted-foreground hover:text-amber-500 transition-colors">{email}</a>
                   ) : (
                     <span className="text-base font-medium text-muted-foreground/80">{email}</span>
                   )}
@@ -258,7 +263,7 @@ export function Navbar() {
                         if (!url) return null;
                         return (
                           <button key={key} type="button" aria-label={label} title={label}
-                            onClick={(e) => { e.stopPropagation(); openSocialLink(url, key); }}
+                            onClick={(e) => { e.stopPropagation(); setMenuOpen(false); openSocialLink(url, key); }}
                             className={`h-9 w-9 rounded-xl ${bg} border ${border} flex items-center justify-center ${hoverBg} ${hoverBorder} transition-colors`}>
                             <Icon className={`h-4 w-4 ${color}`} />
                           </button>
