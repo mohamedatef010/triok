@@ -440,6 +440,7 @@ export function VideoDetailPage() {
                   poster={video.thumbnailUrl || undefined}
                   title={video.title}
                   autoPlay={true}
+                  videoId={video.id}
                   previewLimitSeconds={
                     (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full")
                       ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))

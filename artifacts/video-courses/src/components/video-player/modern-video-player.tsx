@@ -36,6 +36,8 @@ export interface ModernVideoPlayerProps {
   onPreviewLimitReached?: () => void;
   previewLimitSeconds?: number;
   className?: string;
+  /** Pass the video's unique ID to enable automatic progress save/restore across sessions */
+  videoId?: string | number;
 }
 
 const SPEED_OPTIONS = [
@@ -70,12 +72,17 @@ export function ModernVideoPlayer({
   onPreviewLimitReached,
   previewLimitSeconds,
   className = "",
+  videoId,
 }: ModernVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const controlsTimeoutRef = useRef<any>(null);
   const isDraggingScrubberRef = useRef(false);
+  // Track whether actual playback has ever begun (prevents poster flash during buffering)
+  const hasStartedPlaybackRef = useRef(false);
+  // Persist progress save interval
+  const progressSaveIntervalRef = useRef<any>(null);
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -320,6 +327,16 @@ export function ModernVideoPlayer({
   useEffect(() => {
     return () => {
       destroyHls();
+      // Save final position before unmount
+      if (videoId && videoRef.current) {
+        const t = videoRef.current.currentTime;
+        if (t > 3) {
+          try { localStorage.setItem(`vp_${videoId}`, t.toString()); } catch {}
+        }
+      }
+      if (progressSaveIntervalRef.current) {
+        clearInterval(progressSaveIntervalRef.current);
+      }
       if (videoRef.current) {
         try {
           videoRef.current.pause();
@@ -328,7 +345,39 @@ export function ModernVideoPlayer({
         } catch {}
       }
     };
-  }, [destroyHls]);
+  }, [destroyHls, videoId]);
+
+  // ── Auto-save progress every 5s & restore on mount ──
+  useEffect(() => {
+    if (!videoId) return;
+    // Restore saved position when the video metadata loads
+    const video = videoRef.current;
+    if (!video) return;
+    const onMeta = () => {
+      try {
+        const saved = localStorage.getItem(`vp_${videoId}`);
+        if (saved) {
+          const t = parseFloat(saved);
+          if (t > 3 && video.duration && t < video.duration - 5) {
+            video.currentTime = t;
+          }
+        }
+      } catch {}
+    };
+    video.addEventListener("loadedmetadata", onMeta);
+    // Periodic save every 5 seconds during playback
+    progressSaveIntervalRef.current = setInterval(() => {
+      if (video && !video.paused && video.currentTime > 3) {
+        try { localStorage.setItem(`vp_${videoId}`, video.currentTime.toString()); } catch {}
+      }
+    }, 5000);
+    return () => {
+      video.removeEventListener("loadedmetadata", onMeta);
+      if (progressSaveIntervalRef.current) {
+        clearInterval(progressSaveIntervalRef.current);
+      }
+    };
+  }, [videoId, src]);
 
   // Sync volume & mute state to video element
   useEffect(() => {
@@ -634,7 +683,10 @@ export function ModernVideoPlayer({
         poster={poster}
         playsInline
         preload="metadata"
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => {
+          setIsPlaying(true);
+          hasStartedPlaybackRef.current = true; // poster will no longer show after first play
+        }}
         onPause={() => setIsPlaying(false)}
         onTimeUpdate={handleVideoTimeUpdate}
         onDurationChange={handleVideoDurationChange}
@@ -652,6 +704,8 @@ export function ModernVideoPlayer({
         }}
         onClick={togglePlay}
         className="w-full h-full object-contain cursor-pointer"
+        // Remove poster once playback has started so it never flashes back during buffering
+        {...(hasStartedPlaybackRef.current ? { poster: undefined } : {})}
       />
 
       {/* ── Top Ambient Video Title Overlay ── */}
@@ -693,15 +747,18 @@ export function ModernVideoPlayer({
         </div>
       )}
 
-      {/* ── Center Buffering Spinner ── */}
+      {/* ── Center Buffering Spinner — only shows after real stall (450ms debounce), never shows poster behind it ── */}
       {isBuffering && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30 backdrop-blur-[2px] pointer-events-none z-20">
-          <div className="h-16 w-16 rounded-full bg-slate-950/80 border border-amber-400/30 flex items-center justify-center shadow-2xl">
-            <Loader2 className="h-8 w-8 text-amber-400 animate-spin" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20"
+          style={{ background: hasStartedPlaybackRef.current ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.35)" }}>
+          <div className="h-14 w-14 rounded-full bg-slate-950/80 border border-amber-400/30 flex items-center justify-center shadow-2xl backdrop-blur-sm">
+            <Loader2 className="h-7 w-7 text-amber-400 animate-spin" />
           </div>
-          <span className="text-white text-xs font-semibold mt-3 bg-black/60 px-3 py-1 rounded-full">
-            Загрузка потока...
-          </span>
+          {!hasStartedPlaybackRef.current && (
+            <span className="text-white text-xs font-semibold mt-3 bg-black/60 px-3 py-1 rounded-full">
+              Загрузка...
+            </span>
+          )}
         </div>
       )}
 
