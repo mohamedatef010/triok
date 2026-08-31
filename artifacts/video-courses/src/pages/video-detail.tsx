@@ -343,7 +343,7 @@ export function VideoDetailPage() {
   const inCompare = !!compare.videos.find(v => v.id === video.id);
   const playerUrl = (isPurchasedByUser || video.isPurchased)
     ? (playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO)
-    : (video.previewVideoUrl || playbackData?.manifestUrl || FALLBACK_VIDEO);
+    : (playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO);
 
   // Discount percentage calculation
   const discountPercent = (video.discountPrice && video.price && video.price > video.discountPrice)
@@ -452,6 +452,7 @@ export function VideoDetailPage() {
                 </div>
               ) : (
                 <ReactPlayer
+                  key={playerUrl}
                   ref={playerRef}
                   url={playerUrl}
                   playing={isPlaying}

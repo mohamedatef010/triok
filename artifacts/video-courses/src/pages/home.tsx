@@ -1897,10 +1897,11 @@ function PreviewVideoPlayer({ video }: { video: any }) {
     );
   }
 
-  const url = video.previewVideoUrl || playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO;
+  const url = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO;
 
   return (
     <ReactPlayer
+      key={url}
       url={url}
       playing={true}
       controls
