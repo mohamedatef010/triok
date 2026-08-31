@@ -83,6 +83,23 @@ export function ModernVideoPlayer({
   const [duration, setDuration] = useState(0);
   const [bufferedEnd, setBufferedEnd] = useState(0);
   const [isBuffering, setIsBuffering] = useState(false);
+  const bufferingTimeoutRef = useRef<any>(null);
+
+  const setBuffering = useCallback((buffering: boolean) => {
+    if (bufferingTimeoutRef.current) {
+      clearTimeout(bufferingTimeoutRef.current);
+      bufferingTimeoutRef.current = null;
+    }
+    if (buffering) {
+      // Debounce: only show spinner if playback is genuinely stalled for 450ms+
+      bufferingTimeoutRef.current = setTimeout(() => {
+        setIsBuffering(true);
+      }, 450);
+    } else {
+      setIsBuffering(false);
+    }
+  }, []);
+
   const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [volume, setVolume] = useState(() => {
     try {
@@ -141,7 +158,7 @@ export function ModernVideoPlayer({
     if (!video || !src) return;
 
     setErrorMessage(null);
-    setIsBuffering(true);
+    setBuffering(true);
 
     // Save previous playback position so stream transitions or buffer hiccups never reset to 0:00
     const resumeTime = video.currentTime > 0 ? video.currentTime : currentTime;
@@ -154,16 +171,20 @@ export function ModernVideoPlayer({
 
     if (isHlsUrl && Hls.isSupported()) {
       const hls = new Hls({
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
-        maxBufferSize: 60 * 1000 * 1000,
+        maxBufferLength: 60,              // Buffer up to 60s ahead for ultra smooth playback
+        maxMaxBufferLength: 120,          // Max 120s buffer ahead
+        maxBufferSize: 120 * 1024 * 1024, // 120MB buffer memory
+        maxBufferHole: 0.8,               // Auto bridge small packet gaps up to 0.8s
+        lowLatencyMode: false,            // VOD mode for maximum smoothness
+        backBufferLength: 60,             // Keep 60s in back buffer
+        startLevel: -1,                   // Adaptive bitrate
+        fragLoadingTimeOut: 25000,
+        fragLoadingMaxRetry: 6,
+        fragLoadingRetryDelay: 500,
         enableWorker: true,
-        lowLatencyMode: false,
-        backBufferLength: 30,
-        startLevel: -1,
-        nudgeMaxRetry: 8,
+        progressive: true,
+        nudgeMaxRetry: 10,
         nudgeOffset: 0.1,
-        maxBufferHole: 0.5,
         highBufferWatchdogPeriod: 2,
         defaultAudioCodec: "mp4a.40.2",
       });
@@ -176,7 +197,7 @@ export function ModernVideoPlayer({
       });
 
       hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
-        setIsBuffering(false);
+        setBuffering(false);
         if (data.levels && data.levels.length > 0) {
           const levels: VideoQualityOption[] = [
             { id: -1, label: "Авто" },
@@ -204,6 +225,14 @@ export function ModernVideoPlayer({
         }
       });
 
+      hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        setBuffering(false);
+      });
+
+      hls.on(Hls.Events.BUFFER_APPENDED, () => {
+        setBuffering(false);
+      });
+
       hls.on(Hls.Events.LEVEL_SWITCHED, (_, data) => {
         const levelObj = hls.levels[data.level];
         if (levelObj && levelObj.height) {
@@ -220,18 +249,18 @@ export function ModernVideoPlayer({
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn("[ModernVideoPlayer] Fatal network error, recovering stream...", data);
+              console.warn("[ModernVideoPlayer] Network error, recovering stream...", data);
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
-              console.warn("[ModernVideoPlayer] Fatal media error, recovering without resetting position...", data);
+              console.warn("[ModernVideoPlayer] Media error, recovering without resetting position...", data);
               hls.recoverMediaError();
               if (currentPos > 0) {
                 try { video.currentTime = currentPos; } catch {}
               }
               break;
             default:
-              console.error("[ModernVideoPlayer] Unrecoverable HLS error, falling back to direct video stream:", data);
+              console.error("[ModernVideoPlayer] Unrecoverable HLS error, falling back to direct stream:", data);
               destroyHls();
               video.src = src;
               if (currentPos > 0) {
@@ -272,7 +301,7 @@ export function ModernVideoPlayer({
     return () => {
       destroyHls();
     };
-  }, [src, destroyHls]);
+  }, [src, destroyHls, setBuffering]);
 
   // Handle Unmount cleanup globally
   useEffect(() => {
@@ -499,6 +528,7 @@ export function ModernVideoPlayer({
 
     const time = video.currentTime;
     setCurrentTime(time);
+    setBuffering(false);
     onTimeUpdate?.(time, video.duration || duration);
 
     // Buffer range calculation
@@ -596,15 +626,15 @@ export function ModernVideoPlayer({
         onTimeUpdate={handleVideoTimeUpdate}
         onDurationChange={handleVideoDurationChange}
         onProgress={handleVideoProgress}
-        onWaiting={() => setIsBuffering(true)}
-        onPlaying={() => setIsBuffering(false)}
-        onCanPlay={() => setIsBuffering(false)}
+        onWaiting={() => setBuffering(true)}
+        onPlaying={() => setBuffering(false)}
+        onCanPlay={() => setBuffering(false)}
         onEnded={() => {
           setIsPlaying(false);
           onEnded?.();
         }}
         onError={() => {
-          setIsBuffering(false);
+          setBuffering(false);
           setErrorMessage("Не удалось загрузить видео. Пожалуйста, попробуйте позже.");
         }}
         onClick={togglePlay}
