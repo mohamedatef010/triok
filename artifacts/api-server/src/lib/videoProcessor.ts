@@ -36,10 +36,15 @@ function runFfmpeg(inputPath: string, outputDir: string, durationLimit?: number)
   return new Promise((resolve, reject) => {
     let cmd = ffmpeg(inputPath)
       .outputOptions([
-        "-profile:v baseline",
-        "-level 3.0",
-        "-start_number 0",
-        "-hls_time 10",
+        "-c:v libx264",
+        "-crf 22",
+        "-preset veryfast",
+        "-c:a aac",
+        "-b:a 128k",
+        "-g 48",
+        "-keyint_min 48",
+        "-sc_threshold 0",
+        "-hls_time 6",
         "-hls_list_size 0",
         "-f hls"
       ]);

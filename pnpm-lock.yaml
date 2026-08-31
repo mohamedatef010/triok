@@ -451,6 +451,9 @@ importers:
 
   artifacts/video-courses:
     dependencies:
+      hls.js:
+        specifier: ^1.7.1
+        version: 1.7.1
       zustand:
         specifier: ^5.0.14
         version: 5.0.14(@types/react@19.2.18)(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
@@ -2678,6 +2681,9 @@ packages:
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
+
+  hls.js@1.7.1:
+    resolution: {integrity: sha512-DlzIkeBAS9IIQ432k3BUf3HlwbsR0+trB1i2lDdN2gUkNkrehFurh0/48M5c1/EjlDkdGng1gwZIpwyPxvdZ/g==}
 
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
@@ -5694,6 +5700,8 @@ snapshots:
   helmet@8.3.0: {}
 
   help-me@5.0.0: {}
+
+  hls.js@1.7.1: {}
 
   http-errors@2.0.1:
     dependencies:

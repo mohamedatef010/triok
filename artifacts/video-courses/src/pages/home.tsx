@@ -3,7 +3,7 @@ import { useSEO } from "@/hooks/use-seo";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useGetFeaturedVideos, useGetVideoPlayback } from "@workspace/api-client-react";
-import ReactPlayer from "react-player";
+import { ModernVideoPlayer } from "@/components/video-player/modern-video-player";
 import { Button } from "@/components/ui/button";
 import {
   Play,
@@ -1901,23 +1901,6 @@ export function HomePage() {
 function PreviewVideoPlayer({ video }: { video: any }) {
   const { data: playbackData, isLoading } = useGetVideoPlayback(video.id);
   const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
-  const playerRef = useRef<any>(null);
-  // Lock the URL at mount time so that async playbackData arrival
-  // doesn't change the url prop mid-playback (avoids key-remount ghost audio)
-  const lockedUrlRef = useRef<string | null>(null);
-
-  // Explicit cleanup on unmount: iOS native video keeps playing even after
-  // React removes the element from the DOM unless we pause it manually.
-  useEffect(() => {
-    return () => {
-      if (typeof document !== "undefined") {
-        document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
-          try { el.pause(); el.removeAttribute("src"); el.load(); } catch {}
-        });
-      }
-      lockedUrlRef.current = null;
-    };
-  }, []);
 
   if (isLoading) {
     return (
@@ -1927,22 +1910,17 @@ function PreviewVideoPlayer({ video }: { video: any }) {
     );
   }
 
-  const resolvedUrl = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO;
-  // Lock on first resolve so subsequent playbackData updates don't remount the player
-  if (!lockedUrlRef.current) lockedUrlRef.current = resolvedUrl;
-  const url = lockedUrlRef.current ?? resolvedUrl;
+  const url = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO;
 
   return (
-    <ReactPlayer
-      ref={playerRef}
-      url={url}
-      playing={true}
-      controls
-      width="100%"
-      height="100%"
-      className="bg-black object-contain absolute top-0 left-0"
-      config={{ file: { forceHLS: url.includes(".m3u8") } }}
-      onContextMenu={(e: any) => e.preventDefault()}
+    <ModernVideoPlayer
+      src={url}
+      poster={video.thumbnailUrl || undefined}
+      title={video.title}
+      autoPlay={true}
+      previewLimitSeconds={
+        video.previewDurationSeconds || (video.durationSeconds ? video.durationSeconds * 0.2 : undefined)
+      }
     />
   );
 }

@@ -39,7 +39,7 @@ import { LoadingSpinner, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/hooks/use-toast";
 import { VideoReviewModal } from "@/components/video-review-modal";
 import { useQueryClient } from "@tanstack/react-query";
-import ReactPlayer from "react-player";
+import { ModernVideoPlayer } from "@/components/video-player/modern-video-player";
 
 import { formatDuration } from "@/lib/utils";
 import { TrickDifficultyBadge } from "@/components/ui/trick-difficulty";
@@ -162,14 +162,8 @@ export function VideoDetailPage() {
   const createOrder = useCreateOrder();
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const playerRef = useRef<ReactPlayer>(null);
   const viewRecordedRef = useRef(false);
   const recordView = useRecordVideoView();
-  // Locks the URL at the moment Play is pressed to prevent HLS double-playback.
-  // Without this, playbackData arriving async changes playerUrl, the `key` on
-  // ReactPlayer changes, a new player mounts but the old HLS instance + <video>
-  // element keeps playing audio in the background.
-  const lockedPlayerUrlRef = useRef<string | null>(null);
 
   const handleStartPlaying = () => {
     // Pause every media element in the page before starting a new one
@@ -178,12 +172,6 @@ export function VideoDetailPage() {
         try { el.pause(); } catch {}
       });
     }
-    // Lock the URL now so that any subsequent async update to playbackData
-    // does NOT change playerUrl (and therefore never triggers a remount).
-    const resolvedUrl = (isPurchasedByUser || video?.isPurchased)
-      ? (playbackData?.manifestUrl || video?.videoUrl || FALLBACK_VIDEO)
-      : (playbackData?.manifestUrl || video?.previewVideoUrl || video?.videoUrl || FALLBACK_VIDEO);
-    lockedPlayerUrlRef.current = resolvedUrl || FALLBACK_VIDEO;
     if (!viewRecordedRef.current && id) {
       viewRecordedRef.current = true;
       recordView.mutate({ id });
@@ -192,7 +180,6 @@ export function VideoDetailPage() {
   };
   const [playerDuration, setPlayerDuration] = useState<number | null>(null);
   const [showPurchaseOverlay, setShowPurchaseOverlay] = useState(false);
-  const [videoError, setVideoError] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const mainBuyButtonRef = useRef<HTMLDivElement>(null);
@@ -210,10 +197,7 @@ export function VideoDetailPage() {
     return () => {
       setIsPlaying(false);
       setShowPurchaseOverlay(false);
-      setVideoError(false);
       viewRecordedRef.current = false;
-      lockedPlayerUrlRef.current = null;
-      // Force-stop any lingering media elements left by ReactPlayer/HLS.js
       if (typeof document !== "undefined") {
         document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
           try {
@@ -254,35 +238,6 @@ export function VideoDetailPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    e.stopPropagation();
-    e.preventDefault();
-    const target = e.currentTarget;
-    if (target.src !== FALLBACK_VIDEO) {
-      target.src = FALLBACK_VIDEO;
-      target.load();
-    } else {
-      setVideoError(true);
-      setIsPlaying(false);
-    }
-  };
-
-  const handleTimeUpdate = (progress: { playedSeconds: number; played: number; loadedSeconds: number; loaded: number }) => {
-    if (!video || !playerRef.current) return;
-    
-    if (playbackData?.type === "full") return;
-    if (playbackData?.type === "preview") return;
-
-    if (video.previewVideoUrl) return;
-
-    if (video.isPurchased) return;
-    const duration = playerRef.current.getDuration();
-    if (duration > 0 && progress.playedSeconds > duration * 0.2) {
-      setIsPlaying(false);
-      setShowPurchaseOverlay(true);
-    }
-  };
-  
   const handleEnded = () => {
     setIsPlaying(false);
     if (playbackData?.type === "preview") {
@@ -383,11 +338,9 @@ export function VideoDetailPage() {
   const inCart = cart.isInCart(video.id);
   const inCompare = !!compare.videos.find(v => v.id === video.id);
   // Use the locked URL when playing (prevents remount on async playbackData arrival).
-  // Fall back to the live-computed URL only while the thumbnail/play-button is showing.
-  const livePlayerUrl = (isPurchasedByUser || video.isPurchased)
+  const playerUrl = (isPurchasedByUser || video.isPurchased)
     ? (playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO)
     : (playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO);
-  const playerUrl = (isPlaying && lockedPlayerUrlRef.current) ? lockedPlayerUrlRef.current : livePlayerUrl;
 
   // Discount percentage calculation
   const discountPercent = (video.discountPrice && video.price && video.price > video.discountPrice)
@@ -481,38 +434,27 @@ export function VideoDetailPage() {
                     </div>
                   )}
                 </>
-              ) : videoError ? (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-950 text-white gap-3 p-6 text-center">
-                  <div className="h-14 w-14 rounded-2xl bg-amber-400/10 border border-amber-400/30 flex items-center justify-center">
-                    <PlayCircle className="h-7 w-7 text-amber-400" />
-                  </div>
-                  <p className="text-slate-300 text-xs sm:text-sm max-w-xs">Видео недоступно для воспроизведения в браузере</p>
-                  <button
-                    onClick={() => { setVideoError(false); setIsPlaying(false); }}
-                    className="text-xs text-amber-400 font-bold underline underline-offset-4 hover:text-amber-300 cursor-pointer"
-                  >
-                    Вернуться к превью
-                  </button>
-                </div>
               ) : (
-                <ReactPlayer
-                  ref={playerRef}
-                  url={playerUrl}
-                  playing={isPlaying}
-                  controls
-                  width="100%"
-                  height="100%"
-                  className="bg-black object-contain absolute top-0 left-0"
-                  onProgress={handleTimeUpdate}
-                  onDuration={(d) => {
+                <ModernVideoPlayer
+                  src={playerUrl}
+                  poster={video.thumbnailUrl || undefined}
+                  title={video.title}
+                  autoPlay={true}
+                  previewLimitSeconds={
+                    (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full")
+                      ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))
+                      : undefined
+                  }
+                  onPreviewLimitReached={() => {
+                    setIsPlaying(false);
+                    setShowPurchaseOverlay(true);
+                  }}
+                  onDurationChange={(d) => {
                     if (d && d > 0 && (!video?.durationSeconds || video.durationSeconds === 0)) {
                       setPlayerDuration(Math.round(d));
                     }
                   }}
                   onEnded={handleEnded}
-                  onError={() => setVideoError(true)}
-                  config={{ file: { forceHLS: playerUrl.includes(".m3u8"), attributes: { controlsList: 'nodownload', preload: 'metadata' } } }}
-                  onContextMenu={(e: any) => e.preventDefault()}
                 />
               )}
             </div>

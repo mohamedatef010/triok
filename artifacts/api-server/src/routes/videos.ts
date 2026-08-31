@@ -355,6 +355,22 @@ router.post("/videos/:id/process", requireAdmin, async (req, res): Promise<void>
   res.json({ success: true, message: "Processing started" });
 });
 
+// In-memory cache for generated HLS manifests to speed up playback and seeking
+interface CachedManifest {
+  manifest: string;
+  expiresAt: number;
+}
+const manifestCache = new Map<string, CachedManifest>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, val] of manifestCache.entries()) {
+    if (val.expiresAt < now) {
+      manifestCache.delete(key);
+    }
+  }
+}, 60 * 1000);
+
 router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void> => {
   const params = GetVideoParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
@@ -381,6 +397,17 @@ router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void>
     }
   }
 
+  const hasHls = accessType === "full" ? !!video.hlsFullStorageKey : (!!video.hlsPreviewStorageKey || !!video.hlsFullStorageKey);
+
+  if (!hasHls) {
+    // Return direct video URL if HLS is not yet processed
+    const directUrl = accessType === "full" 
+      ? (video.videoUrl || video.previewVideoUrl)
+      : (video.previewVideoUrl || video.videoUrl);
+    res.json({ manifestUrl: directUrl, type: accessType });
+    return;
+  }
+
   // Generate JWT token valid for 2 hours
   const token = jwt.sign({ videoId: video.id, type: accessType }, JWT_SECRET, { expiresIn: "2h" });
 
@@ -405,7 +432,6 @@ router.get("/videos/:id/manifest", async (req, res): Promise<void> => {
     res.status(401).send("Invalid or expired token"); return;
   }
 
-
   if (decoded.videoId !== params.data.id) {
     res.status(403).send("Forbidden"); return;
   }
@@ -413,9 +439,18 @@ router.get("/videos/:id/manifest", async (req, res): Promise<void> => {
   const [video] = await db.select().from(videosTable).where(eq(videosTable.id, params.data.id));
   if (!video) { res.status(404).send("Not found"); return; }
 
-  const key = decoded.type === "full" ? video.hlsFullStorageKey : video.hlsPreviewStorageKey;
+  const key = decoded.type === "full" ? video.hlsFullStorageKey : (video.hlsPreviewStorageKey || video.hlsFullStorageKey);
   if (!key) {
     res.status(404).send("Video manifest not found"); return;
+  }
+
+  const cacheKey = `${key}:${params.data.id}:${decoded.type}`;
+  const cached = manifestCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+    res.setHeader("Cache-Control", "public, max-age=1800");
+    res.send(cached.manifest);
+    return;
   }
 
   try {
@@ -437,7 +472,13 @@ router.get("/videos/:id/manifest", async (req, res): Promise<void> => {
 
     manifestStr = rewrittenLines.join("\n");
 
+    manifestCache.set(cacheKey, {
+      manifest: manifestStr,
+      expiresAt: Date.now() + 3600 * 1000, // 1 hour cache
+    });
+
     res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+    res.setHeader("Cache-Control", "public, max-age=1800");
     res.send(manifestStr);
   } catch (error) {
     req.log.error({ error }, "Error serving manifest");
