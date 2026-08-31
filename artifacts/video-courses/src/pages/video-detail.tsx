@@ -228,9 +228,9 @@ export function VideoDetailPage() {
 
   const handleEnded = () => {
     setIsPlaying(false);
-    // Only show the purchase overlay if there is no dedicated demo video
-    // and the API confirmed this is a preview-type stream.
-    if (playbackData?.type === "preview" && !video?.previewVideoUrl) {
+    // Show the purchase overlay when the video ends (demo or preview),
+    // unless the user has already purchased the course.
+    if (!isPurchasedByUser && !video?.isPurchased) {
       setShowPurchaseOverlay(true);
     }
   };
