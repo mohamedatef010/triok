@@ -1919,7 +1919,10 @@ function PreviewVideoPlayer({ video }: { video: any }) {
       title={video.title}
       autoPlay={true}
       previewLimitSeconds={
-        video.previewDurationSeconds || (video.durationSeconds ? video.durationSeconds * 0.2 : undefined)
+        // If a dedicated demo video URL is set, play it in full (no cutoff)
+        video.previewVideoUrl
+          ? undefined
+          : (video.previewDurationSeconds || (video.durationSeconds ? video.durationSeconds * 0.2 : undefined))
       }
     />
   );

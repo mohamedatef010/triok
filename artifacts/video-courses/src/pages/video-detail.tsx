@@ -228,7 +228,9 @@ export function VideoDetailPage() {
 
   const handleEnded = () => {
     setIsPlaying(false);
-    if (playbackData?.type === "preview") {
+    // Only show the purchase overlay if there is no dedicated demo video
+    // and the API confirmed this is a preview-type stream.
+    if (playbackData?.type === "preview" && !video?.previewVideoUrl) {
       setShowPurchaseOverlay(true);
     }
   };
@@ -368,7 +370,7 @@ export function VideoDetailPage() {
                 autoPlay={false}
                 videoId={video.id}
                 previewLimitSeconds={
-                  (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full")
+                  (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full" && !video.previewVideoUrl)
                     ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))
                     : undefined
                 }
