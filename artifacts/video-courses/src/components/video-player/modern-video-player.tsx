@@ -166,18 +166,22 @@ export function ModernVideoPlayer({
     if (!video || !src) return;
 
     // Check if the exact stream is already active (prevents stream teardown on token refreshes or re-renders)
-    const streamKey = videoId ? `id-${videoId}` : src.split("?")[0];
+    const streamKey = src.split("?")[0];
     if (currentStreamKeyRef.current === streamKey && (hlsRef.current || video.src)) {
       return; // Stream is already playing uninterrupted
     }
     currentStreamKeyRef.current = streamKey;
 
     setErrorMessage(null);
-    setBuffering(true);
+    const wasPlaying = isPlaying || autoPlay;
+    if (wasPlaying) {
+      setBuffering(true);
+    } else {
+      setIsBuffering(false);
+    }
 
     // Save previous playback position so stream transitions or buffer hiccups never reset to 0:00
     const resumeTime = video.currentTime > 0 ? video.currentTime : currentTime;
-    const wasPlaying = isPlaying || autoPlay;
 
     // Stop and clean up any existing Hls
     destroyHls();
@@ -760,26 +764,20 @@ export function ModernVideoPlayer({
         </div>
       )}
 
-      {/* ── Center Buffering Spinner — only shows after real stall (450ms debounce) ── */}
-      {isBuffering && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20"
-          style={{ background: hasStartedPlaybackRef.current ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.35)" }}>
+      {/* ── Center Buffering Spinner — only shows when actively playing and stalled ── */}
+      {isBuffering && isPlaying && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 bg-black/25 backdrop-blur-[1px]">
           <div className="h-14 w-14 rounded-full bg-slate-950/80 border border-amber-400/30 flex items-center justify-center shadow-2xl backdrop-blur-sm">
             <Loader2 className="h-7 w-7 text-amber-400 animate-spin" />
           </div>
-          {!hasStartedPlaybackRef.current && (
-            <span className="text-white text-xs font-semibold mt-3 bg-black/60 px-3 py-1 rounded-full">
-              Загрузка...
-            </span>
-          )}
         </div>
       )}
 
-      {/* ── Big Center Play Button (smooth fade, eliminates rapid flickering) ── */}
+      {/* ── Big Center Play Button (always visible when paused) ── */}
       <div
         onClick={togglePlay}
         className={`absolute inset-0 flex items-center justify-center cursor-pointer z-10 bg-black/35 backdrop-blur-[2px] transition-opacity duration-300 ${
-          !isPlaying && !isBuffering ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          !isPlaying ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
         <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-400/40 hover:scale-110 active:scale-95 transition-transform duration-200">

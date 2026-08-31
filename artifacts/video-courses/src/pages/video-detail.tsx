@@ -202,34 +202,12 @@ export function VideoDetailPage() {
   // Reliable fallback video URLs (hosted on W3C)
   const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
 
-  // Reset everything when the video id changes or the component unmounts
+  // Reset playback and purchase state when video id changes
   useEffect(() => {
-    return () => {
-      setIsPlaying(false);
-      setShowPurchaseOverlay(false);
-      viewRecordedRef.current = false;
-      if (typeof document !== "undefined") {
-        document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
-          try {
-            el.pause();
-            el.removeAttribute("src");
-            el.load();
-          } catch {}
-        });
-      }
-    };
+    setIsPlaying(false);
+    setShowPurchaseOverlay(false);
+    viewRecordedRef.current = false;
   }, [id]);
-
-  // On MOUNT: stop any media that was left playing by the previous page (e.g. the
-  // home-page preview modal on iOS/mobile where native <video> persists across navigation)
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
-        try { el.pause(); el.removeAttribute("src"); el.load(); } catch {}
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Track scroll to show mobile floating sticky purchase bar
   useEffect(() => {
