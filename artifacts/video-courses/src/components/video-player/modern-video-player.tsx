@@ -186,14 +186,16 @@ export function ModernVideoPlayer({
 
     if (isHlsUrl && Hls.isSupported()) {
       const hls = new Hls({
-        // ── Smooth VOD Pre-buffering ──
-        maxBufferLength: 60,               // Smooth 60s buffer ahead
-        maxMaxBufferLength: 120,           // Max 120s buffer
-        maxBufferSize: 120 * 1024 * 1024,  // 120MB buffer memory limit
-        maxBufferHole: 0.3,                // Standard tight buffer hole tolerance
-        highBufferWatchdogPeriod: 0,       // DISABLED! Prevents artificial stall-watchdog seeks during playback
-        nudgeMaxRetry: 0,                  // Never force-seek currentTime during smooth playback
-        backBufferLength: 30,              // Keep past 30s in buffer
+        // ── Smooth VOD Pre-buffering & Zero-Stutter Configuration ──
+        maxBufferLength: 90,               // Smooth 90s buffer ahead
+        maxMaxBufferLength: 180,           // Max 180s buffer
+        maxBufferSize: 256 * 1024 * 1024,  // 256MB buffer memory limit
+        maxBufferHole: 0.6,                // Seamlessly tolerate micro GOP timestamp gaps
+        highBufferWatchdogPeriod: 2,       // Active stall watchdog to prevent player freezes
+        nudgeMaxRetry: 5,                  // Instantly micro-nudge (<10ms) across segment boundaries without stall
+        nudgeOffset: 0.1,                  // Tiny 0.1s offset to skip micro-gaps invisibly
+        startFragPrefetch: true,           // Prefetch next segment in parallel before current finishes
+        backBufferLength: 60,              // Keep past 60s in buffer for instant rewind
         lowLatencyMode: false,             // VOD mode for maximum stability
         startLevel: -1,
         abrEwmaDefaultEstimate: 8000000,   // Assume fast connection (8 Mbps) to avoid starting at low quality
@@ -687,7 +689,7 @@ export function ModernVideoPlayer({
         ref={videoRef}
         poster={poster}
         playsInline
-        preload="metadata"
+        preload="auto"
         onPlay={() => {
           setIsPlaying(true);
           setBuffering(false);

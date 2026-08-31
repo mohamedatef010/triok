@@ -164,9 +164,14 @@ router.get("/author-media/:filename", async (req, res): Promise<void> => {
 
   const bucket = process.env.S3_BUCKET || "video-courses";
   const key = `author-media/${filename}`;
+  const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
 
   try {
-    const response = await s3Client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const response = await s3Client.send(new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ...(range ? { Range: range } : {}),
+    }));
     if (!response.Body) {
       res.status(404).json({ error: "Not found" });
       return;
@@ -175,9 +180,21 @@ router.get("/author-media/:filename", async (req, res): Promise<void> => {
     if (response.ContentType) {
       res.setHeader("Content-Type", response.ContentType);
     }
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("X-Accel-Buffering", "no");
     res.setHeader("Cache-Control", "public, max-age=86400");
+    if (response.ContentLength != null) {
+      res.setHeader("Content-Length", String(response.ContentLength));
+    }
+    if (range && response.ContentRange) {
+      res.status(206);
+      res.setHeader("Content-Range", response.ContentRange);
+    }
 
     const stream = response.Body as NodeJS.ReadableStream;
+    req.on("close", () => {
+      try { (stream as any).destroy?.(); } catch {}
+    });
     stream.pipe(res);
   } catch (error) {
     req.log.error(error);
@@ -370,6 +387,7 @@ router.get("/preview-videos/:filename", async (req, res): Promise<void> => {
 
     res.setHeader("Content-Type", response.ContentType || "video/mp4");
     res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("X-Accel-Buffering", "no");
     res.setHeader("Cache-Control", "public, max-age=86400");
     if (response.ContentLength != null) {
       res.setHeader("Content-Length", String(response.ContentLength));
@@ -380,6 +398,9 @@ router.get("/preview-videos/:filename", async (req, res): Promise<void> => {
     }
 
     const stream = response.Body as NodeJS.ReadableStream;
+    req.on("close", () => {
+      try { (stream as any).destroy?.(); } catch {}
+    });
     stream.pipe(res);
   } catch (error) {
     req.log.error(error);
