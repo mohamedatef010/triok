@@ -143,13 +143,12 @@ export function ModernVideoPlayer({
     setErrorMessage(null);
     setIsBuffering(true);
 
-    // Stop and clean up any existing Hls or previous video source
+    // Save previous playback position so stream transitions or buffer hiccups never reset to 0:00
+    const resumeTime = video.currentTime > 0 ? video.currentTime : currentTime;
+    const wasPlaying = isPlaying || autoPlay;
+
+    // Stop and clean up any existing Hls
     destroyHls();
-    try {
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-    } catch {}
 
     const isHlsUrl = src.includes(".m3u8") || src.includes("/manifest");
 
@@ -162,6 +161,11 @@ export function ModernVideoPlayer({
         lowLatencyMode: false,
         backBufferLength: 30,
         startLevel: -1,
+        nudgeMaxRetry: 8,
+        nudgeOffset: 0.1,
+        maxBufferHole: 0.5,
+        highBufferWatchdogPeriod: 2,
+        defaultAudioCodec: "mp4a.40.2",
       });
 
       hlsRef.current = hls;
@@ -188,7 +192,14 @@ export function ModernVideoPlayer({
           setQualityOptions([{ id: -1, label: "Авто (HD)" }]);
         }
 
-        if (autoPlay) {
+        // Seamlessly restore playback time if we were already in the middle of playback
+        if (resumeTime > 0) {
+          try {
+            video.currentTime = resumeTime;
+          } catch {}
+        }
+
+        if (wasPlaying) {
           video.play().catch(() => setIsPlaying(false));
         }
       });
@@ -205,21 +216,34 @@ export function ModernVideoPlayer({
       });
 
       hls.on(Hls.Events.ERROR, (_, data) => {
+        const currentPos = video.currentTime > 0 ? video.currentTime : currentTime;
         if (data.fatal) {
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              console.warn("[ModernVideoPlayer] Fatal network error, recovering...", data);
+              console.warn("[ModernVideoPlayer] Fatal network error, recovering stream...", data);
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
-              console.warn("[ModernVideoPlayer] Fatal media error, recovering...", data);
+              console.warn("[ModernVideoPlayer] Fatal media error, recovering without resetting position...", data);
               hls.recoverMediaError();
+              if (currentPos > 0) {
+                try { video.currentTime = currentPos; } catch {}
+              }
               break;
             default:
-              console.error("[ModernVideoPlayer] Unrecoverable HLS error:", data);
+              console.error("[ModernVideoPlayer] Unrecoverable HLS error, falling back to direct video stream:", data);
               destroyHls();
-              // Fallback to native src
               video.src = src;
+              if (currentPos > 0) {
+                const onMeta = () => {
+                  try { video.currentTime = currentPos; } catch {}
+                  video.removeEventListener("loadedmetadata", onMeta);
+                };
+                video.addEventListener("loadedmetadata", onMeta);
+              }
+              if (wasPlaying) {
+                video.play().catch(() => {});
+              }
               break;
           }
         }
@@ -233,7 +257,14 @@ export function ModernVideoPlayer({
         { id: 720, label: "720p HD" },
         { id: 480, label: "480p SD" }
       ]);
-      if (autoPlay) {
+      if (resumeTime > 0) {
+        const onLoadedMeta = () => {
+          try { video.currentTime = resumeTime; } catch {}
+          video.removeEventListener("loadedmetadata", onLoadedMeta);
+        };
+        video.addEventListener("loadedmetadata", onLoadedMeta);
+      }
+      if (wasPlaying) {
         video.play().catch(() => setIsPlaying(false));
       }
     }
@@ -241,7 +272,7 @@ export function ModernVideoPlayer({
     return () => {
       destroyHls();
     };
-  }, [src, autoPlay, destroyHls]);
+  }, [src, destroyHls]);
 
   // Handle Unmount cleanup globally
   useEffect(() => {
