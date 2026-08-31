@@ -465,8 +465,8 @@ router.get("/videos/:id/manifest", async (req, res): Promise<void> => {
       if (!line || line.startsWith("#")) return line;
       // It's a segment file
       const segmentKey = prefix + line;
-      // Presign URL for 2 hours
-      const presignedUrl = await generatePresignedUrl(segmentKey, 7200);
+      // Presign segment URL for 12 hours — prevents URL expiry mid-playback
+      const presignedUrl = await generatePresignedUrl(segmentKey, 43200);
       return presignedUrl;
     }));
 
@@ -474,7 +474,7 @@ router.get("/videos/:id/manifest", async (req, res): Promise<void> => {
 
     manifestCache.set(cacheKey, {
       manifest: manifestStr,
-      expiresAt: Date.now() + 3600 * 1000, // 1 hour cache
+      expiresAt: Date.now() + 6 * 3600 * 1000, // 6 hour cache — well within 12h presign
     });
 
     res.setHeader("Content-Type", "application/vnd.apple.mpegurl");

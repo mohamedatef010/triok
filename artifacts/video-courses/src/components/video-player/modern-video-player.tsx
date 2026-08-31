@@ -171,21 +171,34 @@ export function ModernVideoPlayer({
 
     if (isHlsUrl && Hls.isSupported()) {
       const hls = new Hls({
-        maxBufferLength: 60,              // Buffer up to 60s ahead for ultra smooth playback
-        maxMaxBufferLength: 120,          // Max 120s buffer ahead
-        maxBufferSize: 120 * 1024 * 1024, // 120MB buffer memory
-        maxBufferHole: 0.8,               // Auto bridge small packet gaps up to 0.8s
-        lowLatencyMode: false,            // VOD mode for maximum smoothness
-        backBufferLength: 60,             // Keep 60s in back buffer
-        startLevel: -1,                   // Adaptive bitrate
-        fragLoadingTimeOut: 25000,
-        fragLoadingMaxRetry: 6,
-        fragLoadingRetryDelay: 500,
-        enableWorker: true,
-        progressive: true,
-        nudgeMaxRetry: 10,
+        // ── Pre-buffer 90s so fast connections never stutter ──
+        maxBufferLength: 90,
+        maxMaxBufferLength: 200,
+        maxBufferSize: 200 * 1024 * 1024,   // 200 MB RAM buffer
+        backBufferLength: 90,               // Keep last 90s so seeks are instant
+        maxBufferHole: 1.5,                 // Auto-bridge gaps up to 1.5s
+        // ── ABR: stay on highest quality, only drop if truly needed ──
+        startLevel: -1,
+        abrBandWidthFactor: 0.95,           // Use 95% of measured bandwidth
+        abrBandWidthUpFactor: 0.55,         // Upgrade quality slowly
+        abrMaxWithRealBitrate: true,        // Measure real segment bitrate
+        maxStarvationDelay: 4,              // Wait 4s before switching quality down
+        maxLoadingDelay: 4,
+        // ── Fragment loading: retry aggressively ──
+        fragLoadingTimeOut: 30000,
+        fragLoadingMaxRetry: 10,
+        fragLoadingRetryDelay: 300,
+        manifestLoadingTimeOut: 15000,
+        manifestLoadingMaxRetry: 6,
+        levelLoadingTimeOut: 15000,
+        levelLoadingMaxRetry: 6,
+        // ── Stall recovery ──
+        nudgeMaxRetry: 12,
         nudgeOffset: 0.1,
-        highBufferWatchdogPeriod: 2,
+        highBufferWatchdogPeriod: 3,
+        lowLatencyMode: false,
+        progressive: true,
+        enableWorker: true,
         defaultAudioCodec: "mp4a.40.2",
       });
 
