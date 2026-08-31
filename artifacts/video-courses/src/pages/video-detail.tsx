@@ -52,11 +52,21 @@ export function VideoDetailPage() {
   const { toast } = useToast();
   
   const { data: apiVideo, isLoading, error } = useGetVideo(id, {
-    query: { enabled: !!id } as any
+    query: {
+      enabled: !!id,
+      staleTime: 60 * 60 * 1000,
+      refetchOnWindowFocus: false
+    } as any
   });
 
   const { data: playbackData } = useGetVideoPlayback(id, {
-    query: { enabled: !!id, retry: false } as any
+    query: {
+      enabled: !!id,
+      retry: false,
+      staleTime: 24 * 60 * 60 * 1000, // 24h stable token
+      refetchOnWindowFocus: false,     // Never refetch token while user is watching
+      refetchOnReconnect: false
+    } as any
   });
 
   const { data: relatedVideos } = useGetRelatedVideos(id, {

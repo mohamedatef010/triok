@@ -83,6 +83,7 @@ export function ModernVideoPlayer({
   const hasStartedPlaybackRef = useRef(false);
   // Persist progress save interval
   const progressSaveIntervalRef = useRef<any>(null);
+  const currentStreamKeyRef = useRef<string | null>(null);
 
   // Playback state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -163,6 +164,13 @@ export function ModernVideoPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
+
+    // Check if the exact stream is already active (prevents stream teardown on token refreshes or re-renders)
+    const streamKey = videoId ? `id-${videoId}` : src.split("?")[0];
+    if (currentStreamKeyRef.current === streamKey && (hlsRef.current || video.src)) {
+      return; // Stream is already playing uninterrupted
+    }
+    currentStreamKeyRef.current = streamKey;
 
     setErrorMessage(null);
     setBuffering(true);
