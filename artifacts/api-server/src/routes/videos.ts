@@ -365,11 +365,64 @@ router.post("/videos/:id/attachment-upload-url", requireAdmin, async (req, res):
   res.json({ uploadUrl, key, publicUrl, filename: safeFilename });
 });
 
-// Serve attachments via API proxy (with proper Content-Type & Content-Disposition for download/preview)
-router.get("/attachments/:filename", async (req, res): Promise<void> => {
+// Serve attachments via API proxy with STRICT purchase verification
+router.get("/attachments/:filename", optionalAuth, async (req, res): Promise<void> => {
   const filename = req.params.filename as string;
   if (!filename || filename.includes("..") || filename.includes("/")) {
     res.status(400).json({ error: "Invalid filename" });
+    return;
+  }
+
+  // Extract video ID from filename: format is "${videoId}-${timestamp}-${cleanName}${ext}"
+  const videoIdMatch = filename.match(/^(\d+)-/);
+  const videoId = videoIdMatch ? Number(videoIdMatch[1]) : null;
+
+  let isAuthorized = false;
+
+  // Check admin authorization via Bearer header or query token
+  const authHeader = req.headers.authorization || (req.query.token ? `Bearer ${req.query.token}` : undefined);
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const rawToken = authHeader.slice(7);
+    try {
+      const decoded: any = jwt.verify(rawToken, JWT_SECRET, { algorithms: ["HS256"] });
+      if (decoded.role === "admin") {
+        isAuthorized = true;
+      } else if (decoded.userId && videoId) {
+        const [order] = await db
+          .select({ id: ordersTable.id })
+          .from(ordersTable)
+          .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
+          .where(
+            and(
+              eq(ordersTable.userId, decoded.userId),
+              eq(ordersTable.status, "paid"),
+              eq(orderItemsTable.videoId, videoId)
+            )
+          )
+          .limit(1);
+        if (order) isAuthorized = true;
+      }
+    } catch {}
+  }
+
+  if (req.user?.userId && videoId && !isAuthorized) {
+    const [order] = await db
+      .select({ id: ordersTable.id })
+      .from(ordersTable)
+      .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
+      .where(
+        and(
+          eq(ordersTable.userId, req.user.userId),
+          eq(ordersTable.status, "paid"),
+          eq(orderItemsTable.videoId, videoId)
+        )
+      )
+      .limit(1);
+    if (order) isAuthorized = true;
+  }
+
+  if (!isAuthorized) {
+    res.status(403).json({ error: "Файлы и материалы к уроку доступны только после покупки курса" });
     return;
   }
 
@@ -392,7 +445,7 @@ router.get("/attachments/:filename", async (req, res): Promise<void> => {
       res.setHeader("Content-Type", response.ContentType);
     }
     res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", "private, max-age=3600");
     if (response.ContentLength != null) {
       res.setHeader("Content-Length", String(response.ContentLength));
     }
@@ -469,25 +522,104 @@ router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void>
     }
   }
 
-  const hasHls = accessType === "full" ? !!video.hlsFullStorageKey : (!!video.hlsPreviewStorageKey || !!video.hlsFullStorageKey);
-
-  if (!hasHls) {
-    // Return direct video URL if HLS is not yet processed
-    const directUrl = accessType === "full" 
-      ? (video.videoUrl || video.previewVideoUrl)
-      : (video.previewVideoUrl || video.videoUrl);
-    res.json({ manifestUrl: directUrl, type: accessType });
-    return;
+  // Admin access check
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    try {
+      const decoded: any = jwt.verify(authHeader.slice(7), JWT_SECRET, { algorithms: ["HS256"] });
+      if (decoded.role === "admin") {
+        accessType = "full";
+      }
+    } catch {}
   }
-
-  // Generate JWT token valid for 2 hours
-  const token = jwt.sign({ videoId: video.id, type: accessType }, JWT_SECRET, { expiresIn: "2h" });
 
   const protocol = req.headers["x-forwarded-proto"] || req.protocol;
   const host = req.headers.host;
-  const manifestUrl = `${protocol}://${host}/api/videos/${video.id}/manifest?token=${token}`;
 
-  res.json({ manifestUrl, type: accessType });
+  if (accessType === "full") {
+    // Generate secure 4-hour JWT token for full stream access
+    const token = jwt.sign({ videoId: video.id, userId: req.user?.userId, type: "full" }, JWT_SECRET, { expiresIn: "4h" });
+    const streamUrl = `${protocol}://${host}/api/videos/${video.id}/stream?token=${token}`;
+    res.json({ manifestUrl: streamUrl, streamUrl, type: "full" });
+    return;
+  }
+
+  // Preview only for visitors
+  res.json({
+    manifestUrl: video.previewVideoUrl || "",
+    streamUrl: video.previewVideoUrl || "",
+    type: "preview",
+  });
+});
+
+// Secure Full Video Stream endpoint (Native hardware-accelerated, zero-buffering, zero-stutter)
+router.get("/videos/:id/stream", async (req, res): Promise<void> => {
+  const params = GetVideoParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+
+  const token = req.query.token as string;
+  if (!token) { res.status(401).send("Unauthorized"); return; }
+
+  let decoded: any;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
+  } catch (err) {
+    res.status(401).send("Invalid or expired token"); return;
+  }
+
+  if (decoded.videoId !== params.data.id || decoded.type !== "full") {
+    res.status(403).send("Forbidden"); return;
+  }
+
+  const [video] = await db.select().from(videosTable).where(eq(videosTable.id, params.data.id));
+  if (!video) { res.status(404).send("Not found"); return; }
+
+  const bucket = process.env.S3_BUCKET || "video-courses";
+  const sourceKey = video.sourceStorageKey || (video.videoUrl?.startsWith("/api/preview-videos/") ? `preview-videos/${path.basename(video.videoUrl)}` : undefined);
+
+  if (!sourceKey) {
+    if (video.videoUrl) {
+      res.redirect(video.videoUrl);
+      return;
+    }
+    res.status(404).send("Video source not found");
+    return;
+  }
+
+  const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
+
+  try {
+    const response = await s3Client.send(new GetObjectCommand({
+      Bucket: bucket,
+      Key: sourceKey,
+      ...(range ? { Range: range } : {}),
+    }));
+    if (!response.Body) {
+      res.status(404).send("Not found");
+      return;
+    }
+
+    res.setHeader("Content-Type", response.ContentType || "video/mp4");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.setHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
+    if (response.ContentLength != null) {
+      res.setHeader("Content-Length", String(response.ContentLength));
+    }
+    if (range && response.ContentRange) {
+      res.status(206);
+      res.setHeader("Content-Range", response.ContentRange);
+    }
+
+    const stream = response.Body as NodeJS.ReadableStream;
+    req.on("close", () => {
+      try { (stream as any).destroy?.(); } catch {}
+    });
+    stream.pipe(res);
+  } catch (error) {
+    req.log.error({ error }, "Error streaming full video");
+    res.status(500).send("Streaming error");
+  }
 });
 
 router.get("/videos/:id/manifest", async (req, res): Promise<void> => {

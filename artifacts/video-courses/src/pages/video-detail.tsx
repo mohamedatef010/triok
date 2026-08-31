@@ -650,11 +650,15 @@ export function VideoDetailPage() {
 
                     {isPurchased ? (
                       <a
-                        href={att.url}
+                        href={
+                          att.url?.startsWith("/api/attachments/")
+                            ? `${att.url}?token=${localStorage.getItem("auth_token") || ""}`
+                            : att.url
+                        }
                         target="_blank"
                         rel="noreferrer"
                         download
-                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs gap-1.5 shadow-sm shrink-0 transition-all active:scale-95"
+                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs gap-1.5 shadow-sm shrink-0 transition-all active:scale-95 cursor-pointer"
                       >
                         <Download className="h-3.5 w-3.5" />
                         <span>Скачать</span>
