@@ -1861,10 +1861,23 @@ export function HomePage() {
                 <Button variant="outline" className="rounded-full" onClick={() => setActivePreviewVideo(null)}>
                   Закрыть
                 </Button>
-                <Button className="btn-glow font-bold rounded-full" asChild>
-                  <Link href={`/video/${activePreviewVideo.id}`}>
-                    Перейти к курсу ({activePreviewVideo.discountPrice || activePreviewVideo.price} ₽)
-                  </Link>
+                <Button
+                  className="btn-glow font-bold rounded-full"
+                  onClick={() => {
+                    // Stop all media before navigating to prevent background audio on mobile/iOS
+                    if (typeof document !== "undefined") {
+                      document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
+                        try { el.pause(); el.removeAttribute("src"); el.load(); } catch {}
+                      });
+                    }
+                    setActivePreviewVideo(null);
+                    // Small delay to let the cleanup propagate before navigation
+                    setTimeout(() => {
+                      window.location.href = `/video/${activePreviewVideo.id}`;
+                    }, 50);
+                  }}
+                >
+                  Перейти к курсу ({activePreviewVideo.discountPrice || activePreviewVideo.price} ₽)
                 </Button>
               </div>
             </div>
@@ -1888,6 +1901,23 @@ export function HomePage() {
 function PreviewVideoPlayer({ video }: { video: any }) {
   const { data: playbackData, isLoading } = useGetVideoPlayback(video.id);
   const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
+  const playerRef = useRef<any>(null);
+  // Lock the URL at mount time so that async playbackData arrival
+  // doesn't change the url prop mid-playback (avoids key-remount ghost audio)
+  const lockedUrlRef = useRef<string | null>(null);
+
+  // Explicit cleanup on unmount: iOS native video keeps playing even after
+  // React removes the element from the DOM unless we pause it manually.
+  useEffect(() => {
+    return () => {
+      if (typeof document !== "undefined") {
+        document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
+          try { el.pause(); el.removeAttribute("src"); el.load(); } catch {}
+        });
+      }
+      lockedUrlRef.current = null;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -1897,11 +1927,14 @@ function PreviewVideoPlayer({ video }: { video: any }) {
     );
   }
 
-  const url = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO;
+  const resolvedUrl = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO;
+  // Lock on first resolve so subsequent playbackData updates don't remount the player
+  if (!lockedUrlRef.current) lockedUrlRef.current = resolvedUrl;
+  const url = lockedUrlRef.current ?? resolvedUrl;
 
   return (
     <ReactPlayer
-      key={url}
+      ref={playerRef}
       url={url}
       playing={true}
       controls

@@ -226,6 +226,17 @@ export function VideoDetailPage() {
     };
   }, [id]);
 
+  // On MOUNT: stop any media that was left playing by the previous page (e.g. the
+  // home-page preview modal on iOS/mobile where native <video> persists across navigation)
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
+        try { el.pause(); el.removeAttribute("src"); el.load(); } catch {}
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Track scroll to show mobile floating sticky purchase bar
   useEffect(() => {
     const handleScroll = () => {
