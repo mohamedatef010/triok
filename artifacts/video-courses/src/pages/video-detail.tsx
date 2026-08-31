@@ -165,8 +165,25 @@ export function VideoDetailPage() {
   const playerRef = useRef<ReactPlayer>(null);
   const viewRecordedRef = useRef(false);
   const recordView = useRecordVideoView();
+  // Locks the URL at the moment Play is pressed to prevent HLS double-playback.
+  // Without this, playbackData arriving async changes playerUrl, the `key` on
+  // ReactPlayer changes, a new player mounts but the old HLS instance + <video>
+  // element keeps playing audio in the background.
+  const lockedPlayerUrlRef = useRef<string | null>(null);
 
   const handleStartPlaying = () => {
+    // Pause every media element in the page before starting a new one
+    if (typeof document !== "undefined") {
+      document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
+        try { el.pause(); } catch {}
+      });
+    }
+    // Lock the URL now so that any subsequent async update to playbackData
+    // does NOT change playerUrl (and therefore never triggers a remount).
+    const resolvedUrl = (isPurchasedByUser || video?.isPurchased)
+      ? (playbackData?.manifestUrl || video?.videoUrl || FALLBACK_VIDEO)
+      : (playbackData?.manifestUrl || video?.previewVideoUrl || video?.videoUrl || FALLBACK_VIDEO);
+    lockedPlayerUrlRef.current = resolvedUrl || FALLBACK_VIDEO;
     if (!viewRecordedRef.current && id) {
       viewRecordedRef.current = true;
       recordView.mutate({ id });
@@ -188,12 +205,25 @@ export function VideoDetailPage() {
   // Reliable fallback video URLs (hosted on W3C)
   const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
 
+  // Reset everything when the video id changes or the component unmounts
   useEffect(() => {
-    // Reset state on id change
-    setIsPlaying(false);
-    setShowPurchaseOverlay(false);
-    setVideoError(false);
-    viewRecordedRef.current = false;
+    return () => {
+      setIsPlaying(false);
+      setShowPurchaseOverlay(false);
+      setVideoError(false);
+      viewRecordedRef.current = false;
+      lockedPlayerUrlRef.current = null;
+      // Force-stop any lingering media elements left by ReactPlayer/HLS.js
+      if (typeof document !== "undefined") {
+        document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
+          try {
+            el.pause();
+            el.removeAttribute("src");
+            el.load();
+          } catch {}
+        });
+      }
+    };
   }, [id]);
 
   // Track scroll to show mobile floating sticky purchase bar
@@ -341,9 +371,12 @@ export function VideoDetailPage() {
   const isFav = favs.isFavorite(video.id);
   const inCart = cart.isInCart(video.id);
   const inCompare = !!compare.videos.find(v => v.id === video.id);
-  const playerUrl = (isPurchasedByUser || video.isPurchased)
+  // Use the locked URL when playing (prevents remount on async playbackData arrival).
+  // Fall back to the live-computed URL only while the thumbnail/play-button is showing.
+  const livePlayerUrl = (isPurchasedByUser || video.isPurchased)
     ? (playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO)
     : (playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO);
+  const playerUrl = (isPlaying && lockedPlayerUrlRef.current) ? lockedPlayerUrlRef.current : livePlayerUrl;
 
   // Discount percentage calculation
   const discountPercent = (video.discountPrice && video.price && video.price > video.discountPrice)
@@ -452,7 +485,6 @@ export function VideoDetailPage() {
                 </div>
               ) : (
                 <ReactPlayer
-                  key={playerUrl}
                   ref={playerRef}
                   url={playerUrl}
                   playing={isPlaying}
