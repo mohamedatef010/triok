@@ -383,90 +383,46 @@ export function VideoDetailPage() {
           {/* Left Column: Video Player / Cinema Box (col-span-7) */}
           <div className="lg:col-span-7 flex flex-col">
             <div className="relative w-full bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 dark:ring-white/10 ring-slate-900/10 group" style={{ aspectRatio: '16/9', minHeight: '240px' }}>
-              {!isPlaying ? (
-                <>
-                  <img 
-                    src={video.thumbnailUrl || undefined} 
-                    alt={video.title} 
-                    className="w-full h-full object-contain filter brightness-[0.9] group-hover:scale-102 transition-transform duration-700 ease-out"
-                  />
-                  
-                  {/* Subtle dark gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/40 to-transparent flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-                    {showPurchaseOverlay ? (
-                      <div className="bg-slate-950/92 border border-amber-400/50 backdrop-blur-2xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl max-w-md w-full animate-in zoom-in-95 duration-300 shadow-2xl text-center">
-                        <div className="inline-flex h-12 sm:h-14 w-12 sm:w-14 items-center justify-center rounded-2xl bg-amber-400/20 text-amber-400 mb-3 sm:mb-4 border border-amber-400/30">
-                          <Lock className="h-6 sm:h-7 w-6 sm:w-7" />
-                        </div>
-                        <h3 className="text-lg sm:text-xl font-black text-white mb-2 leading-snug">Бесплатный превью-просмотр завершен</h3>
-                        <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">Для продолжения просмотра приобретите полный доступ к обучающему курсу.</p>
-                        <Button 
-                          size="lg" 
-                          className="btn-glow font-black w-full rounded-xl sm:rounded-2xl h-11 sm:h-12 bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30" 
-                          onClick={handleBuyNow}
-                        >
-                          Купить доступ ({currentPrice} ₽)
-                        </Button>
-                      </div>
-                    ) : (
-                      <button 
-                        onClick={handleStartPlaying}
-                        className="group/play flex flex-col items-center gap-3 focus:outline-none cursor-pointer transform transition-transform active:scale-95"
-                      >
-                        {/* Play button circle */}
-                        <div className="h-14 w-14 sm:h-18 sm:w-18 rounded-full bg-white/95 text-slate-950 flex items-center justify-center shadow-xl group-hover/play:scale-110 group-hover/play:bg-amber-400 transition-all duration-250">
-                          <Play className="h-6 w-6 sm:h-8 sm:w-8 fill-current ml-0.5" />
-                        </div>
-
-                        {/* Label */}
-                        <span className="text-white font-semibold text-xs sm:text-sm bg-black/50 px-3.5 py-1 rounded-full">
-                          {isPurchasedByUser || video.isPurchased ? "Смотреть курс" : "Смотреть превью бесплатно"}
-                        </span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Corner Badges on Thumbnail */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    {video.categoryName && (
-                      <span className="px-2.5 py-1 rounded-lg bg-slate-950/80 backdrop-blur-md text-amber-400 text-[11px] font-extrabold border border-amber-400/30 shadow-md">
-                        {video.categoryName}
-                      </span>
-                    )}
-                  </div>
-
-                  {displayDuration && (
-                    <div className="absolute bottom-3 left-3">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 shadow-md">
-                        <Clock className="h-3.5 w-3.5 text-amber-400" />
-                        {displayDuration}
-                      </span>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <ModernVideoPlayer
-                  src={playerUrl}
-                  poster={video.thumbnailUrl || undefined}
-                  title={video.title}
-                  autoPlay={true}
-                  videoId={video.id}
-                  previewLimitSeconds={
-                    (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full")
-                      ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))
-                      : undefined
+              <ModernVideoPlayer
+                src={playerUrl}
+                poster={video.thumbnailUrl || undefined}
+                title={video.title}
+                autoPlay={false}
+                videoId={video.id}
+                previewLimitSeconds={
+                  (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full")
+                    ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))
+                    : undefined
+                }
+                onPreviewLimitReached={() => {
+                  setShowPurchaseOverlay(true);
+                }}
+                onDurationChange={(d) => {
+                  if (d && d > 0 && (!video?.durationSeconds || video.durationSeconds === 0)) {
+                    setPlayerDuration(Math.round(d));
                   }
-                  onPreviewLimitReached={() => {
-                    setIsPlaying(false);
-                    setShowPurchaseOverlay(true);
-                  }}
-                  onDurationChange={(d) => {
-                    if (d && d > 0 && (!video?.durationSeconds || video.durationSeconds === 0)) {
-                      setPlayerDuration(Math.round(d));
-                    }
-                  }}
-                  onEnded={handleEnded}
-                />
+                }}
+                onEnded={handleEnded}
+              />
+
+              {/* Purchase Overlay if preview limit reached */}
+              {showPurchaseOverlay && (
+                <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center p-4 sm:p-6 text-center z-40 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="bg-slate-950/92 border border-amber-400/50 backdrop-blur-2xl p-6 sm:p-8 rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl text-center">
+                    <div className="inline-flex h-12 sm:h-14 w-12 sm:w-14 items-center justify-center rounded-2xl bg-amber-400/20 text-amber-400 mb-3 sm:mb-4 border border-amber-400/30">
+                      <Lock className="h-6 sm:h-7 w-6 sm:w-7" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-black text-white mb-2 leading-snug">Бесплатный превью-просмотр завершен</h3>
+                    <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">Для продолжения просмотра приобретите полный доступ к обучающему курсу.</p>
+                    <Button 
+                      size="lg" 
+                      className="btn-glow font-black w-full rounded-xl sm:rounded-2xl h-11 sm:h-12 bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30" 
+                      onClick={handleBuyNow}
+                    >
+                      Купить доступ ({currentPrice} ₽)
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           </div>

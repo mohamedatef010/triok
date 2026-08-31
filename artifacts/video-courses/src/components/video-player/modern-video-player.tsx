@@ -690,14 +690,22 @@ export function ModernVideoPlayer({
         preload="metadata"
         onPlay={() => {
           setIsPlaying(true);
-          hasStartedPlaybackRef.current = true; // poster will no longer show after first play
+          setBuffering(false);
+          hasStartedPlaybackRef.current = true;
         }}
-        onPause={() => setIsPlaying(false)}
+        onPause={() => {
+          if (videoRef.current?.paused) {
+            setIsPlaying(false);
+          }
+        }}
         onTimeUpdate={handleVideoTimeUpdate}
         onDurationChange={handleVideoDurationChange}
         onProgress={handleVideoProgress}
         onWaiting={() => setBuffering(true)}
-        onPlaying={() => setBuffering(false)}
+        onPlaying={() => {
+          setIsPlaying(true);
+          setBuffering(false);
+        }}
         onCanPlay={() => setBuffering(false)}
         onEnded={() => {
           setIsPlaying(false);
@@ -709,8 +717,6 @@ export function ModernVideoPlayer({
         }}
         onClick={togglePlay}
         className="w-full h-full object-contain cursor-pointer"
-        // Remove poster once playback has started so it never flashes back during buffering
-        {...(hasStartedPlaybackRef.current ? { poster: undefined } : {})}
       />
 
       {/* ── Top Ambient Video Title Overlay ── */}
@@ -752,7 +758,7 @@ export function ModernVideoPlayer({
         </div>
       )}
 
-      {/* ── Center Buffering Spinner — only shows after real stall (450ms debounce), never shows poster behind it ── */}
+      {/* ── Center Buffering Spinner — only shows after real stall (450ms debounce) ── */}
       {isBuffering && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20"
           style={{ background: hasStartedPlaybackRef.current ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.35)" }}>
@@ -767,17 +773,17 @@ export function ModernVideoPlayer({
         </div>
       )}
 
-      {/* ── Big Center Play/Pause Button (on hover when paused) ── */}
-      {!isPlaying && !isBuffering && (
-        <div
-          onClick={togglePlay}
-          className="absolute inset-0 flex items-center justify-center cursor-pointer z-10 bg-black/25 transition-all"
-        >
-          <div className="h-18 w-18 sm:h-20 sm:w-20 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-400/40 hover:scale-110 active:scale-95 transition-all duration-200 group-hover/player:ring-4 group-hover/player:ring-amber-400/30">
-            <Play className="h-8 w-8 sm:h-9 sm:w-9 fill-current ml-1" />
-          </div>
+      {/* ── Big Center Play Button (smooth fade, eliminates rapid flickering) ── */}
+      <div
+        onClick={togglePlay}
+        className={`absolute inset-0 flex items-center justify-center cursor-pointer z-10 bg-black/35 backdrop-blur-[2px] transition-opacity duration-300 ${
+          !isPlaying && !isBuffering ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-2xl shadow-amber-400/40 hover:scale-110 active:scale-95 transition-transform duration-200">
+          <Play className="h-7 w-7 sm:h-9 sm:w-9 fill-current ml-1" />
         </div>
-      )}
+      </div>
 
       {/* ── Error Banner ── */}
       {errorMessage && (
