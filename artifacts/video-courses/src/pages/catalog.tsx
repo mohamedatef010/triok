@@ -147,7 +147,7 @@ export function CatalogPage() {
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-500 mb-4 border border-amber-400/20">
             <Filter className="h-8 w-8" />
           </div>
-          <h3 className="text-2xl font-bold mb-2">Курсы не найдены</h3>
+          <h3 className="text-2xl font-bold mb-2">Видео не найдены</h3>
           <p className="text-muted-foreground mb-6 max-w-sm mx-auto">Попробуйте изменить параметры поиска или сбросить фильтры</p>
           <Button variant="outline" className="rounded-full px-6" onClick={() => { setSearch(""); setCategoryId(undefined); }}>
             Сбросить фильтры

@@ -193,15 +193,15 @@ export function ModernVideoPlayer({
     if (isHlsUrl && Hls.isSupported()) {
       const hls = new Hls({
         // ── Smooth VOD Pre-buffering & Zero-Stutter Configuration ──
-        maxBufferLength: 120,              // Smooth 120s buffer ahead
-        maxMaxBufferLength: 300,           // Max 300s buffer
-        maxBufferSize: 300 * 1024 * 1024,  // 300MB buffer memory limit
-        maxBufferHole: 1.0,                // Seamlessly bridge any micro GOP timestamp gaps (<1.0s) without pausing
-        highBufferWatchdogPeriod: 0.5,     // Check for stalls every 0.5s for instant recovery
-        nudgeMaxRetry: 8,                  // Instantly micro-nudge (<10ms) across segment boundaries without stall
-        nudgeOffset: 0.1,                  // Tiny 0.1s offset to skip micro-gaps invisibly
+        maxBufferLength: 60,               // Smooth 60s buffer ahead for steady stream throughput
+        maxMaxBufferLength: 180,           // Max 180s buffer
+        maxBufferSize: 128 * 1024 * 1024,  // 128MB buffer memory limit
+        maxBufferHole: 0.5,                // Standard 0.5s hole tolerance
+        highBufferWatchdogPeriod: 3.0,     // 3.0s watchdog to prevent false-positive stall nudges on high-bitrate full videos
+        nudgeMaxRetry: 3,                  // Gentle recovery only when truly stalled
+        nudgeOffset: 0.05,                 // 50ms micro-nudge without perceptible jump
         startFragPrefetch: true,           // Prefetch next segment in parallel before current finishes
-        backBufferLength: 90,              // Keep past 90s in buffer for instant rewind
+        backBufferLength: 60,              // Keep past 60s in buffer for instant rewind
         lowLatencyMode: false,             // VOD mode for maximum stability
         startLevel: -1,
         abrEwmaDefaultEstimate: 8000000,   // Assume fast connection (8 Mbps) to avoid starting at low quality

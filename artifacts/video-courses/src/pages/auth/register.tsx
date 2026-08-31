@@ -188,7 +188,7 @@ export function RegisterPage() {
                   Специальные бонусы
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-normal">
-                  Участие в мини-играх и промо-скидки на курсы
+                  Участие в мини-играх и промо-скидки на обучение
                 </p>
               </div>
             </div>

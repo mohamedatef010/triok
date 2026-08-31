@@ -129,11 +129,11 @@ export function DeliveryPage() {
               <div className="space-y-2">
                 <h2 className="text-xl font-bold text-foreground">Где найти приобретённые материалы?</h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Все купленные видеокурсы сохраняются в вашем{" "}
+                  Все купленные материалы и видео сохраняются в вашем{" "}
                   <Link href="/profile" className="text-primary font-bold hover:underline">
                     Личном кабинете
                   </Link>{" "}
-                  в разделе «Мои курсы». Вы можете возвращаться к урокам, повторять трюки и пересматривать материалы в любое время.
+                  в разделе «Мое обучение». Вы можете возвращаться к урокам, повторять трюки и пересматривать материалы в любое время.
                 </p>
               </div>
             </div>

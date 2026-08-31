@@ -171,7 +171,7 @@ export function AdminDashboard() {
                 <Film className="h-5 w-5" />
               </div>
               <div className="text-left">
-                <div className="text-xs font-bold text-slate-900 dark:text-white">Курсы и видео</div>
+                <div className="text-xs font-bold text-slate-900 dark:text-white">Видео и обучение</div>
                 <div className="text-[11px] text-muted-foreground">Управление уроками</div>
               </div>
             </div>

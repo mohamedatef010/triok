@@ -180,7 +180,7 @@ export function LoginPage() {
                   100% Доступ навсегда
                 </h4>
                 <p className="text-[11px] text-muted-foreground mt-0.5 leading-normal">
-                  Все купленные курсы и материалы всегда под рукой
+                  Все купленное обучение и материалы всегда под рукой
                 </p>
               </div>
             </div>

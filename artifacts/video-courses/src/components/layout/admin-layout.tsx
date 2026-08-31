@@ -59,7 +59,7 @@ const navSections: { title: string; items: NavItem[] }[] = [
     title: "Главное управление",
     items: [
       { href: "/admm/dashboard", icon: LayoutDashboard, label: "Дашборд & Аналитика" },
-      { href: "/admm/videos", icon: Film, label: "Видео и курсы" },
+      { href: "/admm/videos", icon: Film, label: "Видео и обучение" },
       { href: "/admm/orders", icon: ShoppingCart, label: "Заказы клиентов" },
       { href: "/admm/users", icon: Users, label: "Пользователи" },
     ],

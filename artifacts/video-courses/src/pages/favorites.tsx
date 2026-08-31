@@ -17,7 +17,7 @@ export function FavoritesPage() {
         </div>
         <h1 className="text-3xl font-bold mb-4">В избранном пока пусто</h1>
         <p className="text-muted-foreground max-w-md mb-8">
-          Добавляйте курсы в избранное, чтобы не потерять их и вернуться к ним позже.
+          Добавляйте видео в избранное, чтобы не потерять их и вернуться к ним позже.
         </p>
         <Button size="lg" asChild>
           <Link href="/catalog">В каталог</Link>

@@ -324,11 +324,10 @@ export function VideoDetailPage() {
   const isFav = favs.isFavorite(video.id);
   const inCart = cart.isInCart(video.id);
   const inCompare = !!compare.videos.find(v => v.id === video.id);
-  // playerUrl: stays empty string until the real source (HLS manifest or direct URL) is ready.
-  // We deliberately avoid any fallback video so users never see a random sample clip.
+  // playerUrl: stays stable without jumping between direct URL and HLS manifest
   const playerUrl = (isPurchasedByUser || video.isPurchased)
     ? (playbackData?.manifestUrl || video.videoUrl || "")
-    : (playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || "");
+    : (video.previewVideoUrl || playbackData?.manifestUrl || video.videoUrl || "");
 
   // Discount percentage calculation
   const discountPercent = (video.discountPrice && video.price && video.price > video.discountPrice)
@@ -849,13 +848,13 @@ export function VideoDetailPage() {
           <div className="flex items-center justify-between gap-2 mb-6">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-bold text-xs uppercase tracking-wider mb-1.5 border border-primary/20">
-                <Layers className="h-3.5 w-3.5" /> Рекомендуемые курсы
+                <Layers className="h-3.5 w-3.5" /> Рекомендуемое обучение
               </div>
               <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight">Аналогичные товары</h2>
             </div>
             <Link href="/catalog">
               <Button variant="ghost" size="sm" className="text-xs font-bold text-amber-500 hover:text-amber-400">
-                Все курсы &rarr;
+                Все видео &rarr;
               </Button>
             </Link>
           </div>
@@ -917,7 +916,7 @@ export function VideoDetailPage() {
               })}
             </div>
           ) : (
-            <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">Похожие курсы пока не добавлены.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground text-center py-6">Похожие видео пока не добавлены.</p>
           )}
         </div>
 

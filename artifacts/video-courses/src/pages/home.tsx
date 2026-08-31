@@ -1747,7 +1747,7 @@ export function HomePage() {
             </div>
             <Button variant="outline" className="hidden sm:flex group items-center gap-2 rounded-full border-primary/20 hover:border-primary hover:text-primary transition-all duration-300 font-bold px-6" asChild>
               <Link href="/catalog">
-                Все курсы
+                Все видео
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
               </Link>
             </Button>
@@ -1760,8 +1760,8 @@ export function HomePage() {
               <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-400/10 text-amber-500 mb-4 border border-amber-400/20">
                 <Film className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Курсы скоро появятся</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto">Новые видеокурсы уже готовятся — следите за обновлениями!</p>
+              <h3 className="text-xl font-bold mb-2">Обучение скоро появится</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto">Новые видеоуроки уже готовятся — следите за обновлениями!</p>
             </div>
           ) : (
             <>

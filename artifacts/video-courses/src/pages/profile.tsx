@@ -328,7 +328,7 @@ export function ProfilePage() {
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="mb-8 p-1.5 bg-muted/60 w-full sm:w-auto flex flex-wrap h-auto rounded-2xl border border-border/80 gap-1">
             <TabsTrigger value="videos" className="flex-1 sm:flex-none py-3 px-6 text-sm font-bold rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md">
-              <Play className="mr-2 h-4 w-4 text-amber-400 fill-current" /> Мои курсы ({activeVideos.length})
+              <Play className="mr-2 h-4 w-4 text-amber-400 fill-current" /> Мое обучение ({activeVideos.length})
             </TabsTrigger>
             <TabsTrigger value="reviews" className="flex-1 sm:flex-none py-3 px-6 text-sm font-bold rounded-xl data-[state=active]:bg-background data-[state=active]:shadow-md">
               <Star className="mr-2 h-4 w-4 text-amber-400 fill-current" /> Мои отзывы ({activeReviews.length})

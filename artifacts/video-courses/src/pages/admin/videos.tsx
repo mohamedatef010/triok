@@ -679,10 +679,10 @@ export function AdminVideos() {
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
               <Film className="h-6 w-6" />
             </div>
-            <span>Видео и курсы</span>
+            <span>Видео и обучение</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Загрузка новых видеокурсов, настройка скидок и управление каталогом
+            Загрузка новых видеоуроков, настройка скидок и управление каталогом
           </p>
         </div>
 

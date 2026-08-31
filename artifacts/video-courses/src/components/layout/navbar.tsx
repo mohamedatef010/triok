@@ -375,7 +375,7 @@ export function Navbar() {
                     ref={searchInputRef}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Найти курс или видео..."
+                    placeholder="Найти видео или фокус..."
                     className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground/60"
                     onKeyDown={(e) => e.key === "Escape" && setSearchOpen(false)}
                   />
@@ -426,7 +426,7 @@ export function Navbar() {
                     </div>
                   ) : (
                     <div className="py-6 text-center text-muted-foreground/60 text-sm">
-                      Введите название курса или видео
+                      Введите название видео или фокуса
                     </div>
                   )}
                 </div>
