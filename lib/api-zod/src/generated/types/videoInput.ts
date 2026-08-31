@@ -5,6 +5,7 @@
  * API specification for video courses platform
  * OpenAPI spec version: 0.1.0
  */
+import type { VideoAttachment } from './videoAttachment';
 
 export interface VideoInput {
   /** @minLength 1 */
@@ -34,4 +35,5 @@ export interface VideoInput {
   difficulty?: number;
   isFeatured?: boolean;
   isPublished?: boolean;
+  attachments?: VideoAttachment[];
 }

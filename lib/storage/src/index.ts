@@ -15,7 +15,7 @@ if (!process.env.S3_ENDPOINT) {
 }
 
 // Internal client — used for server-side operations (uploadFile, getObjectAsString, ensureBucketExists)
-const s3Client = new S3Client({
+export const s3Client = new S3Client({
   region: process.env.S3_REGION || "us-east-1",
   endpoint: process.env.S3_ENDPOINT,
   credentials: {
@@ -111,6 +111,4 @@ export async function deleteObject(key: string): Promise<void> {
   });
   await s3Client.send(command);
 }
-
-export { s3Client };
 

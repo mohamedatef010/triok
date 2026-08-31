@@ -34,6 +34,10 @@ import {
   MessageSquare,
   ChevronLeft,
   Zap,
+  Paperclip,
+  FileText,
+  Download,
+  CheckCircle2,
 } from "lucide-react";
 import { LoadingSpinner, ErrorState } from "@/components/ui/states";
 import { useToast } from "@/hooks/use-toast";
@@ -176,12 +180,6 @@ export function VideoDetailPage() {
   const recordView = useRecordVideoView();
 
   const handleStartPlaying = () => {
-    // Pause every media element in the page before starting a new one
-    if (typeof document !== "undefined") {
-      document.querySelectorAll<HTMLMediaElement>("video, audio").forEach((el) => {
-        try { el.pause(); } catch {}
-      });
-    }
     if (!viewRecordedRef.current && id) {
       viewRecordedRef.current = true;
       recordView.mutate({ id });
@@ -199,8 +197,7 @@ export function VideoDetailPage() {
     : playerDuration;
   const displayDuration = formatDuration(effectiveDurationSeconds) || formatDuration((video as any)?.duration);
 
-  // Reliable fallback video URLs (hosted on W3C)
-  const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
+  // No external fallback — player stays blank until the real video source arrives
 
   // Reset playback and purchase state when video id changes
   useEffect(() => {
@@ -327,10 +324,11 @@ export function VideoDetailPage() {
   const isFav = favs.isFavorite(video.id);
   const inCart = cart.isInCart(video.id);
   const inCompare = !!compare.videos.find(v => v.id === video.id);
-  // Use the locked URL when playing (prevents remount on async playbackData arrival).
+  // playerUrl: stays empty string until the real source (HLS manifest or direct URL) is ready.
+  // We deliberately avoid any fallback video so users never see a random sample clip.
   const playerUrl = (isPurchasedByUser || video.isPurchased)
-    ? (playbackData?.manifestUrl || video.videoUrl || FALLBACK_VIDEO)
-    : (playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO);
+    ? (playbackData?.manifestUrl || video.videoUrl || "")
+    : (playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || "");
 
   // Discount percentage calculation
   const discountPercent = (video.discountPrice && video.price && video.price > video.discountPrice)
@@ -369,6 +367,7 @@ export function VideoDetailPage() {
                 title={video.title}
                 autoPlay={false}
                 videoId={video.id}
+                onPlay={handleStartPlaying}
                 previewLimitSeconds={
                   (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full" && !video.previewVideoUrl)
                     ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))
@@ -605,6 +604,79 @@ export function VideoDetailPage() {
             <p>{video.description || "Подробный пошаговый обучающий видеокурс от профессионального иллюзиониста с детальным разбором секретов и приемов."}</p>
           </div>
         </div>
+
+        {/* ── Printable Materials & Lesson Attachments (Материалы для печати и обучения) ── */}
+        {Array.isArray(video.attachments) && video.attachments.length > 0 && (
+          <div className="max-w-4xl mb-10 sm:mb-14">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-400/10 text-sky-500 font-bold text-xs uppercase tracking-wider mb-3 border border-sky-400/20">
+              <Paperclip className="h-3.5 w-3.5" /> Материалы к уроку
+            </div>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black mb-4 tracking-tight flex items-center gap-2.5">
+              <span>Файлы для печати и реквизит</span>
+              <span className="text-xs sm:text-sm font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border">
+                {video.attachments.length}
+              </span>
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {video.attachments.map((att: any) => {
+                const isPurchased = isPurchasedByUser || video.isPurchased;
+                return (
+                  <div
+                    key={att.id}
+                    className="p-4 rounded-2xl bg-card/90 dark:bg-card/70 border border-border/80 shadow-sm flex items-center justify-between gap-3 group hover:border-sky-500/40 transition-all"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="h-10 w-10 rounded-xl bg-sky-500/15 text-sky-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-sm text-foreground truncate">
+                          {att.name}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
+                          {att.size && <span>{(att.size / 1024).toFixed(0)} KB</span>}
+                          {isPurchased ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" /> Доступно для скачивания
+                            </span>
+                          ) : (
+                            <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                              <Lock className="h-3 w-3" /> Доступно после покупки
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {isPurchased ? (
+                      <a
+                        href={att.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs gap-1.5 shadow-sm shrink-0 transition-all active:scale-95"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        <span>Скачать</span>
+                      </a>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleBuyNow}
+                        className="h-9 px-3 rounded-xl border-amber-400/40 text-amber-500 hover:bg-amber-400/10 font-bold text-xs gap-1 shrink-0 cursor-pointer"
+                      >
+                        <Lock className="h-3 w-3" />
+                        <span>Открыть доступ</span>
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Student Reviews Section (Отзывы учеников) ── */}
         <div id="reviews-section" className="max-w-4xl mb-12 sm:mb-16 pt-6 sm:pt-8 border-t border-border/60">

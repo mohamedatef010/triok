@@ -20,13 +20,13 @@ import { TrickDifficultyBadge } from "@/components/ui/trick-difficulty";
 
 export function CatalogPage() {
   useSEO({
-    title: "Каталог курсов по фокусам",
+    title: "Каталог Обучение по фокусам",
     description: "Обучайтесь фокусам и трюкам с профессиональными видеокурсами. Иллюзии, карточные трюки, ментальная магия и многое другое — всё в одном месте.",
     canonical: "/catalog",
     structuredData: {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "Каталог курсов по фокусам — Классный Фокус",
+      "name": "Каталог Обучение по фокусам — Классный Фокус",
       "description": "Обучайтесь фокусам и трюкам с профессиональными видеокурсами.",
       "url": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai/catalog"
     }
@@ -78,7 +78,7 @@ export function CatalogPage() {
         <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs uppercase tracking-widest w-fit border border-amber-400/20">
           <Sparkles className="h-3.5 w-3.5" /> Обучение
         </div>
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight">Каталог курсов</h1>
+        <h1 className="text-3xl md:text-5xl font-black tracking-tight">Обучение</h1>
       </div>
 
       {/* Filters Bar */}

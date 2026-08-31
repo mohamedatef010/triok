@@ -46,6 +46,11 @@ import {
   X,
   Gauge,
   Layers,
+  Paperclip,
+  FileText,
+  Download,
+  ExternalLink,
+  File as FileIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TrickDifficultyBadge, TrickDifficultySelector } from "@/components/ui/trick-difficulty";
@@ -138,6 +143,15 @@ export function AdminVideos() {
   // --- Category state ---
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("none");
   const [newCategoryName, setNewCategoryName] = useState<string>("");
+
+  // --- Attachments Manager state ---
+  const [selectedVideoForAttachments, setSelectedVideoForAttachments] = useState<any | null>(null);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [attachmentNameInput, setAttachmentNameInput] = useState("");
+  const [attachmentUrlInput, setAttachmentUrlInput] = useState("");
+  const [attachmentSource, setAttachmentSource] = useState<"file" | "url">("file");
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const attachmentFileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -304,6 +318,120 @@ export function AdminVideos() {
       toast({ title: "Ошибка создания раздела", description: err.message || "Не удалось создать раздел", variant: "destructive" });
     } finally {
       setIsCreatingCategory(false);
+    }
+  };
+
+  const handleUploadAttachment = async (file: File) => {
+    if (!selectedVideoForAttachments) return;
+    setIsUploadingAttachment(true);
+    try {
+      const token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token");
+      const res = await fetch(`/api/videos/${selectedVideoForAttachments.id}/attachment-upload-url`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ filename: file.name, contentType: file.type || "application/pdf" }),
+      });
+      if (!res.ok) throw new Error("Не удалось получить ссылку для загрузки файла");
+      const { uploadUrl, publicUrl } = await res.json() as { uploadUrl: string; publicUrl: string; filename: string };
+
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type || "application/pdf" },
+        body: file,
+      });
+      if (!putRes.ok) throw new Error("Ошибка загрузки файла в хранилище");
+
+      const newAtt = {
+        id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        name: attachmentNameInput.trim() || file.name,
+        url: publicUrl,
+        size: file.size,
+        type: file.type || "application/pdf",
+      };
+
+      const currentList = Array.isArray(selectedVideoForAttachments.attachments) ? selectedVideoForAttachments.attachments : [];
+      const updated = [...currentList, newAtt];
+
+      await updateMut.mutateAsync({
+        id: selectedVideoForAttachments.id,
+        data: { attachments: updated },
+      });
+
+      setSelectedVideoForAttachments({
+        ...selectedVideoForAttachments,
+        attachments: updated,
+      });
+      setAttachmentNameInput("");
+      setAttachmentFile(null);
+      invalidateVideoCaches();
+      refetch();
+      toast({ title: "✅ Файл успешно прикреплен!", description: newAtt.name });
+    } catch (err: any) {
+      toast({ title: "Ошибка загрузки файла", description: err.message || "Не удалось загрузить файл", variant: "destructive" });
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  };
+
+  const handleAddUrlAttachment = async () => {
+    if (!selectedVideoForAttachments || !attachmentUrlInput.trim()) {
+      toast({ title: "Введите ссылку на файл", variant: "destructive" });
+      return;
+    }
+    const name = attachmentNameInput.trim() || "Материал для печати (PDF)";
+    const newAtt = {
+      id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      name,
+      url: attachmentUrlInput.trim(),
+      type: "application/pdf",
+    };
+
+    const currentList = Array.isArray(selectedVideoForAttachments.attachments) ? selectedVideoForAttachments.attachments : [];
+    const updated = [...currentList, newAtt];
+
+    try {
+      await updateMut.mutateAsync({
+        id: selectedVideoForAttachments.id,
+        data: { attachments: updated },
+      });
+
+      setSelectedVideoForAttachments({
+        ...selectedVideoForAttachments,
+        attachments: updated,
+      });
+      setAttachmentNameInput("");
+      setAttachmentUrlInput("");
+      invalidateVideoCaches();
+      refetch();
+      toast({ title: "✅ Ссылка на материал добавлена!", description: name });
+    } catch (err: any) {
+      toast({ title: "Ошибка добавления", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleDeleteAttachment = async (attId: string) => {
+    if (!selectedVideoForAttachments) return;
+    const currentList = Array.isArray(selectedVideoForAttachments.attachments) ? selectedVideoForAttachments.attachments : [];
+    const updated = currentList.filter((a: any) => a.id !== attId);
+
+    try {
+      await updateMut.mutateAsync({
+        id: selectedVideoForAttachments.id,
+        data: { attachments: updated },
+      });
+
+      setSelectedVideoForAttachments({
+        ...selectedVideoForAttachments,
+        attachments: updated,
+      });
+      invalidateVideoCaches();
+      refetch();
+      toast({ title: "Файл удален" });
+    } catch (err: any) {
+      toast({ title: "Ошибка удаления", description: err.message, variant: "destructive" });
     }
   };
 
@@ -625,6 +753,20 @@ export function AdminVideos() {
                   <TableCell className="text-xs font-medium text-slate-600 dark:text-slate-400">{v.viewCount}</TableCell>
                   <TableCell className="text-right pr-6">
                     <div className="flex justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 relative"
+                        onClick={() => setSelectedVideoForAttachments(v)}
+                        title="Материалы для печати (PDF, файлы к уроку)"
+                      >
+                        <Paperclip className="h-4 w-4 text-sky-500" />
+                        {Array.isArray((v as any).attachments) && (v as any).attachments.length > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-sky-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                            {(v as any).attachments.length}
+                          </span>
+                        )}
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400" onClick={() => handleDifficultyChange(v.id, v.difficulty)} title="Уровень сложности (1-5)">
                         <Gauge className="h-4 w-4 text-amber-500" />
                       </Button>
@@ -1264,6 +1406,221 @@ export function AdminVideos() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Attachments Manager Dialog ── */}
+      <Dialog
+        open={!!selectedVideoForAttachments}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedVideoForAttachments(null);
+            setAttachmentNameInput("");
+            setAttachmentUrlInput("");
+            setAttachmentFile(null);
+          }
+        }}
+      >
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[580px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-black">
+              <Paperclip className="h-5 w-5 text-sky-500" />
+              <span>Материалы для печати и файлы</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedVideoForAttachments && (
+            <div className="space-y-5 pt-1">
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 flex items-center gap-3">
+                <img
+                  src={selectedVideoForAttachments.thumbnailUrl || undefined}
+                  alt=""
+                  className="w-12 h-8 rounded-lg object-cover bg-slate-900 shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {selectedVideoForAttachments.title}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Прикрепленные файлы (PDF карточки, шаблоны, инструкции) будут доступны покупателям курса.
+                  </div>
+                </div>
+              </div>
+
+              {/* Upload or Add Attachment Section */}
+              <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block">
+                  Прикрепить новый файл (PDF, картинка, схема)
+                </label>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAttachmentSource("file")}
+                    disabled={isUploadingAttachment}
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 text-xs font-semibold transition-all ${
+                      attachmentSource === "file"
+                        ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                        : "border-border hover:border-sky-500/50"
+                    }`}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Загрузить файл (PDF...)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAttachmentSource("url")}
+                    disabled={isUploadingAttachment}
+                    className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 text-xs font-semibold transition-all ${
+                      attachmentSource === "url"
+                        ? "border-sky-500 bg-sky-500/10 text-sky-600 dark:text-sky-400"
+                        : "border-border hover:border-sky-500/50"
+                    }`}
+                  >
+                    <LinkIcon className="h-3.5 w-3.5" />
+                    Вставить ссылку
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <Input
+                    value={attachmentNameInput}
+                    onChange={(e) => setAttachmentNameInput(e.target.value)}
+                    placeholder="Название материала (например: Карточки для печати PDF, Шаблон фокуса)..."
+                    disabled={isUploadingAttachment}
+                    className="h-9 text-xs bg-background rounded-xl"
+                  />
+
+                  {attachmentSource === "file" ? (
+                    <div>
+                      <input
+                        ref={attachmentFileInputRef}
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.zip,.docx,.doc"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            if (!attachmentNameInput.trim()) {
+                              setAttachmentNameInput(f.name);
+                            }
+                            handleUploadAttachment(f);
+                          }
+                        }}
+                        className="hidden"
+                        disabled={isUploadingAttachment}
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => attachmentFileInputRef.current?.click()}
+                        disabled={isUploadingAttachment}
+                        className="w-full h-10 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        {isUploadingAttachment ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Загрузка файла...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4" />
+                            <span>Выбрать и загрузить файл</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={attachmentUrlInput}
+                        onChange={(e) => setAttachmentUrlInput(e.target.value)}
+                        placeholder="https://example.com/files/materials.pdf"
+                        disabled={isUploadingAttachment}
+                        className="h-9 text-xs bg-background rounded-xl flex-1"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddUrlAttachment}
+                        disabled={isUploadingAttachment || !attachmentUrlInput.trim()}
+                        className="h-9 px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs shrink-0"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Добавить
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* List of existing attachments */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Прикрепленные материалы ({selectedVideoForAttachments.attachments?.length || 0})
+                  </span>
+                </div>
+
+                {!selectedVideoForAttachments.attachments || selectedVideoForAttachments.attachments.length === 0 ? (
+                  <div className="text-center py-6 text-xs text-slate-400 border border-dashed rounded-xl">
+                    К этому уроку еще не прикреплены материалы для печати
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden bg-background">
+                    {selectedVideoForAttachments.attachments.map((att: any) => (
+                      <div
+                        key={att.id}
+                        className="flex items-center justify-between p-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors gap-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="p-2 rounded-lg bg-sky-500/10 text-sky-500 shrink-0">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                              {att.name}
+                            </div>
+                            <div className="text-[10px] text-muted-foreground flex items-center gap-2 mt-0.5">
+                              {att.size && (
+                                <span>{(att.size / 1024).toFixed(0)} KB</span>
+                              )}
+                              <a
+                                href={att.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sky-500 hover:underline flex items-center gap-0.5"
+                              >
+                                <span>Открыть</span>
+                                <ExternalLink className="h-2.5 w-2.5" />
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteAttachment(att.id)}
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg shrink-0 cursor-pointer"
+                          title="Удалить файл"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedVideoForAttachments(null)}
+                  className="rounded-xl text-xs font-semibold"
+                >
+                  Готово
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

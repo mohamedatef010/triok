@@ -31,6 +31,7 @@ export interface ModernVideoPlayerProps {
   title?: string;
   autoPlay?: boolean;
   onEnded?: () => void;
+  onPlay?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onDurationChange?: (duration: number) => void;
   onPreviewLimitReached?: () => void;
@@ -67,6 +68,7 @@ export function ModernVideoPlayer({
   title,
   autoPlay = false,
   onEnded,
+  onPlay,
   onTimeUpdate,
   onDurationChange,
   onPreviewLimitReached,
@@ -191,15 +193,15 @@ export function ModernVideoPlayer({
     if (isHlsUrl && Hls.isSupported()) {
       const hls = new Hls({
         // ── Smooth VOD Pre-buffering & Zero-Stutter Configuration ──
-        maxBufferLength: 90,               // Smooth 90s buffer ahead
-        maxMaxBufferLength: 180,           // Max 180s buffer
-        maxBufferSize: 256 * 1024 * 1024,  // 256MB buffer memory limit
-        maxBufferHole: 0.6,                // Seamlessly tolerate micro GOP timestamp gaps
-        highBufferWatchdogPeriod: 2,       // Active stall watchdog to prevent player freezes
-        nudgeMaxRetry: 5,                  // Instantly micro-nudge (<10ms) across segment boundaries without stall
+        maxBufferLength: 120,              // Smooth 120s buffer ahead
+        maxMaxBufferLength: 300,           // Max 300s buffer
+        maxBufferSize: 300 * 1024 * 1024,  // 300MB buffer memory limit
+        maxBufferHole: 1.0,                // Seamlessly bridge any micro GOP timestamp gaps (<1.0s) without pausing
+        highBufferWatchdogPeriod: 0.5,     // Check for stalls every 0.5s for instant recovery
+        nudgeMaxRetry: 8,                  // Instantly micro-nudge (<10ms) across segment boundaries without stall
         nudgeOffset: 0.1,                  // Tiny 0.1s offset to skip micro-gaps invisibly
         startFragPrefetch: true,           // Prefetch next segment in parallel before current finishes
-        backBufferLength: 60,              // Keep past 60s in buffer for instant rewind
+        backBufferLength: 90,              // Keep past 90s in buffer for instant rewind
         lowLatencyMode: false,             // VOD mode for maximum stability
         startLevel: -1,
         abrEwmaDefaultEstimate: 8000000,   // Assume fast connection (8 Mbps) to avoid starting at low quality
@@ -698,6 +700,7 @@ export function ModernVideoPlayer({
           setIsPlaying(true);
           setBuffering(false);
           hasStartedPlaybackRef.current = true;
+          onPlay?.();
         }}
         onPause={() => {
           if (videoRef.current?.paused) {

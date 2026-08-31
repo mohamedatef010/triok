@@ -86,6 +86,16 @@ export interface CategoryInput {
   description?: string | null;
 }
 
+export interface VideoAttachment {
+  id: string;
+  name: string;
+  url: string;
+  /** @nullable */
+  size?: number | null;
+  /** @nullable */
+  type?: string | null;
+}
+
 export interface Video {
   id: number;
   title: string;
@@ -115,6 +125,7 @@ export interface Video {
   reviewCount: number;
   isFeatured?: boolean;
   isPublished?: boolean;
+  attachments?: VideoAttachment[];
   createdAt: string;
 }
 
@@ -150,6 +161,7 @@ export interface VideoDetail {
   isFeatured?: boolean;
   isPublished?: boolean;
   isPurchased: boolean;
+  attachments?: VideoAttachment[];
   createdAt: string;
 }
 
@@ -181,6 +193,7 @@ export interface VideoInput {
   difficulty?: number;
   isFeatured?: boolean;
   isPublished?: boolean;
+  attachments?: VideoAttachment[];
 }
 
 export interface VideoUpdate {
@@ -209,6 +222,7 @@ export interface VideoUpdate {
   difficulty?: number;
   isFeatured?: boolean;
   isPublished?: boolean;
+  attachments?: VideoAttachment[];
 }
 
 export interface VideoListResponse {

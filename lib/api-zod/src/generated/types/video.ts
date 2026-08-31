@@ -5,6 +5,7 @@
  * API specification for video courses platform
  * OpenAPI spec version: 0.1.0
  */
+import type { VideoAttachment } from './videoAttachment';
 
 export interface Video {
   id: number;
@@ -35,5 +36,6 @@ export interface Video {
   reviewCount: number;
   isFeatured?: boolean;
   isPublished?: boolean;
+  attachments?: VideoAttachment[];
   createdAt: Date;
 }

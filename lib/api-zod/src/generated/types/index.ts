@@ -48,6 +48,7 @@ export * from './user';
 export * from './userRole';
 export * from './userUpdate';
 export * from './video';
+export * from './videoAttachment';
 export * from './videoDetail';
 export * from './videoInput';
 export * from './videoListResponse';

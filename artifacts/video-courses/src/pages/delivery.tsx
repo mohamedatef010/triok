@@ -199,7 +199,7 @@ export function DeliveryPage() {
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
         <Button size="lg" className="rounded-2xl font-bold btn-glow px-8 h-12" asChild>
           <Link href="/catalog">
-            Перейти в каталог курсов <ArrowRight className="ml-2 h-4 w-4" />
+            Перейти в каталог Обучение <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
         <Button variant="outline" size="lg" className="rounded-2xl font-bold px-8 h-12" asChild>

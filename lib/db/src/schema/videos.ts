@@ -7,10 +7,19 @@ import {
   numeric,
   boolean,
   pgEnum,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { categoriesTable } from "./categories";
+
+export interface VideoAttachment {
+  id: string;
+  name: string;
+  url: string;
+  size?: number;
+  type?: string;
+}
 
 export const videoProcessingStatusEnum = pgEnum("video_processing_status", [
   "none",
@@ -43,6 +52,7 @@ export const videosTable = pgTable("videos", {
   viewCount: integer("view_count").notNull().default(0),
   isFeatured: boolean("is_featured").notNull().default(false),
   isPublished: boolean("is_published").notNull().default(true),
+  attachments: jsonb("attachments").$type<VideoAttachment[]>().default([]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

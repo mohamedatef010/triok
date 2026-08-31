@@ -1107,6 +1107,21 @@ components:
           type: ["string", "null"]
 
     # ── Videos ──────────────────────────────────────────────────────
+    VideoAttachment:
+      type: object
+      required: [id, name, url]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        size:
+          type: ["number", "null"]
+        type:
+          type: ["string", "null"]
+
     Video:
       type: object
       required: [id, title, thumbnailUrl, price, viewCount, averageRating, reviewCount, createdAt]
@@ -1148,6 +1163,10 @@ components:
           type: boolean
         isPublished:
           type: boolean
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoAttachment"
         createdAt:
           type: string
           format: date-time
@@ -1197,6 +1216,10 @@ components:
           type: boolean
         isPurchased:
           type: boolean
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoAttachment"
         createdAt:
           type: string
           format: date-time
@@ -1236,6 +1259,10 @@ components:
           type: boolean
         isPublished:
           type: boolean
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoAttachment"
 
     VideoUpdate:
       type: object
@@ -1268,6 +1295,10 @@ components:
           type: boolean
         isPublished:
           type: boolean
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/VideoAttachment"
 
     VideoListResponse:
       type: object

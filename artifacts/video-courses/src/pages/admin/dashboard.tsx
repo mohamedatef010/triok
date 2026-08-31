@@ -301,7 +301,7 @@ export function AdminDashboard() {
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Film className="h-4 w-4 text-amber-500" />
-              <span>Топ курсов по просмотрам</span>
+              <span>Топ обучения по просмотрам</span>
             </CardTitle>
             <CardDescription className="text-xs">
               Самые востребованные видеоматериалы платформы

@@ -13,7 +13,9 @@ import {
   GetRelatedVideosParams,
   GetSimilarVideosParams,
 } from "@workspace/api-zod";
-import { generateUploadUrl, getObjectAsString, generatePresignedUrl } from "@workspace/storage";
+import { generateUploadUrl, getObjectAsString, generatePresignedUrl, s3Client } from "@workspace/storage";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import path from "path";
 import { processVideoAsync } from "../lib/videoProcessor";
 import jwt from "jsonwebtoken";
 import { videoViewLimiter } from "../middlewares/rateLimiter";
@@ -68,6 +70,7 @@ async function buildVideoRow(video: typeof videosTable.$inferSelect, catName: st
     isFeatured: video.isFeatured,
     isPublished: video.isPublished,
     isPurchased,
+    attachments: (video.attachments as any) || [],
     createdAt: video.createdAt,
   };
 }
@@ -101,6 +104,7 @@ async function buildVideoListRow(video: typeof videosTable.$inferSelect, catName
     reviewCount: count ?? 0,
     isFeatured: video.isFeatured,
     isPublished: video.isPublished,
+    attachments: (video.attachments as any) || [],
     createdAt: video.createdAt,
   };
 }
@@ -166,6 +170,7 @@ router.post("/videos", requireAdmin, async (req, res): Promise<void> => {
       difficulty: data.difficulty ?? 1,
       isFeatured: data.isFeatured ?? false,
       isPublished: data.isPublished ?? true,
+      attachments: (data.attachments as any) || [],
     })
     .returning();
   const row = await buildVideoListRow(video, null);
@@ -240,6 +245,7 @@ router.patch("/videos/:id", requireAdmin, async (req, res): Promise<void> => {
   if (data.difficulty != null) updates.difficulty = data.difficulty;
   if (data.isFeatured != null) updates.isFeatured = data.isFeatured;
   if (data.isPublished != null) updates.isPublished = data.isPublished;
+  if ("attachments" in data) updates.attachments = (data.attachments as any) ?? [];
   const [video] = await db.update(videosTable).set(updates).where(eq(videosTable.id, params.data.id)).returning();
   if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
   const row = await buildVideoListRow(video, null);
@@ -338,6 +344,72 @@ router.post("/videos/:id/preview-complete", requireAdmin, async (req, res): Prom
     .returning();
   if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
   res.json({ success: true, previewVideoUrl: video.previewVideoUrl });
+});
+
+// Endpoint: get presigned URL to upload lesson attachment (PDF, images, printable materials) directly to S3
+router.post("/videos/:id/attachment-upload-url", requireAdmin, async (req, res): Promise<void> => {
+  const params = GetVideoParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  const [video] = await db.select().from(videosTable).where(eq(videosTable.id, params.data.id));
+  if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
+
+  const originalName = typeof req.body?.filename === "string" ? req.body.filename : "document.pdf";
+  const contentType = typeof req.body?.contentType === "string" ? req.body.contentType : "application/pdf";
+  const ext = path.extname(originalName) || (contentType.includes("pdf") ? ".pdf" : contentType.includes("png") ? ".png" : contentType.includes("jpeg") ? ".jpg" : ".bin");
+  const cleanBase = path.basename(originalName, ext).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 50);
+  const safeFilename = `${video.id}-${Date.now()}-${cleanBase || "file"}${ext}`;
+  const key = `attachments/${safeFilename}`;
+  const uploadUrl = await generateUploadUrl(key, contentType, 3600);
+  const publicUrl = `/api/attachments/${safeFilename}`;
+
+  res.json({ uploadUrl, key, publicUrl, filename: safeFilename });
+});
+
+// Serve attachments via API proxy (with proper Content-Type & Content-Disposition for download/preview)
+router.get("/attachments/:filename", async (req, res): Promise<void> => {
+  const filename = req.params.filename as string;
+  if (!filename || filename.includes("..") || filename.includes("/")) {
+    res.status(400).json({ error: "Invalid filename" });
+    return;
+  }
+
+  const bucket = process.env.S3_BUCKET || "video-courses";
+  const key = `attachments/${filename}`;
+  const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
+
+  try {
+    const response = await s3Client.send(new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ...(range ? { Range: range } : {}),
+    }));
+    if (!response.Body) {
+      res.status(404).json({ error: "Attachment not found" });
+      return;
+    }
+
+    if (response.ContentType) {
+      res.setHeader("Content-Type", response.ContentType);
+    }
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    if (response.ContentLength != null) {
+      res.setHeader("Content-Length", String(response.ContentLength));
+    }
+    if (range && response.ContentRange) {
+      res.status(206);
+      res.setHeader("Content-Range", response.ContentRange);
+    }
+
+    const stream = response.Body as NodeJS.ReadableStream;
+    req.on("close", () => {
+      try { (stream as any).destroy?.(); } catch {}
+    });
+    stream.pipe(res);
+  } catch (error) {
+    req.log.error(error);
+    res.status(404).json({ error: "Attachment not found" });
+  }
 });
 
 router.post("/videos/:id/process", requireAdmin, async (req, res): Promise<void> => {

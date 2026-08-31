@@ -135,6 +135,13 @@ export const GetMyPurchasedVideosResponseItem = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 export const GetMyPurchasedVideosResponse = zod.array(GetMyPurchasedVideosResponseItem)
@@ -238,6 +245,13 @@ export const ListVideosResponse = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })),
   "total": zod.int(),
@@ -270,7 +284,14 @@ export const CreateVideoBody = zod.object({
   "categoryId": zod.int().nullish(),
   "difficulty": zod.int().min(1).max(createVideoBodyDifficultyMax).default(createVideoBodyDifficultyDefault),
   "isFeatured": zod.boolean().optional(),
-  "isPublished": zod.boolean().optional()
+  "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional()
 })
 
 export const createVideoResponseDifficultyDefault = 1;
@@ -296,6 +317,13 @@ export const CreateVideoResponse = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -326,6 +354,13 @@ export const GetFeaturedVideosResponseItem = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 export const GetFeaturedVideosResponse = zod.array(GetFeaturedVideosResponseItem)
@@ -379,6 +414,13 @@ export const GetVideoResponse = zod.object({
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
   "isPurchased": zod.boolean(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -407,7 +449,14 @@ export const UpdateVideoBody = zod.object({
   "categoryId": zod.int().nullish(),
   "difficulty": zod.int().min(1).max(updateVideoBodyDifficultyMax).optional(),
   "isFeatured": zod.boolean().optional(),
-  "isPublished": zod.boolean().optional()
+  "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional()
 })
 
 export const updateVideoResponseDifficultyDefault = 1;
@@ -433,6 +482,13 @@ export const UpdateVideoResponse = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -490,6 +546,13 @@ export const GetRelatedVideosResponseItem = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 export const GetRelatedVideosResponse = zod.array(GetRelatedVideosResponseItem)
@@ -525,6 +588,13 @@ export const GetSimilarVideosResponseItem = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 export const GetSimilarVideosResponse = zod.array(GetSimilarVideosResponseItem)
@@ -737,6 +807,13 @@ export const GetFavoritesResponseItem = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 export const GetFavoritesResponse = zod.array(GetFavoritesResponseItem)
@@ -988,6 +1065,13 @@ export const AdminListVideosResponse = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })),
   "total": zod.int(),
@@ -1030,6 +1114,13 @@ export const SetVideoDiscountResponse = zod.object({
   "reviewCount": zod.int(),
   "isFeatured": zod.boolean().optional(),
   "isPublished": zod.boolean().optional(),
+  "attachments": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "url": zod.string(),
+  "size": zod.number().nullish(),
+  "type": zod.string().nullish()
+})).optional(),
   "createdAt": zod.coerce.date()
 })
 

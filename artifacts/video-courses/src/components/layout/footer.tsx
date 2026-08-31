@@ -73,9 +73,9 @@ export function Footer() {
         <div className="space-y-4">
           <h4 className="font-extrabold text-white text-base tracking-tight">Навигация</h4>
           <nav className="flex flex-col gap-2.5 text-sm text-slate-400 font-medium">
-            <Link href="/catalog" className="hover:text-amber-400 transition-colors">Каталог курсов</Link>
+            <Link href="/catalog" className="hover:text-amber-400 transition-colors">Обучение</Link>
             <Link href="/contacts" className="hover:text-amber-400 transition-colors">Контакты</Link>
-            <Link href="/compare" className="hover:text-amber-400 transition-colors">Сравнение курсов</Link>
+            <Link href="/compare" className="hover:text-amber-400 transition-colors">Сравнение обучения</Link>
             <Link href="/favorites" className="hover:text-amber-400 transition-colors">Избранное</Link>
           </nav>
         </div>

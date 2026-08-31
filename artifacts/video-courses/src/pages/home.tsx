@@ -1900,7 +1900,6 @@ export function HomePage() {
 
 function PreviewVideoPlayer({ video }: { video: any }) {
   const { data: playbackData, isLoading } = useGetVideoPlayback(video.id);
-  const FALLBACK_VIDEO = "https://media.w3.org/2010/05/sintel/trailer.mp4";
 
   if (isLoading) {
     return (
@@ -1910,7 +1909,8 @@ function PreviewVideoPlayer({ video }: { video: any }) {
     );
   }
 
-  const url = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || FALLBACK_VIDEO;
+  // No external fallback — player stays blank until the real source arrives
+  const url = playbackData?.manifestUrl || video.previewVideoUrl || video.videoUrl || "";
 
   return (
     <ModernVideoPlayer

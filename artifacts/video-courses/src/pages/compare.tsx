@@ -30,9 +30,9 @@ export function ComparePage() {
         <div className="w-20 h-20 sm:w-24 sm:h-24 bg-amber-400/10 border border-amber-400/25 rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-amber-500/5">
           <Scale className="h-10 w-10 text-amber-500" />
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black mb-3 tracking-tight">Сравнение курсов</h1>
+        <h1 className="text-2xl sm:text-3xl font-black mb-3 tracking-tight">Сравнение обучения</h1>
         <p className="text-sm sm:text-base text-muted-foreground mb-8 leading-relaxed">
-          Вы пока не добавили курсы для сравнения. Откройте каталог и добавьте до 3 курсов, чтобы наглядно сравнить цены, сложность и отзывы.
+          Вы пока не добавили обучение для сравнения. Откройте каталог и добавьте до 3 позиций, чтобы наглядно сравнить цены, сложность и отзывы.
         </p>
         <Button size="lg" className="btn-glow font-bold rounded-2xl h-12 px-8 bg-amber-400 hover:bg-amber-300 text-slate-950" asChild>
           <Link href="/catalog">
@@ -65,7 +65,7 @@ export function ComparePage() {
             </div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-2.5">
-                Сравнение курсов
+                Сравнение обучения
                 <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-400/15 border border-amber-400/30 px-2.5 py-0.5 rounded-full">
                   {videos.length} из 3
                 </span>
@@ -395,8 +395,8 @@ export function ComparePage() {
                     <div className="w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center text-muted-foreground mb-3">
                       <Scale className="h-6 w-6" />
                     </div>
-                    <span className="font-bold text-sm text-foreground/80 mb-1">Место для курса</span>
-                    <span className="text-xs text-muted-foreground">До 3 курсов одновременно</span>
+                    <span className="font-bold text-sm text-foreground/80 mb-1">Место для обучения</span>
+                    <span className="text-xs text-muted-foreground">До 3 позиций одновременно</span>
                   </div>
 
                   <div className="space-y-4 pt-4">
@@ -411,7 +411,7 @@ export function ComparePage() {
                     <Button variant="outline" className="w-full h-11 rounded-2xl border-dashed font-bold text-xs" asChild>
                       <Link href="/catalog">
                         <Plus className="h-4 w-4 mr-1 text-amber-500" />
-                        Выбрать курс
+                        Выбрать обучение
                       </Link>
                     </Button>
                   </div>

@@ -289,7 +289,7 @@ export function ProfilePage() {
             </div>
             <div>
               <div className="text-2xl font-black leading-none mb-1">{activeVideos.length}</div>
-              <div className="text-xs text-muted-foreground font-semibold">Куплено курсов</div>
+              <div className="text-xs text-muted-foreground font-semibold">Куплено обучение</div>
             </div>
           </div>
 
@@ -350,12 +350,12 @@ export function ProfilePage() {
                 <div className="h-16 w-16 rounded-3xl bg-amber-400/10 text-amber-500 flex items-center justify-center mx-auto mb-4 border border-amber-400/20">
                   <Play className="h-8 w-8 text-amber-400" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">У вас пока нет купленных курсов</h3>
+                <h3 className="text-xl font-bold mb-2">У вас пока нет купленного обучения</h3>
                 <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                  Выберите интересующий курс по фокусам или видеомонтажу и начните обучение прямо сейчас!
+                  Выберите интересующий фокус или трюк и начните обучение прямо сейчас!
                 </p>
                 <Button asChild className="btn-glow font-bold rounded-2xl px-8 h-12">
-                  <Link href="/catalog">Перейти в каталог курсов</Link>
+                  <Link href="/catalog">Перейти в каталог Обучение</Link>
                 </Button>
               </div>
             ) : (
@@ -450,7 +450,7 @@ export function ProfilePage() {
                     Мои опубликованные отзывы ({activeReviews.length})
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Ваши отзывы и оценки отображаются публично на страницах курсов с вашим именем.
+                    Ваши отзывы и оценки отображаются публично на страницах обучения с вашим именем.
                   </p>
                 </div>
 
@@ -474,7 +474,7 @@ export function ProfilePage() {
                   <Star className="h-12 w-12 text-amber-400/40 mx-auto mb-3" />
                   <h4 className="text-lg font-bold mb-1">Вы пока не оставили ни одного отзыва</h4>
                   <p className="text-xs sm:text-sm text-muted-foreground mb-6">
-                    Поделитесь вашими впечатлениями от купленных курсов, чтобы помочь другим ученикам!
+                    Поделитесь вашими впечатлениями от купленного обучения, чтобы помочь другим ученикам!
                   </p>
                   {activeVideos.length > 0 ? (
                     <Button 
