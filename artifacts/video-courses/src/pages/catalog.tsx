@@ -59,7 +59,8 @@ export function CatalogPage() {
   }, [location]);
 
   const { data: categories } = useListCategories();
-  const categoryList = Array.isArray(categories) ? categories : [];
+  const rawCategoryList = Array.isArray(categories) ? categories : [];
+  const categoryList = rawCategoryList.filter((cat: any) => (cat.videoCount ?? 0) > 0 || cat.id === categoryId);
   
   const { data: videosData, isLoading, error } = useListVideos({
     search: debouncedSearch || undefined,

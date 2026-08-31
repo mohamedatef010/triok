@@ -58,6 +58,7 @@ router.patch("/categories/:id", requireAdmin, async (req, res): Promise<void> =>
 router.delete("/categories/:id", requireAdmin, async (req, res): Promise<void> => {
   const params = DeleteCategoryParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+  await db.update(videosTable).set({ categoryId: null }).where(eq(videosTable.categoryId, params.data.id));
   await db.delete(categoriesTable).where(eq(categoriesTable.id, params.data.id));
   res.sendStatus(204);
 });

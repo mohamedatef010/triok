@@ -11,6 +11,7 @@ import {
   useProcessVideo,
   useListCategories,
   useCreateCategory,
+  useDeleteCategory,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ import {
   Image as ImageIcon,
   X,
   Gauge,
+  Layers,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TrickDifficultyBadge, TrickDifficultySelector } from "@/components/ui/trick-difficulty";
@@ -96,13 +98,22 @@ export function AdminVideos() {
   const processVideoMut = useProcessVideo();
   const { data: categories, refetch: refetchCategories } = useListCategories();
   const createCategoryMut = useCreateCategory();
+  const deleteCategoryMut = useDeleteCategory();
   const { toast } = useToast();
 
   const invalidateVideoCaches = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
     queryClient.invalidateQueries({ queryKey: ["/api/videos/featured"] });
     queryClient.invalidateQueries({ queryKey: ["/api/admin/videos"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
   }, [queryClient]);
+
+  // --- Category Manager state ---
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+  const [newCatNameInput, setNewCatNameInput] = useState("");
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [deletingCatId, setDeletingCatId] = useState<number | null>(null);
+  const [isDeletingUnused, setIsDeletingUnused] = useState(false);
 
   // --- Dialog state ---
   const [isOpen, setIsOpen] = useState(false);
@@ -268,6 +279,77 @@ export function AdminVideos() {
     invalidateVideoCaches();
     refetch();
     toast({ title: `✅ Уровень сложности установлен: ${diff}/5` });
+  };
+
+  const handleCreateNewCategory = async () => {
+    const trimmed = newCatNameInput.trim();
+    if (!trimmed) {
+      toast({ title: "Введите название раздела", variant: "destructive" });
+      return;
+    }
+    setIsCreatingCategory(true);
+    try {
+      const slug = trimmed.toLowerCase().replace(/[^a-z0-9а-яё]/gi, "-").replace(/-+/g, "-");
+      await createCategoryMut.mutateAsync({
+        data: {
+          name: trimmed,
+          slug: slug || `cat-${Date.now()}`,
+        },
+      });
+      setNewCatNameInput("");
+      toast({ title: "✅ Раздел создан!", description: trimmed });
+      refetchCategories();
+      invalidateVideoCaches();
+    } catch (err: any) {
+      toast({ title: "Ошибка создания раздела", description: err.message || "Не удалось создать раздел", variant: "destructive" });
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (cat: { id: number; name: string; videoCount?: number }) => {
+    const count = cat.videoCount ?? 0;
+    const confirmMsg = count > 0
+      ? `В разделе «${cat.name}» привязано ${count} видео.\nЕсли удалить раздел, эти видео останутся без раздела.\n\nУдалить раздел «${cat.name}»?`
+      : `Удалить неиспользуемый раздел «${cat.name}»?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setDeletingCatId(cat.id);
+    try {
+      await deleteCategoryMut.mutateAsync({ id: cat.id });
+      toast({ title: "✅ Раздел удалён", description: cat.name });
+      refetchCategories();
+      invalidateVideoCaches();
+    } catch (err: any) {
+      toast({ title: "Ошибка при удалении раздела", description: err.message || "Не удалось удалить раздел", variant: "destructive" });
+    } finally {
+      setDeletingCatId(null);
+    }
+  };
+
+  const handleDeleteAllUnusedCategories = async () => {
+    const unused = (categories || []).filter((c) => (c.videoCount ?? 0) === 0);
+    if (unused.length === 0) {
+      toast({ title: "Нет неиспользуемых разделов", description: "Все существующие разделы содержат видео" });
+      return;
+    }
+
+    if (!window.confirm(`Удалить все неиспользуемые разделы (${unused.length} шт.)?`)) return;
+
+    setIsDeletingUnused(true);
+    try {
+      for (const cat of unused) {
+        await deleteCategoryMut.mutateAsync({ id: cat.id });
+      }
+      toast({ title: `✅ Удалено ${unused.length} неиспользуемых разделов` });
+      refetchCategories();
+      invalidateVideoCaches();
+    } catch (err: any) {
+      toast({ title: "Ошибка при удалении", description: err.message || "Не удалось удалить некоторые разделы", variant: "destructive" });
+    } finally {
+      setIsDeletingUnused(false);
+    }
   };
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
@@ -476,14 +558,26 @@ export function AdminVideos() {
           </p>
         </div>
 
-        <Button
-          onClick={() => setIsOpen(true)}
-          size="sm"
-          className="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold shadow-md shadow-amber-500/20 text-xs shrink-0 w-fit"
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          <span>Добавить курс</span>
-        </Button>
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setCategoryManagerOpen(true)}
+            size="sm"
+            className="h-10 px-3.5 rounded-xl border-slate-200 dark:border-slate-800 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 shadow-sm"
+          >
+            <Layers className="h-4 w-4 mr-1.5 text-amber-500" />
+            <span>Разделы (категории)</span>
+          </Button>
+
+          <Button
+            onClick={() => setIsOpen(true)}
+            size="sm"
+            className="h-10 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold shadow-md shadow-amber-500/20 text-xs shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            <span>Добавить курс</span>
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
@@ -681,7 +775,16 @@ export function AdminVideos() {
             {/* Category selection */}
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
-                <label className="text-sm font-semibold">Раздел (Категория)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold">Раздел (Категория)</label>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryManagerOpen(true)}
+                    className="text-xs text-amber-600 hover:text-amber-500 dark:text-amber-400 font-semibold underline underline-offset-2 cursor-pointer"
+                  >
+                    Управление
+                  </button>
+                </div>
                 <select
                   value={selectedCategoryId}
                   onChange={(e) => {
@@ -1021,6 +1124,145 @@ export function AdminVideos() {
                 </>
               )}
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Category Manager Dialog ── */}
+      <Dialog open={categoryManagerOpen} onOpenChange={setCategoryManagerOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-black">
+              <Layers className="h-5 w-5 text-amber-500" />
+              Управление разделами (категориями)
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 pt-2">
+            {/* Create new category */}
+            <div className="bg-slate-50 dark:bg-slate-800/40 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 block mb-2">
+                Добавить новый раздел
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  value={newCatNameInput}
+                  onChange={(e) => setNewCatNameInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateNewCategory();
+                    }
+                  }}
+                  placeholder="Название раздела (например: Карточные трюки)..."
+                  disabled={isCreatingCategory}
+                  className="h-10 text-sm bg-background rounded-xl"
+                />
+                <Button
+                  onClick={handleCreateNewCategory}
+                  disabled={isCreatingCategory || !newCatNameInput.trim()}
+                  className="h-10 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shrink-0"
+                >
+                  {isCreatingCategory ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Добавить
+                </Button>
+              </div>
+            </div>
+
+            {/* List of categories */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Все разделы ({categories?.length || 0})
+                </span>
+                {categories && categories.some((c) => (c.videoCount ?? 0) === 0) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteAllUnusedCategories}
+                    disabled={isDeletingUnused}
+                    className="h-7 text-xs text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg px-2 font-semibold"
+                  >
+                    {isDeletingUnused ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                    )}
+                    Удалить неиспользуемые (0 видео)
+                  </Button>
+                )}
+              </div>
+
+              {!categories || categories.length === 0 ? (
+                <div className="text-center py-8 text-sm text-slate-400 border border-dashed rounded-xl">
+                  Разделы пока не созданы
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800 border border-slate-200/80 dark:border-slate-800 rounded-xl overflow-hidden bg-background">
+                  {categories.map((cat) => {
+                    const count = cat.videoCount ?? 0;
+                    const isDeleting = deletingCatId === cat.id;
+                    return (
+                      <div
+                        key={cat.id}
+                        className="flex items-center justify-between p-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors gap-3"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
+                              {cat.name}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              #{cat.id}
+                            </span>
+                          </div>
+                          <span className="text-xs text-slate-400 font-mono">
+                            /{cat.slug}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                              count > 0
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                : "bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            {count} {count === 1 ? "видео" : count > 1 && count < 5 ? "видео" : "видео"}
+                          </span>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isDeleting || isDeletingUnused}
+                            onClick={() => handleDeleteCategory(cat)}
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg cursor-pointer"
+                            title={count === 0 ? "Удалить неиспользуемый раздел" : "Удалить раздел"}
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-red-500" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setCategoryManagerOpen(false)}
+                className="rounded-xl text-xs font-semibold"
+              >
+                Закрыть
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

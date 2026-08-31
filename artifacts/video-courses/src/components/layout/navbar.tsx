@@ -4,7 +4,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
 import {
   Menu, Search, Heart, ShoppingCart, User,
-  Sun, Moon, LogOut, Settings, Sparkles, X, MoreHorizontal, Film,
+  Sun, Moon, LogOut, Settings, Sparkles, X, MoreHorizontal, Film, ChevronDown,
 } from "lucide-react";
 
 import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
@@ -76,6 +76,8 @@ export function Navbar() {
   const { data: reqData, isLoading: reqLoading } = useRequisitesPhone();
   const { data: categoriesData } = useListCategories();
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
+  const activeCategories = categories.filter((cat: any) => typeof cat.videoCount === "number" ? cat.videoCount > 0 : false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   // Prefer phone from Реквизиты продавца (site_requisites), fallback to author_section, then 'Не указан'
   const rawPhone = (!reqLoading && reqData?.phone)
     ? reqData.phone
@@ -225,28 +227,69 @@ export function Navbar() {
                 {/* Верхнее меню */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-1 border-b border-border/50 pb-2">Верхнее меню</h4>
-                  <Link href="/catalog" onClick={() => setMenuOpen(false)} className="text-base font-bold hover:text-amber-500 transition-colors">Каталог</Link>
-
-                  {/* Доступные разделы / категории видеокурсов */}
-                  {categories.length > 0 && (
-                    <div className="flex flex-col gap-1.5 pl-3 py-1 my-0.5 border-l-2 border-amber-400/40 dark:border-amber-500/30">
-                      {categories.map((cat: any) => (
-                        <Link
-                          key={cat.id}
-                          href={`/catalog?category=${cat.id}`}
-                          onClick={() => setMenuOpen(false)}
-                          className="text-sm font-semibold text-muted-foreground hover:text-amber-500 transition-colors flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-amber-400/10 group"
+                  
+                  {/* Каталог с раскрывающимся списком активных разделов */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between py-1 group">
+                      <Link
+                        href="/catalog"
+                        onClick={() => setMenuOpen(false)}
+                        className="text-base font-bold hover:text-amber-500 transition-colors flex-1"
+                      >
+                        Каталог
+                      </Link>
+                      {activeCategories.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setCatalogOpen((prev) => !prev);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-amber-400/10 text-muted-foreground hover:text-amber-500 transition-all flex items-center gap-1 cursor-pointer"
+                          aria-label="Показать разделы каталога"
+                          title="Разделы"
                         >
-                          <span className="group-hover:translate-x-0.5 transition-transform">{cat.name}</span>
-                          {typeof cat.videoCount === "number" && cat.videoCount > 0 && (
-                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground group-hover:bg-amber-500/20 group-hover:text-amber-500 transition-colors">
-                              {cat.videoCount}
-                            </span>
-                          )}
-                        </Link>
-                      ))}
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform duration-200 ${
+                              catalogOpen ? "rotate-180 text-amber-500" : ""
+                            }`}
+                          />
+                        </button>
+                      )}
                     </div>
-                  )}
+
+                    {/* Доступные разделы / категории видеокурсов (отображаются только при нажатии на стрелку) */}
+                    {catalogOpen && activeCategories.length > 0 && (
+                      <div className="flex flex-col gap-1.5 pl-3 py-1.5 my-1 border-l-2 border-amber-400/50 dark:border-amber-500/40">
+                        <Link
+                          href="/catalog"
+                          onClick={() => setMenuOpen(false)}
+                          className="text-xs font-bold text-amber-500 hover:text-amber-600 transition-colors py-1 px-1.5 rounded-lg hover:bg-amber-400/10 flex items-center justify-between"
+                        >
+                          <span>Все разделы каталога</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">
+                            Все
+                          </span>
+                        </Link>
+                        {activeCategories.map((cat: any) => (
+                          <Link
+                            key={cat.id}
+                            href={`/catalog?category=${cat.id}`}
+                            onClick={() => setMenuOpen(false)}
+                            className="text-sm font-semibold text-muted-foreground hover:text-amber-500 transition-colors flex items-center justify-between py-1 px-1.5 rounded-lg hover:bg-amber-400/10 group"
+                          >
+                            <span className="group-hover:translate-x-0.5 transition-transform">{cat.name}</span>
+                            {typeof cat.videoCount === "number" && cat.videoCount > 0 && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground group-hover:bg-amber-500/20 group-hover:text-amber-500 transition-colors">
+                                {cat.videoCount}
+                              </span>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <div className="mt-2 flex flex-col gap-3 pl-4 border-l-2 border-border/40">
                     <span className="text-sm font-semibold text-muted-foreground">Личные данные</span>
