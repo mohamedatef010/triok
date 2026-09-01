@@ -12,14 +12,7 @@ async function getCartForUser(userId: number) {
     .from(cartItemsTable)
     .where(eq(cartItemsTable.userId, userId));
 
-  const videoIds = items.map((i) => i.videoId);
-  const videos = videoIds.length
-    ? await db.select().from(videosTable).where((t) =>
-        videoIds.map((id) => eq(t.id, id)).reduce((a, b) => ({ ...a, [Symbol()]: b }) as any)
-      )
-    : [];
-
-  // Simpler approach: fetch individually
+  // Fetch each video individually (safe and simple)
   const cartRows = await Promise.all(
     items.map(async (item) => {
       const [video] = await db.select().from(videosTable).where(eq(videosTable.id, item.videoId));
@@ -40,12 +33,22 @@ async function getCartForUser(userId: number) {
 }
 
 router.get("/cart", requireAuth, async (req, res): Promise<void> => {
-  res.json(await getCartForUser(req.user!.userId));
+  try {
+    res.json(await getCartForUser(req.user!.userId));
+  } catch (error) {
+    req.log.error({ error }, "Error fetching cart");
+    res.status(500).json({ error: "Не удалось получить корзину" });
+  }
 });
 
 router.delete("/cart", requireAuth, async (req, res): Promise<void> => {
-  await db.delete(cartItemsTable).where(eq(cartItemsTable.userId, req.user!.userId));
-  res.json({ success: true, message: "Корзина очищена" });
+  try {
+    await db.delete(cartItemsTable).where(eq(cartItemsTable.userId, req.user!.userId));
+    res.json({ success: true, message: "Корзина очищена" });
+  } catch (error) {
+    req.log.error({ error }, "Error clearing cart");
+    res.status(500).json({ error: "Не удалось очистить корзину" });
+  }
 });
 
 router.post("/cart/items", requireAuth, async (req, res): Promise<void> => {
@@ -77,12 +80,17 @@ router.post("/cart/items", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.delete("/cart/items/:videoId", requireAuth, async (req, res): Promise<void> => {
-  const params = RemoveFromCartParams.safeParse(req.params);
-  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
-  await db
-    .delete(cartItemsTable)
-    .where(and(eq(cartItemsTable.userId, req.user!.userId), eq(cartItemsTable.videoId, params.data.videoId)));
-  res.json(await getCartForUser(req.user!.userId));
+  try {
+    const params = RemoveFromCartParams.safeParse(req.params);
+    if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+    await db
+      .delete(cartItemsTable)
+      .where(and(eq(cartItemsTable.userId, req.user!.userId), eq(cartItemsTable.videoId, params.data.videoId)));
+    res.json(await getCartForUser(req.user!.userId));
+  } catch (error) {
+    req.log.error({ error }, "Error removing item from cart");
+    res.status(500).json({ error: "Не удалось удалить товар из корзины" });
+  }
 });
 
 export default router;
