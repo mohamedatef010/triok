@@ -55,20 +55,20 @@ export function VideoDetailPage() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   
-  const { data: apiVideo, isLoading, error } = useGetVideo(id, {
+  const { data: apiVideo, isLoading, error, refetch: refetchVideo } = useGetVideo(id, {
     query: {
       enabled: !!id,
-      staleTime: 60 * 60 * 1000,
+      staleTime: 10_000,
       refetchOnWindowFocus: false
     } as any
   });
 
-  const { data: playbackData } = useGetVideoPlayback(id, {
+  const { data: playbackData, refetch: refetchPlayback } = useGetVideoPlayback(id, {
     query: {
       enabled: !!id,
       retry: false,
-      staleTime: 24 * 60 * 60 * 1000, // 24h stable token
-      refetchOnWindowFocus: false,     // Never refetch token while user is watching
+      staleTime: 10_000,
+      refetchOnWindowFocus: false,
       refetchOnReconnect: false
     } as any
   });
@@ -101,14 +101,32 @@ export function VideoDetailPage() {
   });
   const reviewsList = Array.isArray(realReviews) ? realReviews : [];
 
-  const { data: myPurchasedVideos } = useGetMyPurchasedVideos({
+  const { data: myPurchasedVideos, refetch: refetchPurchased } = useGetMyPurchasedVideos({
     query: { enabled: isAuthenticated } as any
   });
+
+  // Re-fetch video details, playback stream, and purchases immediately whenever auth state changes (e.g. login/register)
+  useEffect(() => {
+    if (id) {
+      refetchVideo();
+      refetchPlayback();
+      if (isAuthenticated) {
+        refetchPurchased();
+      }
+    }
+  }, [id, isAuthenticated, user?.id, refetchVideo, refetchPlayback, refetchPurchased]);
 
   const isPurchasedByUser = Boolean(
     (Array.isArray(myPurchasedVideos) && myPurchasedVideos.some((v: any) => v.id === id)) ||
     apiVideo?.isPurchased
   );
+
+  // Auto-dismiss preview purchase modal as soon as purchase is recognized
+  useEffect(() => {
+    if (isPurchasedByUser || apiVideo?.isPurchased) {
+      setShowPurchaseOverlay(false);
+    }
+  }, [isPurchasedByUser, apiVideo?.isPurchased]);
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const myExistingReview = reviewsList.find((r: any) => r.userId === user?.id);

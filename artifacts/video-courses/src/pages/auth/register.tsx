@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSEO } from "@/hooks/use-seo";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   name: z.string().min(2, "Введите ваше имя (минимум 2 символа)"),
@@ -82,6 +83,7 @@ export function RegisterPage() {
     robots: "noindex, follow"
   });
 
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const registerMut = useRegister();
@@ -96,6 +98,7 @@ export function RegisterPage() {
     try {
       const res = await registerMut.mutateAsync({ data: values });
       localStorage.setItem("auth_token", res.token);
+      await queryClient.invalidateQueries();
       await refetch();
 
       // Handle redirect — same logic as login

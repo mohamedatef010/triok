@@ -495,11 +495,11 @@ router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void>
   const host = req.headers.host;
 
   if (isPurchased) {
-    // Generate secure 4-hour JWT token for full stream access
+    // Generate secure 30-day JWT token for seamless, uninterrupted stream access
     const token = jwt.sign(
       { videoId: video.id, userId: req.user?.userId, role: req.user?.role, type: "full" },
       JWT_SECRET,
-      { expiresIn: "4h" }
+      { expiresIn: "30d" }
     );
     const streamUrl = `${protocol}://${host}/api/videos/${video.id}/stream?token=${token}`;
     res.json({ manifestUrl: streamUrl, streamUrl, type: "full" });
@@ -515,27 +515,39 @@ router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void>
 });
 
 // Secure Full Video Stream endpoint (Native hardware-accelerated, zero-buffering, zero-stutter)
-router.get("/videos/:id/stream", async (req, res): Promise<void> => {
+router.get("/videos/:id/stream", optionalAuth, async (req, res): Promise<void> => {
   const params = GetVideoParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 
-  const token = req.query.token as string;
-  if (!token) { res.status(401).send("Unauthorized"); return; }
+  let userId: number | null = req.user?.userId || null;
+  let isAdmin = req.user?.role === "admin";
+  let tokenType = "full";
 
-  let decoded: any;
-  try {
-    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
-  } catch (err) {
-    res.status(401).send("Invalid or expired token"); return;
+  // Check signed token from query param ?token=... if present
+  const token = req.query.token as string | undefined;
+  if (token) {
+    try {
+      const decoded: any = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"] });
+      if (decoded.videoId === params.data.id) {
+        if (decoded.role === "admin") isAdmin = true;
+        if (decoded.userId) userId = decoded.userId;
+        if (decoded.type) tokenType = decoded.type;
+      }
+    } catch (err) {
+      // If token expired but user has a valid Bearer header/cookie, proceed with session auth
+      if (!userId && !isAdmin) {
+        res.status(401).send("Invalid or expired token");
+        return;
+      }
+    }
   }
 
-  if (decoded.videoId !== params.data.id || decoded.type !== "full") {
-    res.status(403).send("Forbidden"); return;
+  if (!userId && !isAdmin) {
+    res.status(401).send("Unauthorized");
+    return;
   }
 
-  const isAdmin = decoded.role === "admin";
-  const isPurchased = isAdmin ? true : (decoded.userId ? await checkUserPurchasedVideo(decoded.userId, params.data.id) : false);
-
+  const isPurchased = isAdmin ? true : (userId ? await checkUserPurchasedVideo(userId, params.data.id) : false);
   if (!isPurchased) {
     res.status(403).send("Forbidden: Course not purchased");
     return;
@@ -572,7 +584,8 @@ router.get("/videos/:id/stream", async (req, res): Promise<void> => {
     res.setHeader("Content-Type", response.ContentType || "video/mp4");
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("X-Accel-Buffering", "no");
-    res.setHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
+    // Enable browser caching so seeking and rewinding uses local buffered memory without stuttering
+    res.setHeader("Cache-Control", "private, max-age=86400, must-revalidate");
     if (response.ContentLength != null) {
       res.setHeader("Content-Length", String(response.ContentLength));
     }
@@ -582,13 +595,32 @@ router.get("/videos/:id/stream", async (req, res): Promise<void> => {
     }
 
     const stream = response.Body as NodeJS.ReadableStream;
-    req.on("close", () => {
+    let isCleanedUp = false;
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
       try { (stream as any).destroy?.(); } catch {}
+    };
+
+    req.on("close", cleanup);
+    req.on("end", cleanup);
+    stream.on("error", (err: any) => {
+      cleanup();
+      if (!res.headersSent) {
+        res.status(500).send("Stream read error");
+      }
     });
+
     stream.pipe(res);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === "InvalidRange" || error?.$metadata?.httpStatusCode === 416) {
+      res.status(416).setHeader("Content-Range", `bytes */*`).send("Requested range not satisfiable");
+      return;
+    }
     req.log.error({ error }, "Error streaming full video");
-    res.status(500).send("Streaming error");
+    if (!res.headersSent) {
+      res.status(500).send("Streaming error");
+    }
   }
 });
 

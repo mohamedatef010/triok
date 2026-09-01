@@ -644,21 +644,30 @@ export function ModernVideoPlayer({
   };
 
   // Scrubber interaction
+  const [scrubPreviewTime, setScrubPreviewTime] = useState<number | null>(null);
+
   const handleScrubberMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
-    const target = pos * duration;
-    seekTo(target);
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const target = pos * (duration || 0);
     isDraggingScrubberRef.current = true;
+    setScrubPreviewTime(target);
+
+    let latestTarget = target;
 
     const handleMouseMove = (ev: MouseEvent) => {
       if (!isDraggingScrubberRef.current) return;
       const movePos = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
-      seekTo(movePos * duration);
+      latestTarget = movePos * (duration || 0);
+      setScrubPreviewTime(latestTarget);
+      setHoverPosition(movePos * 100);
+      setHoverTime(latestTarget);
     };
 
     const handleMouseUp = () => {
       isDraggingScrubberRef.current = false;
+      setScrubPreviewTime(null);
+      seekTo(latestTarget);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
@@ -671,14 +680,17 @@ export function ModernVideoPlayer({
     const rect = e.currentTarget.getBoundingClientRect();
     const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     setHoverPosition(pos * 100);
-    setHoverTime(pos * duration);
+    setHoverTime(pos * (duration || 0));
   };
 
   const handleScrubberMouseLeave = () => {
-    setHoverTime(null);
+    if (!isDraggingScrubberRef.current) {
+      setHoverTime(null);
+    }
   };
 
-  const playedPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const effectiveCurrentTime = scrubPreviewTime !== null ? scrubPreviewTime : currentTime;
+  const playedPercent = duration > 0 ? (effectiveCurrentTime / duration) * 100 : 0;
   const bufferedPercent = duration > 0 ? (bufferedEnd / duration) * 100 : 0;
 
   return (

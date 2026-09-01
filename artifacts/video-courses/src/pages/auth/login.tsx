@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useSEO } from "@/hooks/use-seo";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   email: z.string().email("Введите корректный email адрес"),
@@ -89,6 +90,7 @@ export function LoginPage() {
     robots: "noindex, follow"
   });
 
+  const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   const { refetch } = useAuth();
   const loginMutation = useLogin();
@@ -103,6 +105,7 @@ export function LoginPage() {
     try {
       const res = await loginMutation.mutateAsync({ data: values });
       localStorage.setItem("auth_token", res.token);
+      await queryClient.invalidateQueries();
       await refetch();
       
       // Handle redirect
