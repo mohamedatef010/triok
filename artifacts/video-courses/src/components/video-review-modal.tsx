@@ -169,7 +169,7 @@ export function VideoReviewModal({
           {/* Star rating selector */}
           <div className="space-y-2 text-center sm:text-left">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-              Ваша оценка курса <span className="text-amber-500">*</span>
+              Ваша оценка обучения <span className="text-amber-500">*</span>
             </label>
 
             <div className="flex items-center justify-center sm:justify-start gap-2 py-2">
@@ -207,12 +207,12 @@ export function VideoReviewModal({
             <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="Расскажите, что вам понравилось больше всего в этом курсе, как помогли уроки и трюки..."
+              placeholder="Расскажите, что вам понравилось больше всего, как помогли объяснения и секреты фокусов..."
               rows={4}
               className="rounded-2xl resize-none p-4 text-sm bg-background border-border/80 focus-visible:ring-amber-400"
             />
             <p className="text-[11px] text-muted-foreground">
-              Отзыв будет опубликован на странице курса с вашим именем: <span className="font-bold text-foreground">{reviewerName}</span>
+              Отзыв будет опубликован на странице обучения с вашим именем: <span className="font-bold text-foreground">{reviewerName}</span>
             </p>
           </div>
 

@@ -61,7 +61,7 @@ export function Footer() {
             <LogoWordmark className="text-white" />
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed pt-2">
-            Профессиональные онлайн-курсы по фокусам и иллюзионному искусству. Учитесь удивлять — пошаговые видеоуроки от профессионального фокусника Максима Берестнева.
+            Обучение фокусам и иллюзионному искусству. Учитесь удивлять — пошаговые видеоуроки и секреты от профессионального фокусника Максима Берестнева.
           </p>
           <div className="pt-2 flex items-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0" />

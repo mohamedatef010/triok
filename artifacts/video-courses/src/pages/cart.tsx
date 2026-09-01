@@ -99,7 +99,7 @@ export function CartPage() {
         </div>
         <h1 className="text-3xl font-bold mb-4">Корзина пуста</h1>
         <p className="text-muted-foreground max-w-md mb-8">
-          Вы еще не добавили ни одного курса в корзину. Перейдите в каталог, чтобы выбрать подходящее обучение.
+          Вы еще не добавили ни одного видеоурока в корзину. Перейдите в каталог, чтобы выбрать подходящее обучение.
         </p>
         <Button size="lg" className="rounded-2xl font-bold btn-glow px-8 h-12" asChild>
           <Link href="/catalog">Перейти в каталог</Link>
@@ -223,7 +223,7 @@ export function CartPage() {
               {/* Totals */}
               <div className="space-y-3 pt-2 border-t text-sm font-semibold">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Курсов в заказе:</span>
+                  <span>Уроков в заказе:</span>
                   <span>{items.length} шт.</span>
                 </div>
 

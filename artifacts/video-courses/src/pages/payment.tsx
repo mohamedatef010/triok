@@ -56,7 +56,7 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
         </div>
         <h1 className="text-3xl font-bold mb-4">Оплата прошла успешно!</h1>
         <p className="text-muted-foreground mb-8 max-w-md">
-          Спасибо за покупку. Курсы добавлены в ваш личный кабинет. Сейчас вы будете перенаправлены...
+          Спасибо за покупку. Обучение добавлено в ваш личный кабинет. Сейчас вы будете перенаправлены...
         </p>
       </div>
     );
@@ -94,7 +94,7 @@ export function PaymentPage({ params }: { params: { orderId: string } }) {
               <span className="font-bold text-xl text-foreground">{order.total} ₽</span>
             </div>
             <div className="text-sm text-muted-foreground border-t pt-4">
-              В заказе {order.items.length} {order.items.length === 1 ? 'курс' : 'курсов'}.
+              В заказе {order.items.length} {order.items.length === 1 ? 'урок' : 'уроков'}.
             </div>
           </div>
 

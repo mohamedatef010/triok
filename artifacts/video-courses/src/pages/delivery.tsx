@@ -33,13 +33,13 @@ export function DeliveryPage() {
   const emailHref = email && email !== "Не указан" ? `mailto:${email}` : undefined;
   useSEO({
     title: "Получение цифрового товара | Порядок предоставления доступа",
-    description: "Информация о порядке и сроках предоставления доступа к цифровым обучающим видеокурсам на платформе Классный Фокус после успешной оплаты.",
+    description: "Информация о порядке и сроках предоставления доступа к цифровым обучающим материалам на платформе Классный Фокус после успешной оплаты.",
     canonical: "/delivery",
     structuredData: {
       "@context": "https://schema.org",
       "@type": "WebPage",
       "name": "Получение цифрового товара — Классный Фокус",
-      "description": "Порядок и правила предоставления электронного доступа к видеокурсам после оплаты.",
+      "description": "Порядок и правила предоставления электронного доступа к обучающим видео после оплаты.",
       "url": "https://xn----7sb1acdcpkxafxk9g.xn--p1ai/delivery"
     }
   });
@@ -72,7 +72,7 @@ export function DeliveryPage() {
               </div>
               <h3 className="font-bold text-lg text-foreground">Оплата заказа</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Вы выбираете интересующий видеокурс и оплачиваете его онлайн через защищённую платёжную систему ЮKassa.
+                Вы выбираете интересующий фокус или урок и оплачиваете его онлайн через защищённую платёжную систему ЮKassa.
               </p>
             </div>
           </Card>
@@ -85,7 +85,7 @@ export function DeliveryPage() {
               </div>
               <h3 className="font-bold text-lg text-foreground">Мгновенный доступ</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Сразу после подтверждения успешного платежа доступ к видеокурсу автоматически открывается в вашем Личном кабинете.
+                Сразу после подтверждения успешного платежа доступ к обучению автоматически открывается в вашем Личном кабинете.
               </p>
             </div>
           </Card>

@@ -143,10 +143,10 @@ export function VideoDetailPage() {
   const displayVideo = video ? { ...video, averageRating: avgRatingNumber, reviewCount: reviewCountNumber } : null;
 
   // Dynamic SEO based on loaded video data
-  const seoTitle = video?.title || "Курс по фокусам";
+  const seoTitle = video?.title || "Обучение фокусам";
   const seoDescription = video?.description
     ? video.description.slice(0, 160)
-    : "Пошаговый курс по фокусам и трюкам. Освойте секреты иллюзионного искусства шаг за шагом.";
+    : "Пошаговое обучение фокусам и трюкам. Освойте секреты иллюзионного искусства шаг за шагом.";
   const seoImage = video?.thumbnailUrl || undefined;
   const seoCanonical = id ? `/video/${id}` : undefined;
 
@@ -417,7 +417,7 @@ export function VideoDetailPage() {
                       <Lock className="h-6 sm:h-7 w-6 sm:w-7" />
                     </div>
                     <h3 className="text-lg sm:text-xl font-black text-white mb-2 leading-snug">Бесплатный превью-просмотр завершен</h3>
-                    <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">Для продолжения просмотра приобретите полный доступ к обучающему курсу.</p>
+                    <p className="text-xs sm:text-sm text-slate-300 mb-5 leading-relaxed">Для продолжения просмотра приобретите полный доступ к данному обучению.</p>
                     <Button 
                       size="lg" 
                       className="btn-glow font-black w-full rounded-xl sm:rounded-2xl h-11 sm:h-12 bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg shadow-amber-400/30" 
@@ -499,7 +499,7 @@ export function VideoDetailPage() {
                 <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 via-primary/5 to-muted/40 border border-amber-500/25 mb-5 flex items-center justify-between">
                   <div>
                     <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground block mb-0.5">
-                      Стоимость курса
+                      Стоимость обучения
                     </span>
                     <div className="flex items-baseline gap-2">
                       <span className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
@@ -530,7 +530,7 @@ export function VideoDetailPage() {
               <div ref={mainBuyButtonRef} className="space-y-3.5 pt-2 border-t border-border/60">
                 {video.isPurchased ? (
                   <div className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 p-3.5 sm:p-4 rounded-2xl font-black text-center border border-emerald-500/30 flex items-center justify-center gap-2 text-sm sm:text-base">
-                    <ShieldCheck className="h-5 w-5" /> Курс куплен. Приятного просмотра!
+                    <ShieldCheck className="h-5 w-5" /> Обучение доступно. Приятного просмотра!
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2.5">
@@ -549,12 +549,17 @@ export function VideoDetailPage() {
                       className={`w-full h-11 sm:h-12 font-bold rounded-2xl text-xs sm:text-sm transition-all active:scale-[0.98] cursor-pointer ${
                         inCart ? "border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10" : ""
                       }`}
-                      onClick={() => {
+                      onClick={async () => {
                         if (inCart) {
-                          cart.remove(video.id);
-                          toast({ title: "Удалено из корзины" });
+                          setLocation("/cart");
                         } else {
-                          cart.add({ videoId: video.id, title: video.title, thumbnailUrl: video.thumbnailUrl, price: video.price, discountPrice: video.discountPrice });
+                          await cart.add({ 
+                            videoId: video.id, 
+                            title: video.title, 
+                            thumbnailUrl: video.thumbnailUrl, 
+                            price: video.price, 
+                            discountPrice: video.discountPrice 
+                          });
                           toast({ title: "Добавлено в корзину" });
                         }
                       }}
@@ -583,7 +588,7 @@ export function VideoDetailPage() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    className={`rounded-xl h-10 font-bold text-xs border-border/70 ${inCompare ? "text-primary border-primary/30 bg-primary/5" : "text-muted-foreground"}`}
+                    className={`rounded-xl h-10 font-bold text-xs border-border/70 ${inCompare ? "text-amber-500 border-amber-500/30 bg-amber-500/5" : "text-muted-foreground"}`}
                     onClick={() => {
                       if (inCompare) {
                         compare.removeVideo(video.id);
@@ -600,13 +605,13 @@ export function VideoDetailPage() {
                 </div>
 
 
-                {/* Digital Goods Delivery Notice */}
-                <div className="text-[11px] text-muted-foreground bg-muted/25 p-3 rounded-xl border border-border/50 space-y-0.5">
+                {/* Secure Badge */}
+                <div className="pt-3 border-t border-border/40 text-[11px] text-muted-foreground space-y-1.5 font-medium">
                   <div className="font-bold text-foreground flex items-center gap-1.5">
                     <span className="text-amber-500">●</span> Доступ к материалам:
                   </div>
                   <p className="leading-relaxed">
-                    Цифровой обучающий видеокурс. Доступ открывается в Личном кабинете сразу после подтверждения успешной онлайн-оплаты.
+                    Цифровое обучающее видео. Доступ открывается в Личном кабинете сразу после подтверждения успешной онлайн-оплаты.
                   </p>
                 </div>
 
@@ -617,16 +622,16 @@ export function VideoDetailPage() {
 
         </div>
 
-        {/* ── Description Block (Описание курса) ── */}
+        {/* ── Description Block (Описание обучения) ── */}
         <div className="max-w-4xl mb-10 sm:mb-14">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs uppercase tracking-wider mb-3 border border-amber-400/20">
-            <Info className="h-3.5 w-3.5" /> О курсе
+            <Info className="h-3.5 w-3.5" /> Об обучении
           </div>
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-black mb-4 tracking-tight">
-            Описание обучающего курса
+            Описание обучения
           </h2>
           <div className="bg-card/90 dark:bg-card/70 p-4 sm:p-7 rounded-2xl sm:rounded-3xl border border-border/80 shadow-sm text-foreground/90 text-sm sm:text-base leading-relaxed space-y-3">
-            <p>{video.description || "Подробный пошаговый обучающий видеокурс от профессионального иллюзиониста с детальным разбором секретов и приемов."}</p>
+            <p>{video.description || "Подробное пошаговое обучение от профессионального иллюзиониста с детальным разбором секретов и приемов."}</p>
           </div>
         </div>
 
@@ -643,94 +648,116 @@ export function VideoDetailPage() {
               </span>
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              {video.attachments.map((att: any) => {
-                const isPurchased = isPurchasedByUser || video.isPurchased;
-                return (
-                  <div
-                    key={att.id}
-                    className="p-4 rounded-2xl bg-card/90 dark:bg-card/70 border border-border/80 shadow-sm flex items-center justify-between gap-3 group hover:border-sky-500/40 transition-all"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="h-10 w-10 rounded-xl bg-sky-500/15 text-sky-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <FileText className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-sm text-foreground truncate">
-                          {att.name}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2">
-                          {att.size && <span>{(att.size / 1024).toFixed(0)} KB</span>}
-                          {isPurchased ? (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" /> Доступно для скачивания
-                            </span>
-                          ) : (
-                            <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                              <Lock className="h-3 w-3" /> Доступно после покупки
-                            </span>
-                          )}
-                        </div>
-                      </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {video.attachments.map((att: any, idx: number) => (
+                <div 
+                  key={att.id || idx} 
+                  className="p-4 rounded-2xl bg-card/90 border border-sky-500/20 hover:border-sky-400/40 transition-all flex items-center justify-between gap-3 shadow-sm group"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-10 w-10 rounded-xl bg-sky-400/10 text-sky-500 flex items-center justify-center shrink-0 border border-sky-400/25">
+                      <FileText className="h-5 w-5" />
                     </div>
-
-                    {isPurchased ? (
-                      <a
-                        href={
-                          att.url?.startsWith("/api/attachments/")
-                            ? `${att.url}?token=${localStorage.getItem("auth_token") || ""}`
-                            : att.url
-                        }
-                        target="_blank"
-                        rel="noreferrer"
-                        download
-                        className="inline-flex items-center justify-center h-9 px-3.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs gap-1.5 shadow-sm shrink-0 transition-all active:scale-95 cursor-pointer"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        <span>Скачать</span>
-                      </a>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleBuyNow}
-                        className="h-9 px-3 rounded-xl border-amber-400/40 text-amber-500 hover:bg-amber-400/10 font-bold text-xs gap-1 shrink-0 cursor-pointer"
-                      >
-                        <Lock className="h-3 w-3" />
-                        <span>Открыть доступ</span>
-                      </Button>
-                    )}
+                    <div className="min-w-0">
+                      <h4 className="text-xs sm:text-sm font-extrabold text-foreground truncate">
+                        {att.title || "Материал для трюка"}
+                      </h4>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {att.fileSize ? `${Math.round(att.fileSize / 1024)} КБ` : "Готово к скачиванию"}
+                      </p>
+                    </div>
                   </div>
-                );
-              })}
+
+                  {(isPurchasedByUser || video.isPurchased) ? (
+                    <a 
+                      href={att.fileUrl} 
+                      download 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-600 hover:text-white dark:text-sky-400 dark:hover:text-slate-950 font-bold text-xs transition-all shrink-0 border border-sky-500/30"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Скачать</span>
+                    </a>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-xl border shrink-0">
+                      <Lock className="h-3 w-3" /> После покупки
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* ── Student Reviews Section (Отзывы учеников) ── */}
-        <div id="reviews-section" className="max-w-4xl mb-12 sm:mb-16 pt-6 sm:pt-8 border-t border-border/60">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+        {/* ── Related Videos Section ── */}
+        {relatedList && relatedList.length > 0 && (
+          <div className="mb-10 sm:mb-14">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs uppercase tracking-wider mb-3 border border-amber-400/20">
+              <Zap className="h-3.5 w-3.5" /> Рекомендуем
+            </div>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black mb-6 tracking-tight">
+              Вам также может понравиться
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {relatedList.slice(0, 4).map((rel: any) => (
+                <Link key={rel.id} href={`/video/${rel.id}`} className="group block">
+                  <div className="bg-card/85 rounded-2xl overflow-hidden border border-border/80 hover:border-amber-400/40 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col h-full">
+                    <div className="relative aspect-video bg-slate-950 overflow-hidden">
+                      <img 
+                        src={rel.thumbnailUrl} 
+                        alt={rel.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                      <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-bold text-white">
+                        {formatDuration(rel.durationSeconds || (rel as any).duration) || "Урок"}
+                      </div>
+                    </div>
+
+                    <div className="p-4 flex flex-col flex-1">
+                      <h4 className="font-extrabold text-sm text-foreground line-clamp-2 mb-2 group-hover:text-amber-500 transition-colors">
+                        {rel.title}
+                      </h4>
+                      <div className="mt-auto flex items-center justify-between pt-2 border-t border-border/40">
+                        <span className="font-black text-sm text-amber-500">
+                          {rel.discountPrice ?? rel.price} ₽
+                        </span>
+                        <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          {rel.averageRating ? Number(rel.averageRating).toFixed(1) : "5.0"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Reviews Section ── */}
+        <div id="reviews-section" className="max-w-4xl pt-6 border-t border-border/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 text-amber-500 font-bold text-xs uppercase tracking-wider mb-2 border border-amber-400/20">
-                <Star className="h-3.5 w-3.5 fill-amber-400" /> Реальные отзывы
+                <MessageSquare className="h-3.5 w-3.5" /> Отзывы учеников
               </div>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight flex items-center gap-2.5">
-                Отзывы учеников
-                {reviewsList.length > 0 && (
-                  <span className="text-xs sm:text-sm font-bold text-muted-foreground bg-muted px-2.5 py-0.5 rounded-full border">
-                    {reviewsList.length}
-                  </span>
-                )}
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight">
+                Отзывы и впечатления ({reviewsList.length})
               </h2>
             </div>
 
             {(isPurchasedByUser || video.isPurchased) && (
-              <Button
+              <Button 
                 className="btn-glow font-bold rounded-xl sm:rounded-2xl h-10 sm:h-11 px-4 sm:px-6 self-start sm:self-auto bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs sm:text-sm cursor-pointer"
                 onClick={() => setReviewModalOpen(true)}
               >
                 <Star className={`h-4 w-4 mr-2 ${myExistingReview ? "fill-slate-950" : ""}`} />
-                {myExistingReview ? "Редактировать отзыв" : "Оставить отзыв о курсе"}
+                {myExistingReview ? "Редактировать отзыв" : "Оставить отзыв об обучении"}
               </Button>
             )}
           </div>
@@ -743,8 +770,8 @@ export function VideoDetailPage() {
               <h4 className="font-bold text-base sm:text-lg">Пока нет отзывов</h4>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
                 {isPurchasedByUser 
-                  ? "Вы прошли этот курс? Поделитесь вашим мнением и помогите другим сделать выбор!" 
-                  : "Отзывы появятся после того, как первые ученики пройдут данный курс."}
+                  ? "Вы изучили этот фокус? Поделитесь вашим мнением и помогите другим сделать выбор!" 
+                  : "Отзывы появятся после того, как первые зрители изучат этот фокус."}
               </p>
               {isPurchasedByUser && (
                 <Button 

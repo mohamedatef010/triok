@@ -51,11 +51,29 @@ router.delete("/cart", requireAuth, async (req, res): Promise<void> => {
 router.post("/cart/items", requireAuth, async (req, res): Promise<void> => {
   const parsed = AddToCartBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
-  await db
-    .insert(cartItemsTable)
-    .values({ userId: req.user!.userId, videoId: parsed.data.videoId })
-    .onConflictDoNothing();
-  res.status(201).json(await getCartForUser(req.user!.userId));
+
+  const userId = req.user!.userId;
+  const videoId = parsed.data.videoId;
+
+  try {
+    const existing = await db
+      .select()
+      .from(cartItemsTable)
+      .where(and(eq(cartItemsTable.userId, userId), eq(cartItemsTable.videoId, videoId)));
+
+    if (existing.length === 0) {
+      await db
+        .insert(cartItemsTable)
+        .values({ userId, videoId })
+        .onConflictDoNothing();
+    }
+
+    const cart = await getCartForUser(userId);
+    res.status(201).json(cart);
+  } catch (error) {
+    req.log.error({ error }, "Error adding item to cart");
+    res.status(500).json({ error: "Не удалось добавить товар в корзину" });
+  }
 });
 
 router.delete("/cart/items/:videoId", requireAuth, async (req, res): Promise<void> => {

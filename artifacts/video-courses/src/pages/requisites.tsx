@@ -36,7 +36,7 @@ export function RequisitesPage() {
   const supportEmail = requisitesData?.supportEmail || NOT_SET;
   const location = requisitesData?.location || "Россия";
   const paymentMethods = requisitesData?.paymentMethods || "Банковские карты (МИР, Visa, MasterCard), СБП через сервис ЮKassa";
-  const deliveryMethod = requisitesData?.deliveryMethod || "Электронный доступ к цифровым видеокурсам в Личном кабинете сразу после онлайн-оплаты";
+  const deliveryMethod = requisitesData?.deliveryMethod || "Электронный доступ к цифровым обучающим материалам в Личном кабинете сразу после онлайн-оплаты";
 
   const items = [
     {

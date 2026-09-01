@@ -67,7 +67,7 @@ function LazyAutoplayVideo({ src, className }: { src: string; className?: string
 export function ContactsPage() {
   useSEO({
     title: "Контакты",
-    description: "Свяжитесь с нами по любым вопросам — обучение, курсы, сотрудничество. Мы всегда на связи.",
+    description: "Свяжитесь с нами по любым вопросам — обучение, секреты фокусов, сотрудничество. Мы всегда на связи.",
     canonical: "/contacts",
     structuredData: {
       "@context": "https://schema.org",
@@ -138,7 +138,7 @@ export function ContactsPage() {
             Свяжитесь со мной
           </h1>
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Пишите по любым вопросам — курсы, обучение, сотрудничество
+            Пишите по любым вопросам — обучение, секреты фокусов, сотрудничество
           </p>
         </div>
 

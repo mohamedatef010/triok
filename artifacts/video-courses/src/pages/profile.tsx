@@ -160,7 +160,7 @@ export function ProfilePage() {
             Личный кабинет
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg mb-8 max-w-lg mx-auto leading-relaxed">
-            Войдите в аккаунт, чтобы просматривать купленные видеокурсы, оставлять отзывы, отслеживать прогресс и управлять заказами.
+            Войдите в аккаунт, чтобы просматривать купленные видеоуроки, оставлять отзывы, отслеживать прогресс и управлять заказами.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
@@ -418,7 +418,7 @@ export function ProfilePage() {
                         <div className="space-y-2 pt-2 border-t border-border/60">
                           <Button size="sm" className="w-full font-bold rounded-xl h-11 btn-glow" asChild>
                             <Link href={`/video/${video.id}`}>
-                              <Play className="h-4 w-4 mr-2 fill-current" /> Смотреть курс
+                              <Play className="h-4 w-4 mr-2 fill-current" /> Смотреть видео
                             </Link>
                           </Button>
 
@@ -429,7 +429,7 @@ export function ProfilePage() {
                             className="w-full font-bold rounded-xl h-10 border-border/80 hover:border-amber-400 hover:text-amber-500 transition-colors"
                           >
                             <Star className={`h-4 w-4 mr-1.5 ${existingReview ? "fill-amber-400 text-amber-400" : "text-amber-400"}`} />
-                            {existingReview ? "Редактировать мой отзыв" : "Оставить отзыв о курсе"}
+                            {existingReview ? "Редактировать мой отзыв" : "Оставить отзыв об обучении"}
                           </Button>
                         </div>
                       </div>
@@ -443,38 +443,14 @@ export function ProfilePage() {
           {/* ──────── TAB 2: MY REVIEWS (Customer Reviews & Ratings) ──────── */}
           <TabsContent value="reviews" className="min-h-[350px]">
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 rounded-3xl bg-card border shadow-sm">
-                <div>
-                  <h3 className="text-lg font-black flex items-center gap-2">
-                    <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
-                    Мои опубликованные отзывы ({activeReviews.length})
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                    Ваши отзывы и оценки отображаются публично на страницах обучения с вашим именем.
-                  </p>
-                </div>
-
-                {activeVideos.length > 0 && (
-                  <Button
-                    size="sm"
-                    className="rounded-xl font-bold btn-glow shrink-0"
-                    onClick={() => {
-                      // Find first video without review, or first video
-                      const unreviewed = activeVideos.find(v => !reviewsByVideoId.has(v.id)) || activeVideos[0];
-                      handleOpenReview(unreviewed);
-                    }}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-1.5" /> Написать новый отзыв
-                  </Button>
-                )}
-              </div>
-
               {activeReviews.length === 0 ? (
-                <div className="text-center py-16 bg-card border border-dashed rounded-3xl p-8 max-w-lg mx-auto">
-                  <Star className="h-12 w-12 text-amber-400/40 mx-auto mb-3" />
-                  <h4 className="text-lg font-bold mb-1">Вы пока не оставили ни одного отзыва</h4>
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-6">
-                    Поделитесь вашими впечатлениями от купленного обучения, чтобы помочь другим ученикам!
+                <div className="text-center py-16 px-4 rounded-3xl border border-dashed border-border/80 bg-card/50 max-w-lg mx-auto">
+                  <div className="h-16 w-16 rounded-3xl bg-amber-400/10 text-amber-500 flex items-center justify-center mx-auto mb-4 border border-amber-400/20 shadow-sm">
+                    <Star className="h-8 w-8 text-amber-500" />
+                  </div>
+                  <h3 className="text-xl font-black mb-2">Вы еще не оставили отзывов</h3>
+                  <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-6 leading-relaxed">
+                    Поделитесь впечатлениями о пройденном обучении. Ваш отзыв поможет другим иллюзионистам сделать правильный выбор.
                   </p>
                   {activeVideos.length > 0 ? (
                     <Button 
@@ -485,7 +461,7 @@ export function ProfilePage() {
                     </Button>
                   ) : (
                     <Button asChild className="rounded-full px-6 font-bold btn-glow">
-                      <Link href="/catalog">Выбрать курс в каталоге</Link>
+                      <Link href="/catalog">Выбрать обучение в каталоге</Link>
                     </Button>
                   )}
                 </div>
@@ -508,7 +484,7 @@ export function ProfilePage() {
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <Link href={`/video/${review.videoId}`}>
                               <h4 className="font-extrabold text-base hover:text-primary transition-colors cursor-pointer">
-                                {review.videoTitle || "Курс"}
+                                {review.videoTitle || "Урок"}
                               </h4>
                             </Link>
                             <span className="text-xs text-muted-foreground">
@@ -521,14 +497,10 @@ export function ProfilePage() {
                             {Array.from({ length: 5 }).map((_, i) => (
                               <Star 
                                 key={i} 
-                                className={`h-4 w-4 ${
-                                  i < review.rating 
-                                    ? "fill-amber-400 text-amber-400" 
-                                    : "text-slate-300 dark:text-slate-700"
-                                }`} 
+                                className={`h-4 w-4 ${i < review.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} 
                               />
                             ))}
-                            <span className="text-xs font-bold ml-1.5 text-amber-500">{review.rating} / 5</span>
+                            <span className="text-xs font-black ml-1.5 text-foreground">{review.rating}/5</span>
                           </div>
 
                           {/* Review Text */}
@@ -549,7 +521,7 @@ export function ProfilePage() {
                           onClick={() => {
                             setSelectedVideoForReview({
                               id: review.videoId,
-                              title: review.videoTitle || "Курс",
+                              title: review.videoTitle || "Урок",
                               thumbnailUrl: review.videoThumbnailUrl
                             });
                             setSelectedExistingReview({
