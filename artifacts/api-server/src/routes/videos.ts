@@ -14,7 +14,7 @@ import {
   GetSimilarVideosParams,
 } from "@workspace/api-zod";
 import { generateUploadUrl, getObjectAsString, generatePresignedUrl, s3Client } from "@workspace/storage";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import path from "path";
 import { processVideoAsync } from "../lib/videoProcessor";
 import jwt from "jsonwebtoken";
@@ -501,7 +501,9 @@ router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void>
       JWT_SECRET,
       { expiresIn: "30d" }
     );
-    const streamUrl = `${protocol}://${host}/api/videos/${video.id}/stream?token=${token}`;
+    const streamUrl = video.hlsFullStorageKey
+      ? `${protocol}://${host}/api/videos/${video.id}/manifest?token=${token}`
+      : `${protocol}://${host}/api/videos/${video.id}/stream?token=${token}`;
     res.json({ manifestUrl: streamUrl, streamUrl, type: "full" });
     return;
   }
@@ -571,28 +573,67 @@ router.get("/videos/:id/stream", optionalAuth, async (req, res): Promise<void> =
   const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
 
   try {
+    // 1. Get object metadata (file size and content type)
+    const head = await s3Client.send(new HeadObjectCommand({
+      Bucket: bucket,
+      Key: sourceKey,
+    }));
+    const totalSize = head.ContentLength || 0;
+    const contentType = head.ContentType || "video/mp4";
+
+    // 2MB chunks: delivers in <150ms over standard connections, eliminating connection stalls and stutter
+    const CHUNK_SIZE = 2 * 1024 * 1024;
+
+    if (!range) {
+      // Whole-file request
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Content-Length", String(totalSize));
+      res.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("X-Accel-Buffering", "no");
+      res.setHeader("Cache-Control", "private, max-age=86400, must-revalidate");
+
+      const response = await s3Client.send(new GetObjectCommand({
+        Bucket: bucket,
+        Key: sourceKey,
+      }));
+      if (!response.Body) { res.status(404).send("Not found"); return; }
+      (response.Body as NodeJS.ReadableStream).pipe(res);
+      return;
+    }
+
+    // 2. Parse RFC 7233 Range header
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    if (isNaN(start) || start < 0 || (totalSize > 0 && start >= totalSize)) {
+      res.status(416).setHeader("Content-Range", `bytes */${totalSize}`).send("Requested range not satisfiable");
+      return;
+    }
+
+    const end = parts[1] && parts[1].trim() !== ""
+      ? Math.min(parseInt(parts[1], 10), totalSize > 0 ? totalSize - 1 : parseInt(parts[1], 10))
+      : (totalSize > 0 ? Math.min(start + CHUNK_SIZE - 1, totalSize - 1) : start + CHUNK_SIZE - 1);
+
+    const contentLength = end - start + 1;
+    const s3Range = `bytes=${start}-${end}`;
+
     const response = await s3Client.send(new GetObjectCommand({
       Bucket: bucket,
       Key: sourceKey,
-      ...(range ? { Range: range } : {}),
+      Range: s3Range,
     }));
+
     if (!response.Body) {
       res.status(404).send("Not found");
       return;
     }
 
-    res.setHeader("Content-Type", response.ContentType || "video/mp4");
+    res.status(206);
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${totalSize}`);
+    res.setHeader("Content-Length", String(contentLength));
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("X-Accel-Buffering", "no");
-    // Enable browser caching so seeking and rewinding uses local buffered memory without stuttering
     res.setHeader("Cache-Control", "private, max-age=86400, must-revalidate");
-    if (response.ContentLength != null) {
-      res.setHeader("Content-Length", String(response.ContentLength));
-    }
-    if (range && response.ContentRange) {
-      res.status(206);
-      res.setHeader("Content-Range", response.ContentRange);
-    }
 
     const stream = response.Body as NodeJS.ReadableStream;
     let isCleanedUp = false;

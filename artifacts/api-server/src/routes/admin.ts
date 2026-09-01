@@ -1,6 +1,6 @@
 import { Router, IRouter } from "express";
 import { db, usersTable, ordersTable, orderItemsTable, videosTable, categoriesTable, siteSettingsTable } from "@workspace/db";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { generateUploadUrl, s3Client } from "@workspace/storage";
 import { eq, sql, desc } from "drizzle-orm";
 import { z } from "zod";
@@ -375,36 +375,91 @@ router.get("/preview-videos/:filename", async (req, res): Promise<void> => {
   const range = typeof req.headers.range === "string" ? req.headers.range : undefined;
 
   try {
+    const head = await s3Client.send(new HeadObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    }));
+    const totalSize = head.ContentLength || 0;
+    const contentType = head.ContentType || "video/mp4";
+
+    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB chunk for instant response, zero stutter, and fast seek
+
+    if (!range) {
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Content-Length", String(totalSize));
+      res.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("X-Accel-Buffering", "no");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+
+      const response = await s3Client.send(new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      }));
+      if (!response.Body) { res.status(404).json({ error: "Not found" }); return; }
+      (response.Body as NodeJS.ReadableStream).pipe(res);
+      return;
+    }
+
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    if (isNaN(start) || start < 0 || (totalSize > 0 && start >= totalSize)) {
+      res.status(416).setHeader("Content-Range", `bytes */${totalSize}`).send("Requested range not satisfiable");
+      return;
+    }
+
+    const end = parts[1] && parts[1].trim() !== ""
+      ? Math.min(parseInt(parts[1], 10), totalSize > 0 ? totalSize - 1 : parseInt(parts[1], 10))
+      : (totalSize > 0 ? Math.min(start + CHUNK_SIZE - 1, totalSize - 1) : start + CHUNK_SIZE - 1);
+
+    const contentLength = end - start + 1;
+    const s3Range = `bytes=${start}-${end}`;
+
     const response = await s3Client.send(new GetObjectCommand({
       Bucket: bucket,
       Key: key,
-      ...(range ? { Range: range } : {}),
+      Range: s3Range,
     }));
+
     if (!response.Body) {
       res.status(404).json({ error: "Not found" });
       return;
     }
 
-    res.setHeader("Content-Type", response.ContentType || "video/mp4");
+    res.status(206);
+    res.setHeader("Content-Range", `bytes ${start}-${end}/${totalSize}`);
+    res.setHeader("Content-Length", String(contentLength));
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("X-Accel-Buffering", "no");
     res.setHeader("Cache-Control", "public, max-age=86400");
-    if (response.ContentLength != null) {
-      res.setHeader("Content-Length", String(response.ContentLength));
-    }
-    if (range && response.ContentRange) {
-      res.status(206);
-      res.setHeader("Content-Range", response.ContentRange);
-    }
 
     const stream = response.Body as NodeJS.ReadableStream;
-    req.on("close", () => {
+    let isCleanedUp = false;
+    const cleanup = () => {
+      if (isCleanedUp) return;
+      isCleanedUp = true;
       try { (stream as any).destroy?.(); } catch {}
+    };
+
+    req.on("close", cleanup);
+    req.on("end", cleanup);
+    stream.on("error", (err: any) => {
+      cleanup();
+      if (!res.headersSent) {
+        res.status(500).send("Stream read error");
+      }
     });
+
     stream.pipe(res);
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === "InvalidRange" || error?.$metadata?.httpStatusCode === 416) {
+      res.status(416).setHeader("Content-Range", `bytes */*`).send("Requested range not satisfiable");
+      return;
+    }
     req.log.error(error);
-    res.status(404).json({ error: "Not found" });
+    if (!res.headersSent) {
+      res.status(404).json({ error: "Not found" });
+    }
   }
 });
 
