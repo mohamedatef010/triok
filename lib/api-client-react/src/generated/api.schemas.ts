@@ -479,3 +479,20 @@ page?: number;
 limit?: number;
 };
 
+export interface CartItem {
+  videoId: number;
+  title: string;
+  thumbnailUrl: string;
+  price: number;
+  /** @nullable */
+  discountPrice?: number | null;
+}
+
+export interface Cart {
+  items: CartItem[];
+  total: number;
+}
+
+export interface CartItemInput {
+  videoId: number;
+}

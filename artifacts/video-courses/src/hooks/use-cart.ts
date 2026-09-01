@@ -4,7 +4,8 @@ import {
   useAddToCart, 
   useRemoveFromCart, 
   useClearCart,
-  CartItem
+  Cart,
+  CartItem,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./use-auth";
