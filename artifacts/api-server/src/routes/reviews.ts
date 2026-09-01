@@ -3,6 +3,7 @@ import { db, reviewsTable, usersTable, ordersTable, orderItemsTable, videosTable
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { ListReviewsParams, CreateReviewParams, CreateReviewBody, DeleteReviewParams } from "@workspace/api-zod";
+import { checkUserPurchasedVideo } from "../lib/purchaseCheck";
 
 const router: IRouter = Router();
 
@@ -78,19 +79,8 @@ router.post("/videos/:id/reviews", requireAuth, async (req, res): Promise<void> 
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   // Check purchase
-  const [order] = await db
-    .select({ id: ordersTable.id })
-    .from(ordersTable)
-    .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
-    .where(
-      and(
-        eq(ordersTable.userId, req.user!.userId),
-        eq(ordersTable.status, "paid"),
-        eq(orderItemsTable.videoId, params.data.id)
-      )
-    )
-    .limit(1);
-  if (!order) {
+  const isPurchased = await checkUserPurchasedVideo(req.user!.userId, params.data.id);
+  if (!isPurchased) {
     res.status(403).json({ error: "Вы можете оставить отзыв только после покупки курса" });
     return;
   }

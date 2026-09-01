@@ -19,6 +19,7 @@ import path from "path";
 import { processVideoAsync } from "../lib/videoProcessor";
 import jwt from "jsonwebtoken";
 import { videoViewLimiter } from "../middlewares/rateLimiter";
+import { checkUserPurchasedVideo } from "../lib/purchaseCheck";
 
 const isProduction = process.env.NODE_ENV === "production";
 const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? "" : "dev-jwt-access-secret-change-in-prod");
@@ -28,35 +29,32 @@ if (isProduction && !JWT_SECRET) {
 const router: IRouter = Router();
 
 
-async function buildVideoRow(video: typeof videosTable.$inferSelect, catName: string | null, userId?: number) {
+async function buildVideoRow(video: typeof videosTable.$inferSelect, catName: string | null, userId?: number, isAdmin?: boolean) {
   const videoReviews = await db.select().from(reviewsTable).where(eq(reviewsTable.videoId, video.id));
   const avg = videoReviews.length
     ? videoReviews.reduce((s, r) => s + r.rating, 0) / videoReviews.length
     : 0;
 
-  let isPurchased = false;
-  if (userId) {
-    const [order] = await db
-      .select({ id: ordersTable.id })
-      .from(ordersTable)
-      .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
-      .where(
-        and(
-          eq(ordersTable.userId, userId),
-          eq(ordersTable.status, "paid"),
-          eq(orderItemsTable.videoId, video.id)
-        )
-      )
-      .limit(1);
-    isPurchased = !!order;
-  }
+  const isPurchased = isAdmin ? true : (userId ? await checkUserPurchasedVideo(userId, video.id) : false);
+
+  const rawAttachments = Array.isArray(video.attachments) ? (video.attachments as any[]) : [];
+  // For non-purchasers, sanitize attachment URLs so direct download links are never exposed before purchase
+  const sanitizedAttachments = isPurchased
+    ? rawAttachments
+    : rawAttachments.map((a) => ({
+        id: a.id,
+        name: a.name,
+        size: a.size,
+        type: a.type,
+        url: "", // Hidden until purchase
+      }));
 
   return {
     id: video.id,
     title: video.title,
     description: video.description ?? null,
     thumbnailUrl: video.thumbnailUrl ?? "",
-    videoUrl: video.videoUrl ?? null,
+    videoUrl: isPurchased ? (video.videoUrl ?? null) : null,
     previewVideoUrl: video.previewVideoUrl ?? null,
     durationSeconds: video.durationSeconds ?? null,
     price: Number(video.price),
@@ -70,7 +68,7 @@ async function buildVideoRow(video: typeof videosTable.$inferSelect, catName: st
     isFeatured: video.isFeatured,
     isPublished: video.isPublished,
     isPurchased,
-    attachments: (video.attachments as any) || [],
+    attachments: sanitizedAttachments,
     createdAt: video.createdAt,
   };
 }
@@ -221,7 +219,8 @@ router.get("/videos/:id", optionalAuth, async (req, res): Promise<void> => {
   const [cat] = video.categoryId
     ? await db.select().from(categoriesTable).where(eq(categoriesTable.id, video.categoryId))
     : [null];
-  const row = await buildVideoRow(video, cat?.name ?? null, req.user?.userId);
+  const isAdmin = req.user?.role === "admin";
+  const row = await buildVideoRow(video, cat?.name ?? null, req.user?.userId, isAdmin);
   res.json(row);
 });
 
@@ -377,51 +376,33 @@ router.get("/attachments/:filename", optionalAuth, async (req, res): Promise<voi
   const videoIdMatch = filename.match(/^(\d+)-/);
   const videoId = videoIdMatch ? Number(videoIdMatch[1]) : null;
 
-  let isAuthorized = false;
-
-  // Check admin authorization via Bearer header or query token
-  const authHeader = req.headers.authorization || (req.query.token ? `Bearer ${req.query.token}` : undefined);
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const rawToken = authHeader.slice(7);
-    try {
-      const decoded: any = jwt.verify(rawToken, JWT_SECRET, { algorithms: ["HS256"] });
-      if (decoded.role === "admin") {
-        isAuthorized = true;
-      } else if (decoded.userId && videoId) {
-        const [order] = await db
-          .select({ id: ordersTable.id })
-          .from(ordersTable)
-          .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
-          .where(
-            and(
-              eq(ordersTable.userId, decoded.userId),
-              eq(ordersTable.status, "paid"),
-              eq(orderItemsTable.videoId, videoId)
-            )
-          )
-          .limit(1);
-        if (order) isAuthorized = true;
-      }
-    } catch {}
+  if (!videoId) {
+    res.status(400).json({ error: "Invalid attachment filename" });
+    return;
   }
 
-  if (req.user?.userId && videoId && !isAuthorized) {
-    const [order] = await db
-      .select({ id: ordersTable.id })
-      .from(ordersTable)
-      .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
-      .where(
-        and(
-          eq(ordersTable.userId, req.user.userId),
-          eq(ordersTable.status, "paid"),
-          eq(orderItemsTable.videoId, videoId)
-        )
-      )
-      .limit(1);
-    if (order) isAuthorized = true;
+  let userId: number | null = req.user?.userId || null;
+  let isAdmin = req.user?.role === "admin";
+
+  // Check token from query param ?token=... or authorization header if not already in req.user
+  if (!userId && !isAdmin) {
+    const rawToken = (req.query.token as string) || (req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : null);
+    if (rawToken) {
+      try {
+        const decoded: any = jwt.verify(rawToken, JWT_SECRET, { algorithms: ["HS256"] });
+        if (decoded.role === "admin") {
+          isAdmin = true;
+        }
+        if (decoded.userId) {
+          userId = decoded.userId;
+        }
+      } catch {}
+    }
   }
 
-  if (!isAuthorized) {
+  const isPurchased = isAdmin ? true : (userId ? await checkUserPurchasedVideo(userId, videoId) : false);
+
+  if (!isPurchased) {
     res.status(403).json({ error: "Файлы и материалы к уроку доступны только после покупки курса" });
     return;
   }
@@ -503,48 +484,29 @@ router.get("/videos/:id/playback", optionalAuth, async (req, res): Promise<void>
   const [video] = await db.select().from(videosTable).where(eq(videosTable.id, params.data.id));
   if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
 
-  let accessType = "preview";
-  if (req.user?.userId) {
-    const [order] = await db
-      .select({ id: ordersTable.id })
-      .from(ordersTable)
-      .innerJoin(orderItemsTable, eq(orderItemsTable.orderId, ordersTable.id))
-      .where(
-        and(
-          eq(ordersTable.userId, req.user.userId),
-          eq(ordersTable.status, "paid"),
-          eq(orderItemsTable.videoId, video.id)
-        )
-      )
-      .limit(1);
-    if (order) {
-      accessType = "full";
-    }
-  }
-
-  // Admin access check
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    try {
-      const decoded: any = jwt.verify(authHeader.slice(7), JWT_SECRET, { algorithms: ["HS256"] });
-      if (decoded.role === "admin") {
-        accessType = "full";
-      }
-    } catch {}
+  let isPurchased = false;
+  if (req.user?.role === "admin") {
+    isPurchased = true;
+  } else if (req.user?.userId) {
+    isPurchased = await checkUserPurchasedVideo(req.user.userId, video.id);
   }
 
   const protocol = req.headers["x-forwarded-proto"] || req.protocol;
   const host = req.headers.host;
 
-  if (accessType === "full") {
+  if (isPurchased) {
     // Generate secure 4-hour JWT token for full stream access
-    const token = jwt.sign({ videoId: video.id, userId: req.user?.userId, type: "full" }, JWT_SECRET, { expiresIn: "4h" });
+    const token = jwt.sign(
+      { videoId: video.id, userId: req.user?.userId, role: req.user?.role, type: "full" },
+      JWT_SECRET,
+      { expiresIn: "4h" }
+    );
     const streamUrl = `${protocol}://${host}/api/videos/${video.id}/stream?token=${token}`;
     res.json({ manifestUrl: streamUrl, streamUrl, type: "full" });
     return;
   }
 
-  // Preview only for visitors
+  // Preview only for visitors / non-purchasers
   res.json({
     manifestUrl: video.previewVideoUrl || "",
     streamUrl: video.previewVideoUrl || "",
@@ -569,6 +531,14 @@ router.get("/videos/:id/stream", async (req, res): Promise<void> => {
 
   if (decoded.videoId !== params.data.id || decoded.type !== "full") {
     res.status(403).send("Forbidden"); return;
+  }
+
+  const isAdmin = decoded.role === "admin";
+  const isPurchased = isAdmin ? true : (decoded.userId ? await checkUserPurchasedVideo(decoded.userId, params.data.id) : false);
+
+  if (!isPurchased) {
+    res.status(403).send("Forbidden: Course not purchased");
+    return;
   }
 
   const [video] = await db.select().from(videosTable).where(eq(videosTable.id, params.data.id));

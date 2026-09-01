@@ -105,9 +105,10 @@ export function VideoDetailPage() {
     query: { enabled: isAuthenticated } as any
   });
 
-  const isPurchasedByUser = Array.isArray(myPurchasedVideos) 
-    ? myPurchasedVideos.some((v: any) => v.id === id) 
-    : false;
+  const isPurchasedByUser = Boolean(
+    (Array.isArray(myPurchasedVideos) && myPurchasedVideos.some((v: any) => v.id === id)) ||
+    apiVideo?.isPurchased
+  );
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const myExistingReview = reviewsList.find((r: any) => r.userId === user?.id);

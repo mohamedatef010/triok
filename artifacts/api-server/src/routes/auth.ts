@@ -212,14 +212,23 @@ router.patch("/auth/me", requireAuth, async (req, res): Promise<void> => {
 });
 
 router.get("/auth/me/videos", requireAuth, async (req, res): Promise<void> => {
-  const { ordersTable, orderItemsTable, videosTable, categoriesTable, reviewsTable } = await import("@workspace/db");
+  const { videosTable, categoriesTable, reviewsTable } = await import("@workspace/db");
+  const { getUserPurchasedVideoIds } = await import("../lib/purchaseCheck");
+
+  // Get strictly paid & granted video IDs
+  const purchasedIdsSet = await getUserPurchasedVideoIds(req.user!.userId);
+  const purchasedVideoIds = Array.from(purchasedIdsSet);
+
+  if (purchasedVideoIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
   const rows = await db
-    .selectDistinctOn([videosTable.id])
-    .from(orderItemsTable)
-    .innerJoin(ordersTable, eq(orderItemsTable.orderId, ordersTable.id))
-    .innerJoin(videosTable, eq(orderItemsTable.videoId, videosTable.id))
+    .select()
+    .from(videosTable)
     .leftJoin(categoriesTable, eq(videosTable.categoryId, categoriesTable.id))
-    .where(eq(ordersTable.userId, req.user!.userId));
+    .where(inArray(videosTable.id, purchasedVideoIds));
 
   if (rows.length === 0) {
     res.json([]);
@@ -245,16 +254,20 @@ router.get("/auth/me/videos", requireAuth, async (req, res): Promise<void> => {
         description: r.videos.description ?? null,
         thumbnailUrl: r.videos.thumbnailUrl ?? "",
         videoUrl: r.videos.videoUrl ?? null,
+        previewVideoUrl: r.videos.previewVideoUrl ?? null,
         durationSeconds: r.videos.durationSeconds ?? null,
         price: Number(r.videos.price),
         discountPrice: r.videos.discountPrice != null ? Number(r.videos.discountPrice) : null,
         categoryId: r.videos.categoryId ?? null,
         categoryName: r.categories?.name ?? null,
+        difficulty: r.videos.difficulty ?? 1,
         viewCount: r.videos.viewCount,
         averageRating: Math.round(avg * 10) / 10,
         reviewCount: videoReviews.length,
         isFeatured: r.videos.isFeatured,
         isPublished: r.videos.isPublished,
+        isPurchased: true,
+        attachments: (r.videos.attachments as any) || [],
         createdAt: r.videos.createdAt,
       };
     })
@@ -262,4 +275,5 @@ router.get("/auth/me/videos", requireAuth, async (req, res): Promise<void> => {
 });
 
 export default router;
+
 
