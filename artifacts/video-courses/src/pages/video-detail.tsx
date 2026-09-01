@@ -244,9 +244,10 @@ export function VideoDetailPage() {
 
   const handleEnded = () => {
     setIsPlaying(false);
-    // Show the purchase overlay when the video ends (demo or preview),
-    // unless the user has already purchased the course.
-    if (!isPurchasedByUser && !video?.isPurchased) {
+    // Show the subscription overlay ONLY when the preview video ends for non-purchasers.
+    // If the user has full access (purchased, admin, or playback token is "full"), do not show the overlay.
+    const hasFullAccess = isPurchasedByUser || video?.isPurchased || playbackData?.type === "full";
+    if (!hasFullAccess) {
       setShowPurchaseOverlay(true);
     }
   };
@@ -343,10 +344,19 @@ export function VideoDetailPage() {
   const isFav = favs.isFavorite(video.id);
   const inCart = cart.isInCart(video.id);
   const inCompare = !!compare.videos.find(v => v.id === video.id);
-  // playerUrl: stays stable without jumping between direct URL and HLS manifest
-  const playerUrl = (isPurchasedByUser || video.isPurchased)
+  // playerUrl: purchased users get full stream; non-purchasers ONLY get the preview URL.
+  // Never fall back to playbackData stream for non-purchasers (it may be the full video).
+  const isFullAccess = isPurchasedByUser || video.isPurchased || playbackData?.type === "full";
+
+  const playerUrl = isFullAccess
     ? (playbackData?.manifestUrl || video.videoUrl || "")
-    : (video.previewVideoUrl || playbackData?.manifestUrl || video.videoUrl || "");
+    : (video.previewVideoUrl || "");
+
+  // previewLimitSeconds: apply ONLY when there is no separate preview video file.
+  // When previewVideoUrl exists the video itself is already time-limited; overlay fires via onEnded.
+  const previewLimitSecs = (!isFullAccess && !video.previewVideoUrl)
+    ? (video.previewDurationSeconds || (effectiveDurationSeconds ? Math.floor(effectiveDurationSeconds * 0.2) : undefined))
+    : undefined;
 
   // Discount percentage calculation
   const discountPercent = (video.discountPrice && video.price && video.price > video.discountPrice)
@@ -386,11 +396,7 @@ export function VideoDetailPage() {
                 autoPlay={false}
                 videoId={video.id}
                 onPlay={handleStartPlaying}
-                previewLimitSeconds={
-                  (!isPurchasedByUser && !video.isPurchased && playbackData?.type !== "full" && !video.previewVideoUrl)
-                    ? (video.previewDurationSeconds || (effectiveDurationSeconds ? effectiveDurationSeconds * 0.2 : undefined))
-                    : undefined
-                }
+                previewLimitSeconds={previewLimitSecs}
                 onPreviewLimitReached={() => {
                   setShowPurchaseOverlay(true);
                 }}
@@ -401,6 +407,7 @@ export function VideoDetailPage() {
                 }}
                 onEnded={handleEnded}
               />
+
 
               {/* Purchase Overlay if preview limit reached */}
               {showPurchaseOverlay && (
