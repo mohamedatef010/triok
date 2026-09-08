@@ -232,22 +232,25 @@ router.patch("/videos/:id", requireAdmin, async (req, res): Promise<void> => {
   const data = parsed.data;
   const updates: Partial<typeof videosTable.$inferInsert> = {};
   if (data.title != null) updates.title = data.title;
-  if ("description" in data) updates.description = data.description ?? undefined;
-  if ("thumbnailUrl" in data) updates.thumbnailUrl = data.thumbnailUrl ?? undefined;
-  if ("videoUrl" in data) updates.videoUrl = data.videoUrl ?? undefined;
-  if ("previewVideoUrl" in data) updates.previewVideoUrl = data.previewVideoUrl ?? undefined;
-  if ("previewDurationSeconds" in data) updates.previewDurationSeconds = data.previewDurationSeconds ?? undefined;
-  if ("durationSeconds" in data) updates.durationSeconds = data.durationSeconds ?? undefined;
+  if ("description" in data) updates.description = data.description ?? null;
+  if ("thumbnailUrl" in data) updates.thumbnailUrl = data.thumbnailUrl ?? null;
+  if ("videoUrl" in data) updates.videoUrl = data.videoUrl ?? null;
+  if ("previewVideoUrl" in data) updates.previewVideoUrl = data.previewVideoUrl ?? null;
+  if ("previewDurationSeconds" in data) updates.previewDurationSeconds = data.previewDurationSeconds ?? null;
+  if ("durationSeconds" in data) updates.durationSeconds = data.durationSeconds ?? null;
   if (data.price != null) updates.price = String(data.price);
-  if ("discountPrice" in data) updates.discountPrice = data.discountPrice != null ? String(data.discountPrice) : undefined;
-  if ("categoryId" in data) updates.categoryId = data.categoryId ?? undefined;
+  if ("discountPrice" in data) updates.discountPrice = data.discountPrice != null ? String(data.discountPrice) : null;
+  if ("categoryId" in data) updates.categoryId = data.categoryId ?? null;
   if (data.difficulty != null) updates.difficulty = data.difficulty;
   if (data.isFeatured != null) updates.isFeatured = data.isFeatured;
   if (data.isPublished != null) updates.isPublished = data.isPublished;
   if ("attachments" in data) updates.attachments = (data.attachments as any) ?? [];
   const [video] = await db.update(videosTable).set(updates).where(eq(videosTable.id, params.data.id)).returning();
   if (!video) { res.status(404).json({ error: "Видео не найдено" }); return; }
-  const row = await buildVideoListRow(video, null);
+  const [cat] = video.categoryId
+    ? await db.select().from(categoriesTable).where(eq(categoriesTable.id, video.categoryId))
+    : [null];
+  const row = await buildVideoListRow(video, cat?.name ?? null);
   res.json(row);
 });
 

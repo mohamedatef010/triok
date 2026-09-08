@@ -51,6 +51,7 @@ import {
   Download,
   ExternalLink,
   File as FileIcon,
+  Pencil,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { TrickDifficultyBadge, TrickDifficultySelector } from "@/components/ui/trick-difficulty";
@@ -58,6 +59,19 @@ import { formatDuration } from "@/lib/utils";
 
 type ThumbnailSource = "url" | "file";
 type PreviewVideoSource = "url" | "file";
+type EditVideoSource = "keep" | "file" | "url";
+type EditThumbnailSource = "keep" | "url" | "file";
+type EditPreviewVideoSource = "keep" | "url" | "file";
+type EditStep = "idle" | "uploading" | "processing" | "saving" | "done" | "error";
+
+const editStepLabels: Record<EditStep, string> = {
+  idle: "",
+  saving: "Сохранение изменений...",
+  uploading: "Загрузка файла...",
+  processing: "Запуск HLS-обработки...",
+  done: "Готово!",
+  error: "Произошла ошибка",
+};
 
 /** Конвертация любого изображения в WebP с помощью Canvas API в браузере */
 async function convertImageToWebP(file: File, quality = 0.88): Promise<Blob> {
@@ -214,6 +228,290 @@ export function AdminVideos() {
     setThumbnailFile(file);
     setThumbnailPreview(URL.createObjectURL(file));
   };
+
+  // --- Edit Course state ---
+  const [editingVideo, setEditingVideo] = useState<any | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    title: "",
+    price: "",
+    discountPercent: "",
+    thumbnailUrl: "",
+    description: "",
+    durationSeconds: "",
+    previewDurationSeconds: "",
+    videoUrl: "",
+    previewVideoUrl: "",
+    difficulty: 1,
+  });
+  const [editSelectedCategoryId, setEditSelectedCategoryId] = useState<string>("none");
+  const [editNewCategoryName, setEditNewCategoryName] = useState<string>("");
+
+  const [editVideoSource, setEditVideoSource] = useState<EditVideoSource>("keep");
+  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
+  const [editDragOver, setEditDragOver] = useState(false);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [editThumbnailSource, setEditThumbnailSource] = useState<EditThumbnailSource>("keep");
+  const [editThumbnailFile, setEditThumbnailFile] = useState<File | null>(null);
+  const [editThumbnailPreview, setEditThumbnailPreview] = useState<string | null>(null);
+  const [editThumbnailDragOver, setEditThumbnailDragOver] = useState(false);
+  const editThumbnailInputRef = useRef<HTMLInputElement>(null);
+
+  const [editPreviewVideoSource, setEditPreviewVideoSource] = useState<EditPreviewVideoSource>("keep");
+  const [editPreviewVideoFile, setEditPreviewVideoFile] = useState<File | null>(null);
+  const [editPreviewVideoDragOver, setEditPreviewVideoDragOver] = useState(false);
+  const editPreviewVideoInputRef = useRef<HTMLInputElement>(null);
+
+  const [editStep, setEditStep] = useState<EditStep>("idle");
+  const [editProgress, setEditProgress] = useState(0);
+
+  const resetEditDialog = () => {
+    if (editThumbnailPreview) URL.revokeObjectURL(editThumbnailPreview);
+    setEditThumbnailPreview(null);
+    setEditSelectedFile(null);
+    setEditPreviewVideoFile(null);
+    setEditThumbnailFile(null);
+    setEditStep("idle");
+    setEditProgress(0);
+    setEditingVideo(null);
+  };
+
+  const handleOpenEdit = (video: any) => {
+    const priceNum = Number(video.price) || 0;
+    const discNum = video.discountPrice != null ? Number(video.discountPrice) : null;
+    const calcDiscPct = (discNum && priceNum > 0)
+      ? String(Math.round((1 - discNum / priceNum) * 100))
+      : "";
+
+    setEditFormData({
+      title: video.title || "",
+      description: video.description || "",
+      price: String(video.price ?? ""),
+      discountPercent: calcDiscPct,
+      durationSeconds: video.durationSeconds ? String(video.durationSeconds) : "",
+      previewDurationSeconds: video.previewDurationSeconds ? String(video.previewDurationSeconds) : "",
+      videoUrl: video.videoUrl || "",
+      previewVideoUrl: video.previewVideoUrl || "",
+      thumbnailUrl: video.thumbnailUrl || "",
+      difficulty: video.difficulty || 1,
+    });
+    setEditSelectedCategoryId(video.categoryId ? String(video.categoryId) : "none");
+    setEditNewCategoryName("");
+    setEditVideoSource("keep");
+    setEditSelectedFile(null);
+    setEditDragOver(false);
+    setEditPreviewVideoSource("keep");
+    setEditPreviewVideoFile(null);
+    setEditPreviewVideoDragOver(false);
+    setEditThumbnailSource("keep");
+    setEditThumbnailFile(null);
+    setEditThumbnailDragOver(false);
+    if (editThumbnailPreview) URL.revokeObjectURL(editThumbnailPreview);
+    setEditThumbnailPreview(null);
+    setEditStep("idle");
+    setEditProgress(0);
+    setEditingVideo(video);
+  };
+
+  const handleEditThumbnailFileSelect = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Выбранный файл не является изображением", variant: "destructive" });
+      return;
+    }
+    if (editThumbnailPreview) URL.revokeObjectURL(editThumbnailPreview);
+    setEditThumbnailFile(file);
+    setEditThumbnailPreview(URL.createObjectURL(file));
+  };
+
+  const handleEditFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setEditDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("video/")) {
+      setEditSelectedFile(file);
+      try {
+        const v = document.createElement("video");
+        v.preload = "metadata";
+        v.onloadedmetadata = () => {
+          window.URL.revokeObjectURL(v.src);
+          const dur = Math.round(v.duration);
+          if (dur > 0) {
+            setEditFormData(prev => ({
+              ...prev,
+              durationSeconds: prev.durationSeconds || String(dur),
+            }));
+          }
+        };
+        v.src = URL.createObjectURL(file);
+      } catch {}
+    } else {
+      toast({ title: "Только видеофайлы", variant: "destructive" });
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingVideo) return;
+    if (!editFormData.title.trim() || !editFormData.price) {
+      toast({ title: "Заполните обязательные поля: Название и Цена", variant: "destructive" });
+      return;
+    }
+    if (editVideoSource === "file" && !editSelectedFile) {
+      toast({ title: "Выберите видеофайл для загрузки", variant: "destructive" });
+      return;
+    }
+    if (editVideoSource === "url" && !editFormData.videoUrl.trim()) {
+      toast({ title: "Введите ссылку на видео", variant: "destructive" });
+      return;
+    }
+
+    try {
+      setEditStep("saving");
+
+      // Category resolution
+      let resolvedCategoryId: number | null = null;
+      if (editSelectedCategoryId !== "none") {
+        resolvedCategoryId = Number(editSelectedCategoryId);
+      } else if (editNewCategoryName.trim()) {
+        const slug = editNewCategoryName.trim().toLowerCase().replace(/\s+/g, "-");
+        const cat = await createCategoryMut.mutateAsync({
+          data: {
+            name: editNewCategoryName.trim(),
+            slug: slug || `cat-${Date.now()}`,
+          }
+        });
+        resolvedCategoryId = cat.id;
+        refetchCategories();
+      }
+
+      // Thumbnail resolution
+      let resolvedThumbnail: string | null | undefined = undefined;
+      if (editThumbnailSource === "file" && editThumbnailFile) {
+        setEditStep("uploading");
+        const webpBlob = await convertImageToWebP(editThumbnailFile);
+        const uploadRes = await fetch("/api/admin/upload-image", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("auth_token")}`,
+            "Content-Type": "image/webp",
+          },
+          body: webpBlob,
+        });
+        if (!uploadRes.ok) throw new Error("Ошибка загрузки миниатюры");
+        const { url: publicUrl } = await uploadRes.json() as { url: string };
+        resolvedThumbnail = publicUrl;
+      } else if (editThumbnailSource === "url") {
+        resolvedThumbnail = editFormData.thumbnailUrl.trim() || null;
+      }
+
+      // Preview video resolution
+      let resolvedPreviewVideoUrl: string | null | undefined = undefined;
+      if (editPreviewVideoSource === "file" && editPreviewVideoFile) {
+        setEditStep("uploading");
+        const token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token");
+        const previewRes = await fetch(`/api/videos/${editingVideo.id}/preview-upload-url`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ contentType: editPreviewVideoFile.type || "video/mp4" }),
+        });
+        if (!previewRes.ok) throw new Error("Не удалось получить ссылку для загрузки демо-видео");
+        const { uploadUrl: previewUploadUrl, publicUrl: previewPublicUrl } = await previewRes.json() as { uploadUrl: string; publicUrl: string };
+
+        const putPreview = await fetch(previewUploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": editPreviewVideoFile.type || "video/mp4" },
+          body: editPreviewVideoFile,
+        });
+        if (!putPreview.ok) throw new Error("Ошибка загрузки демо-видео");
+
+        const completeRes = await fetch(`/api/videos/${editingVideo.id}/preview-complete`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ previewVideoUrl: previewPublicUrl }),
+        });
+        if (!completeRes.ok) throw new Error("Не удалось сохранить демо-видео");
+        resolvedPreviewVideoUrl = previewPublicUrl;
+      } else if (editPreviewVideoSource === "url") {
+        resolvedPreviewVideoUrl = editFormData.previewVideoUrl.trim() || null;
+      }
+
+      // Video URL / S3 upload resolution
+      let resolvedVideoUrl: string | null | undefined = undefined;
+      if (editVideoSource === "file" && editSelectedFile) {
+        setEditStep("uploading");
+        const { uploadUrl } = await getUploadUrlMut.mutateAsync({ id: editingVideo.id });
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader("Content-Type", editSelectedFile!.type || "video/mp4");
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setEditProgress(Math.round((e.loaded / e.total) * 100));
+            }
+          };
+          xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`HTTP ${xhr.status}`)));
+          xhr.onerror = () => reject(new Error("Upload failed"));
+          xhr.send(editSelectedFile);
+        });
+
+        setEditStep("processing");
+        await processVideoMut.mutateAsync({ id: editingVideo.id });
+      } else if (editVideoSource === "url") {
+        resolvedVideoUrl = editFormData.videoUrl.trim() || null;
+      }
+
+      // Calculations
+      const numPrice = Number(editFormData.price) || 0;
+      const numDiscountPercent = Number(editFormData.discountPercent) || 0;
+      const calculatedDiscountPrice = (numPrice > 0 && numDiscountPercent > 0 && numDiscountPercent < 100)
+        ? Math.round(numPrice * (1 - numDiscountPercent / 100))
+        : null;
+
+      const patchData: any = {
+        title: editFormData.title.trim(),
+        description: editFormData.description.trim() ? editFormData.description.trim() : null,
+        price: numPrice,
+        discountPrice: calculatedDiscountPrice,
+        categoryId: resolvedCategoryId,
+        difficulty: editFormData.difficulty || 1,
+        durationSeconds: editFormData.durationSeconds ? Number(editFormData.durationSeconds) : null,
+        previewDurationSeconds: editFormData.previewDurationSeconds ? Number(editFormData.previewDurationSeconds) : null,
+      };
+
+      if (resolvedThumbnail !== undefined) {
+        patchData.thumbnailUrl = resolvedThumbnail;
+      }
+      if (resolvedVideoUrl !== undefined) {
+        patchData.videoUrl = resolvedVideoUrl;
+      }
+      if (resolvedPreviewVideoUrl !== undefined) {
+        patchData.previewVideoUrl = resolvedPreviewVideoUrl;
+      }
+
+      setEditStep("saving");
+      await updateMut.mutateAsync({
+        id: editingVideo.id,
+        data: patchData,
+      });
+
+      setEditStep("done");
+      toast({ title: "✅ Курс успешно обновлен!", description: editFormData.title });
+      invalidateVideoCaches();
+      refetch();
+      setTimeout(resetEditDialog, 1200);
+    } catch (err: any) {
+      setEditStep("error");
+      toast({ title: "Ошибка при сохранении", description: err.message || "Не удалось обновить курс", variant: "destructive" });
+    }
+  };
+
+  const isEditWorking = ["saving", "uploading", "processing"].includes(editStep);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Точно удалить этот курс?")) return;
@@ -756,6 +1054,15 @@ export function AdminVideos() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8 rounded-lg hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        onClick={() => handleOpenEdit(v)}
+                        title="Редактировать курс (название, описание, раздел, видео...)"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 relative"
                         onClick={() => setSelectedVideoForAttachments(v)}
                         title="Материалы для печати (PDF, файлы к уроку)"
@@ -1263,6 +1570,601 @@ export function AdminVideos() {
                 <>
                   <Upload className="mr-2 h-4 w-4" />
                   Создать курс
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Edit Course Dialog ── */}
+      <Dialog open={!!editingVideo} onOpenChange={(open) => { if (!isEditWorking) { if (!open) resetEditDialog(); } }}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-black">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                <Pencil className="h-5 w-5" />
+              </div>
+              <div className="text-left">
+                <div>Редактировать курс #{editingVideo?.id}</div>
+                {editingVideo && (
+                  <div className="text-xs font-normal text-muted-foreground mt-0.5 truncate max-w-[400px]">
+                    {editingVideo.title}
+                  </div>
+                )}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Progress / Status Steps */}
+          {editStep !== "idle" && (
+            <div className={`rounded-xl p-4 border text-sm font-medium flex items-center gap-3 ${
+              editStep === "done" ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" :
+              editStep === "error" ? "bg-red-500/10 border-red-500/30 text-red-600" :
+              "bg-amber-500/10 border-amber-500/30 text-amber-600"
+            }`}>
+              {editStep === "done" && <CheckCircle2 className="h-5 w-5 shrink-0" />}
+              {editStep === "error" && <AlertCircle className="h-5 w-5 shrink-0" />}
+              {isEditWorking && <Loader2 className="h-5 w-5 shrink-0 animate-spin" />}
+              <div className="flex-1">
+                <div>{editStepLabels[editStep]}</div>
+                {editStep === "uploading" && (
+                  <div className="mt-2">
+                    <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                        style={{ width: `${editProgress}%` }}
+                      />
+                    </div>
+                    <div className="text-xs text-right mt-1">{editProgress}%</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-4">
+            {/* Title */}
+            <div className="grid gap-2">
+              <label className="text-sm font-semibold">Название курса <span className="text-red-500">*</span></label>
+              <Input
+                value={editFormData.title}
+                onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                placeholder="Например: Полный курс по Premiere Pro"
+                disabled={isEditWorking}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="grid gap-2">
+              <label className="text-sm font-semibold">Описание курса</label>
+              <textarea
+                value={editFormData.description}
+                onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                placeholder="Опишите чему научатся студенты..."
+                rows={3}
+                disabled={isEditWorking}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 resize-none"
+              />
+            </div>
+
+            {/* Price, Discount, Durations */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Цена ₽ <span className="text-red-500">*</span></label>
+                <Input
+                  type="number"
+                  value={editFormData.price}
+                  onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                  placeholder="5000"
+                  disabled={isEditWorking}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Скидка %</label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="99"
+                  value={editFormData.discountPercent}
+                  onChange={(e) => setEditFormData({ ...editFormData, discountPercent: e.target.value })}
+                  placeholder="20 (т.е. 20%)"
+                  disabled={isEditWorking}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Длительность (сек)</label>
+                <Input
+                  type="number"
+                  value={editFormData.durationSeconds}
+                  onChange={(e) => setEditFormData({ ...editFormData, durationSeconds: e.target.value })}
+                  placeholder="150"
+                  disabled={isEditWorking}
+                  title="Общая длительность курса в секундах"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Превью (сек)</label>
+                <Input
+                  type="number"
+                  value={editFormData.previewDurationSeconds}
+                  onChange={(e) => setEditFormData({ ...editFormData, previewDurationSeconds: e.target.value })}
+                  placeholder="180"
+                  disabled={isEditWorking}
+                  title="Длительность бесплатного превью"
+                />
+              </div>
+            </div>
+
+            {/* Helper preview when discount percent is entered */}
+            {Number(editFormData.price) > 0 && Number(editFormData.discountPercent) > 0 && Number(editFormData.discountPercent) < 100 && (
+              <div className="text-xs bg-amber-400/10 border border-amber-400/30 text-amber-600 dark:text-amber-400 p-2.5 rounded-lg flex items-center justify-between font-medium">
+                <span>🎯 Скидка: <strong>{Number(editFormData.discountPercent)}%</strong> (экономия {(Number(editFormData.price) - Math.round(Number(editFormData.price) * (1 - Number(editFormData.discountPercent) / 100))).toLocaleString("ru-RU")} ₽)</span>
+                <span className="font-bold text-sm">Итоговая цена: {Math.round(Number(editFormData.price) * (1 - Number(editFormData.discountPercent) / 100)).toLocaleString("ru-RU")} ₽</span>
+              </div>
+            )}
+
+            {/* Category / Department */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold">Раздел (Категория)</label>
+                  <button
+                    type="button"
+                    onClick={() => setCategoryManagerOpen(true)}
+                    className="text-xs text-amber-600 hover:text-amber-500 dark:text-amber-400 font-semibold underline underline-offset-2 cursor-pointer"
+                  >
+                    Управление
+                  </button>
+                </div>
+                <select
+                  value={editSelectedCategoryId}
+                  onChange={(e) => {
+                    setEditSelectedCategoryId(e.target.value);
+                    if (e.target.value !== "none") {
+                      setEditNewCategoryName("");
+                    }
+                  }}
+                  disabled={isEditWorking}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="none">Без раздела</option>
+                  {categories?.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold">Или создать новый раздел</label>
+                <Input
+                  value={editNewCategoryName}
+                  onChange={(e) => {
+                    setEditNewCategoryName(e.target.value);
+                    if (e.target.value.trim()) {
+                      setEditSelectedCategoryId("none");
+                    }
+                  }}
+                  placeholder="Например: Карточные трюки"
+                  disabled={isEditWorking}
+                />
+              </div>
+            </div>
+
+            {/* Difficulty */}
+            <TrickDifficultySelector
+              value={editFormData.difficulty}
+              onChange={(diff) => setEditFormData({ ...editFormData, difficulty: diff })}
+              disabled={isEditWorking}
+            />
+
+            {/* Thumbnail */}
+            <div className="grid gap-3">
+              <label className="text-sm font-semibold">Обложка курса (миниатюра)</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditThumbnailSource("keep")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editThumbnailSource === "keep"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  Оставить текущую
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditThumbnailSource("url")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editThumbnailSource === "url"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  Ссылка URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditThumbnailSource("file")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editThumbnailSource === "file"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Загрузить файл
+                </button>
+              </div>
+
+              {editThumbnailSource === "keep" && (
+                <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-xl border">
+                  {editingVideo?.thumbnailUrl ? (
+                    <img
+                      src={editingVideo.thumbnailUrl}
+                      alt="Current thumbnail"
+                      className="w-16 h-10 object-cover rounded border bg-slate-900 shrink-0"
+                    />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground shrink-0" />
+                  )}
+                  <div className="text-xs text-muted-foreground flex-1">
+                    Текущая обложка сохраняется без изменений.
+                  </div>
+                </div>
+              )}
+
+              {editThumbnailSource === "url" && (
+                <Input
+                  value={editFormData.thumbnailUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, thumbnailUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                  disabled={isEditWorking}
+                />
+              )}
+
+              {editThumbnailSource === "file" && (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setEditThumbnailDragOver(true); }}
+                  onDragLeave={() => setEditThumbnailDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setEditThumbnailDragOver(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) handleEditThumbnailFileSelect(file);
+                  }}
+                  onClick={() => !isEditWorking && editThumbnailInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                    editThumbnailDragOver ? "border-amber-400 bg-amber-400/10" :
+                    editThumbnailFile ? "border-emerald-400 bg-emerald-400/10" :
+                    "border-border hover:border-amber-400/60"
+                  } ${isEditWorking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <input
+                    ref={editThumbnailInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleEditThumbnailFileSelect(f); }}
+                    className="hidden"
+                    disabled={isEditWorking}
+                  />
+                  {editThumbnailFile && editThumbnailPreview ? (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={editThumbnailPreview}
+                        alt="preview"
+                        className="w-16 h-10 object-cover rounded border bg-muted shrink-0"
+                      />
+                      <div className="text-left flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-emerald-600 truncate">{editThumbnailFile.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {(editThumbnailFile.size / 1024).toFixed(0)} KB · Будет автоматически конвертирована в WebP
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditThumbnailFile(null);
+                          if (editThumbnailPreview) URL.revokeObjectURL(editThumbnailPreview);
+                          setEditThumbnailPreview(null);
+                        }}
+                        className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageIcon className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                      <div className="font-semibold text-sm mb-1">Перетащите новую обложку сюда</div>
+                      <div className="text-xs text-muted-foreground">или нажмите для выбора (JPG, PNG, WEBP...)</div>
+                      <div className="text-xs text-amber-600 font-medium mt-1">⚡ Автоматически конвертируется в WebP</div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Preview Video (Demo for all visitors) */}
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-semibold">🎬 Демо-видео (превью для всех посетителей)</label>
+                <span className="text-xs text-amber-600 font-semibold bg-amber-400/10 border border-amber-400/30 px-2 py-0.5 rounded-full">Бесплатный просмотр</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditPreviewVideoSource("keep")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editPreviewVideoSource === "keep"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  Оставить текущее
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditPreviewVideoSource("url")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editPreviewVideoSource === "url"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  Ссылка
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditPreviewVideoSource("file")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editPreviewVideoSource === "file"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Загрузить файл
+                </button>
+              </div>
+
+              {editPreviewVideoSource === "keep" && (
+                <div className="p-3 bg-muted/40 rounded-xl border text-xs text-muted-foreground flex items-center gap-2">
+                  <Film className="h-4 w-4 text-muted-foreground" />
+                  <span>
+                    {editingVideo?.previewVideoUrl
+                      ? `Текущее демо-видео активно (${editingVideo.previewVideoUrl.substring(0, 40)}...)`
+                      : "Демо-видео не было задано (используется авто-превью)"}
+                  </span>
+                </div>
+              )}
+
+              {editPreviewVideoSource === "url" && (
+                <Input
+                  value={editFormData.previewVideoUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, previewVideoUrl: e.target.value })}
+                  placeholder="https://vimeo.com/... (ссылка на демо-видео)"
+                  disabled={isEditWorking}
+                />
+              )}
+
+              {editPreviewVideoSource === "file" && (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setEditPreviewVideoDragOver(true); }}
+                  onDragLeave={() => setEditPreviewVideoDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setEditPreviewVideoDragOver(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file && file.type.startsWith("video/")) {
+                      setEditPreviewVideoFile(file);
+                    } else {
+                      toast({ title: "Только видеофайлы", variant: "destructive" });
+                    }
+                  }}
+                  onClick={() => !isEditWorking && editPreviewVideoInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                    editPreviewVideoDragOver ? "border-amber-400 bg-amber-400/10" :
+                    editPreviewVideoFile ? "border-emerald-400 bg-emerald-400/10" :
+                    "border-border hover:border-amber-400/60"
+                  } ${isEditWorking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <input
+                    ref={editPreviewVideoInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) setEditPreviewVideoFile(f); }}
+                    className="hidden"
+                    disabled={isEditWorking}
+                  />
+                  {editPreviewVideoFile ? (
+                    <div className="flex items-center gap-3">
+                      <Film className="h-8 w-8 text-emerald-600 shrink-0" />
+                      <div className="text-left flex-1 min-w-0">
+                        <div className="font-semibold text-sm text-emerald-600 truncate">{editPreviewVideoFile.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {(editPreviewVideoFile.size / (1024 * 1024)).toFixed(1)} MB
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setEditPreviewVideoFile(null); }}
+                        className="ml-auto text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                      <div className="font-semibold text-sm mb-1">Перетащите новое демо-видео сюда</div>
+                      <div className="text-xs text-muted-foreground">или нажмите для выбора с устройства</div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Full Course Video for Buyers */}
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-semibold">🔒 Полный видеокурс <span className="text-red-500">*</span></label>
+                <span className="text-xs text-emerald-600 font-semibold bg-emerald-400/10 border border-emerald-400/30 px-2 py-0.5 rounded-full">Только для покупателей</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditVideoSource("keep")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editVideoSource === "keep"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  Оставить текущее
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditVideoSource("url")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editVideoSource === "url"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  <LinkIcon className="h-3.5 w-3.5" />
+                  Ссылка на видео
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditVideoSource("file")}
+                  disabled={isEditWorking}
+                  className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                    editVideoSource === "file"
+                      ? "border-amber-400 bg-amber-400/10 text-amber-600"
+                      : "border-border hover:border-amber-400/50"
+                  }`}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Загрузить новый файл
+                </button>
+              </div>
+
+              {editVideoSource === "keep" && (
+                <div className="p-3 bg-muted/40 rounded-xl border text-xs text-muted-foreground flex items-center gap-2">
+                  <Film className="h-4 w-4 text-emerald-600" />
+                  <span>Текущее видео курса остаётся без изменений. Будут обновлены только изменённые данные.</span>
+                </div>
+              )}
+
+              {editVideoSource === "url" && (
+                <div className="grid gap-2">
+                  <Input
+                    value={editFormData.videoUrl}
+                    onChange={(e) => setEditFormData({ ...editFormData, videoUrl: e.target.value })}
+                    placeholder="https://vimeo.com/... или https://youtube.com/..."
+                    disabled={isEditWorking}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Вставьте прямую ссылку на видео. Файл не будет скачан — ссылка сохраняется как есть.
+                  </p>
+                </div>
+              )}
+
+              {editVideoSource === "file" && (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setEditDragOver(true); }}
+                  onDragLeave={() => setEditDragOver(false)}
+                  onDrop={handleEditFileDrop}
+                  onClick={() => !isEditWorking && editFileInputRef.current?.click()}
+                  className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+                    editDragOver ? "border-amber-400 bg-amber-400/10" :
+                    editSelectedFile ? "border-emerald-400 bg-emerald-400/10" :
+                    "border-border hover:border-amber-400/60"
+                  } ${isEditWorking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setEditSelectedFile(file);
+                        try {
+                          const v = document.createElement("video");
+                          v.preload = "metadata";
+                          v.onloadedmetadata = () => {
+                            window.URL.revokeObjectURL(v.src);
+                            const dur = Math.round(v.duration);
+                            if (dur > 0) {
+                              setEditFormData(prev => ({
+                                ...prev,
+                                durationSeconds: prev.durationSeconds || String(dur),
+                              }));
+                            }
+                          };
+                          v.src = URL.createObjectURL(file);
+                        } catch {}
+                      }
+                    }}
+                    className="hidden"
+                    disabled={isEditWorking}
+                  />
+                  {editSelectedFile ? (
+                    <div className="flex items-center justify-center gap-3">
+                      <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                      <div className="text-left">
+                        <div className="font-semibold text-sm text-emerald-600">{editSelectedFile.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {(editSelectedFile.size / 1024 / 1024).toFixed(1)} MB
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setEditSelectedFile(null); }}
+                        className="ml-auto text-muted-foreground hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+                      <div className="font-semibold text-sm mb-1">Перетащите новое видео сюда</div>
+                      <div className="text-xs text-muted-foreground">или нажмите для выбора файла (MP4, MOV, AVI, MKV...)</div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" onClick={resetEditDialog} disabled={isEditWorking}>Отмена</Button>
+            <Button onClick={handleSaveEdit} disabled={isEditWorking} className="min-w-[160px] bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold">
+              {isEditWorking ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {editStep === "uploading" ? `${editProgress}%` : "Сохранение..."}
+                </>
+              ) : (
+                <>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Сохранить изменения
                 </>
               )}
             </Button>
