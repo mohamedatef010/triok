@@ -21,27 +21,20 @@ function getStoredLocalCart(): CartItem[] {
   }
 }
 
-/** Returns true when the user has a valid auth token stored locally,
+/** Returns true when the user has a valid customer auth token stored locally,
  *  even before useGetMe finishes its first fetch. */
 function hasAuthToken(): boolean {
-  return !!(
-    localStorage.getItem("auth_token") ||
-    localStorage.getItem("admin_token")
-  );
+  return !!localStorage.getItem("auth_token");
 }
 
 export function useCart() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [localCart, setLocalCart] = useState<CartItem[]>(getStoredLocalCart);
   const isSyncing = useRef(false);
 
-  // Enable server cart fetch as soon as a token exists in localStorage,
-  // not just after useGetMe resolves — avoids the race condition window.
-  const [tokenPresent, setTokenPresent] = useState(hasAuthToken);
-  useEffect(() => {
-    setTokenPresent(hasAuthToken());
-  }, [isAuthenticated]);
+  // Enable server cart fetch when authenticated, or while auth is still loading and a token exists.
+  const tokenPresent = isAuthenticated || (authLoading && hasAuthToken());
 
   const { data: serverCart, refetch } = useGetCart({
     query: {
@@ -126,25 +119,27 @@ export function useCart() {
 
   const serverCartItems = Array.isArray(serverCart?.items) ? serverCart!.items : 
                           Array.isArray(serverCart) ? (serverCart as any) : [];
-  // Use server cart when token is present (even if useGetMe is still loading)
-  const useServerCart = tokenPresent;
+  // Use server cart strictly when authenticated (or initial loading with a customer token)
+  const useServerCart = isAuthenticated || (authLoading && hasAuthToken());
   const items: CartItem[] = useServerCart ? serverCartItems : localCart;
   const total = useServerCart 
     ? (serverCart?.total || 0)
     : localCart.reduce((acc, item) => acc + (item.discountPrice ?? item.price), 0);
 
   const add = async (item: CartItem) => {
-    // Use hasAuthToken() instead of isAuthenticated to avoid a race condition:
-    // isAuthenticated can be false while useGetMe is still loading, even though
-    // the user is actually logged in (token exists in localStorage).
-    if (hasAuthToken()) {
+    if (isAuthenticated) {
       try {
         const res = await addToCartMut.mutateAsync({ data: { videoId: item.videoId } });
         if (res && Array.isArray(res.items)) {
           queryClient.setQueryData(getGetCartQueryKey(), res);
         }
-      } catch (err) {
-        console.error("Error adding to cart:", err);
+      } catch (err: any) {
+        console.error("Error adding to cart on server:", err);
+        // Fallback: If server request fails (e.g. expired session), keep in localCart
+        const current = getStoredLocalCart();
+        if (!current.find(i => Number(i.videoId) === Number(item.videoId))) {
+          updateLocalCart([...current, item]);
+        }
       }
       await queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
       await queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
@@ -152,14 +147,14 @@ export function useCart() {
       window.dispatchEvent(new Event(CART_EVENT));
     } else {
       const current = getStoredLocalCart();
-      if (!current.find(i => i.videoId === item.videoId)) {
+      if (!current.find(i => Number(i.videoId) === Number(item.videoId))) {
         updateLocalCart([...current, item]);
       }
     }
   };
 
   const remove = async (videoId: number) => {
-    if (hasAuthToken()) {
+    if (isAuthenticated) {
       try {
         const res = await removeFromCartMut.mutateAsync({ videoId });
         if (res && Array.isArray(res.items)) {
@@ -174,12 +169,12 @@ export function useCart() {
       window.dispatchEvent(new Event(CART_EVENT));
     } else {
       const current = getStoredLocalCart();
-      updateLocalCart(current.filter(i => i.videoId !== videoId));
+      updateLocalCart(current.filter(i => Number(i.videoId) !== Number(videoId)));
     }
   };
 
   const clear = async () => {
-    if (hasAuthToken()) {
+    if (isAuthenticated) {
       try {
         await clearCartMut.mutateAsync();
         queryClient.setQueryData(getGetCartQueryKey(), { items: [], total: 0 });
@@ -197,9 +192,9 @@ export function useCart() {
 
   const isInCart = (videoId: number) => {
     if (useServerCart) {
-      return serverCartItems.some((i: any) => i.videoId === videoId);
+      return serverCartItems.some((i: any) => Number(i.videoId) === Number(videoId));
     }
-    return localCart.some((i: any) => i.videoId === videoId);
+    return localCart.some((i: any) => Number(i.videoId) === Number(videoId));
   };
 
   return {

@@ -1778,6 +1778,20 @@ export function HomePage() {
                 ))}
               </div>
 
+              {/* ── Mobile: "Все видео" Button below videos ── */}
+              <div className={`justify-center mt-8 ${displayVideos.length > 8 ? "flex lg:hidden" : "flex sm:hidden"}`}>
+                <Button 
+                  variant="outline" 
+                  className="w-full xs:w-auto min-w-[200px] group flex items-center justify-center gap-2 rounded-full border-primary/20 hover:border-primary hover:text-primary transition-all duration-300 font-bold px-7 h-12 text-sm shadow-sm"
+                  asChild
+                >
+                  <Link href="/catalog">
+                    Все видео
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
+                  </Link>
+                </Button>
+              </div>
+
               {/* ── Desktop: standard grid layout with fixed columns ── */}
               <div ref={spiralRef} className="hidden lg:block">
 

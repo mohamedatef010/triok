@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { 
   useGetMe, 
   useLogout, 
@@ -14,6 +15,14 @@ export function useAuth() {
       gcTime: 60_000,
     } as any,
   });
+
+  // Automatically remove invalid or expired customer auth_token so guest flow stays clean
+  useEffect(() => {
+    if (!isLoading && !user && localStorage.getItem("auth_token")) {
+      localStorage.removeItem("auth_token");
+      queryClient.invalidateQueries({ queryKey: ["/api/cart"] });
+    }
+  }, [isLoading, user, queryClient]);
 
   const logoutMutation = useLogout({
     mutation: {
