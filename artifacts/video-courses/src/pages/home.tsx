@@ -389,21 +389,18 @@ export function HomePage() {
   const allAvailableVideos = catalogVideos.length > 0 ? catalogVideos : featuredVideos;
   const displayVideos = allAvailableVideos;
 
-  // Responsive page size: Always 2 rows!
+  // Responsive page size:
   // Desktop (>= 1024px): 4 cols x 2 rows = 8 cards
-  // Tablet (640px - 1023px): 2 cols x 2 rows = 4 cards
-  // Mobile (< 640px): 1 col x 2 rows = 2 cards
+  // Tablet & Mobile (< 1024px): 2 cols x 2 rows = 4 cards
   const [pageSize, setPageSize] = useState(8);
 
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
       if (w >= 1024) {
-        setPageSize(8);
-      } else if (w >= 640) {
-        setPageSize(4);
+        setPageSize(8); // Desktop: 8 cards
       } else {
-        setPageSize(2);
+        setPageSize(4); // Tablet & Mobile: 4 cards
       }
     };
     handleResize();
@@ -804,45 +801,45 @@ export function HomePage() {
             className="absolute inset-0 flex items-center justify-center group/btn focus:outline-none"
             title="Смотреть курс"
           >
-            <div className="h-14 w-14 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-400/40 group-hover/btn:scale-115 transition-transform duration-300">
-              <Play className="h-6 w-6 fill-current ml-1" />
+            <div className="h-10 w-10 sm:h-14 sm:w-14 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-400/40 group-hover/btn:scale-115 transition-transform duration-300">
+              <Play className="h-4 w-4 sm:h-6 sm:w-6 fill-current ml-0.5 sm:ml-1" />
             </div>
           </Link>
 
           {/* Discount Badge */}
           {video.discountPrice && (
-            <div className="absolute top-3 left-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[11px] font-black px-2.5 py-1 rounded-lg shadow-lg border border-white/20">
+            <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-gradient-to-r from-red-600 to-amber-600 text-white text-[9px] sm:text-[11px] font-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg shadow-lg border border-white/20">
               -{Math.round((1 - video.discountPrice / video.price) * 100)}%
             </div>
           )}
 
           {/* Category Pill */}
           {video.categoryName && (
-            <div className="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-amber-400 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border border-amber-400/30">
+            <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-slate-950/80 backdrop-blur-md text-amber-400 text-[9px] sm:text-[11px] font-extrabold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg border border-amber-400/30">
               {video.categoryName}
             </div>
           )}
 
           {/* Duration badge */}
           {durationText && (
-            <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[11px] font-semibold text-white/90 bg-slate-950/70 backdrop-blur-md px-2 py-0.5 rounded-md">
-              <Clock className="h-3 w-3 text-amber-400" /> {durationText}
+            <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 flex items-center gap-1 text-[9px] sm:text-[11px] font-semibold text-white/90 bg-slate-950/70 backdrop-blur-md px-1.5 sm:px-2 py-0.5 rounded-md">
+              <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-400" /> {durationText}
             </div>
           )}
         </div>
 
         {/* Card Content */}
-        <div className="p-5 flex flex-col justify-between flex-grow">
+        <div className="p-3 sm:p-5 flex flex-col justify-between flex-grow">
           <div>
             <Link href={`/video/${video.id}`}>
-              <h3 className="font-bold text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-200 mb-2 cursor-pointer">
+              <h3 className="font-bold text-xs sm:text-base line-clamp-2 leading-snug group-hover:text-primary transition-colors duration-200 mb-1.5 sm:mb-2 cursor-pointer">
                 {video.title}
               </h3>
             </Link>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mb-4">
-              <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                <Star className="h-3.5 w-3.5 fill-current mr-1 text-amber-400" />
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground mb-2 sm:mb-4">
+              <div className="flex items-center text-amber-400 font-bold bg-amber-400/10 px-1.5 sm:px-2 py-0.5 rounded-md border border-amber-400/20">
+                <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current mr-0.5 sm:mr-1 text-amber-400" />
                 <span>{video.averageRating ? Number(video.averageRating).toFixed(1) : "0.0"}</span>
               </div>
               <span className="text-muted-foreground">•</span>
@@ -850,20 +847,20 @@ export function HomePage() {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-border/60 flex items-center justify-between mt-auto">
-            <div className="flex items-baseline gap-2">
+          <div className="pt-2 sm:pt-3 border-t border-border/60 flex items-center justify-between mt-auto">
+            <div className="flex items-baseline gap-1 sm:gap-2">
               {video.discountPrice ? (
                 <>
-                  <span className="font-black text-lg text-primary">{video.discountPrice} ₽</span>
-                  <span className="text-xs text-muted-foreground line-through">{video.price} ₽</span>
+                  <span className="font-black text-sm sm:text-lg text-primary">{video.discountPrice} ₽</span>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground line-through">{video.price} ₽</span>
                 </>
               ) : (
-                <span className="font-black text-lg text-primary">{video.price} ₽</span>
+                <span className="font-black text-sm sm:text-lg text-primary">{video.price} ₽</span>
               )}
             </div>
 
             <Link href={`/video/${video.id}`}>
-              <Button size="sm" variant="ghost" className="text-xs font-bold text-amber-500 hover:text-amber-400 hover:bg-amber-400/10 rounded-full">
+              <Button size="sm" variant="ghost" className="text-[10px] sm:text-xs px-2 sm:px-3 h-7 sm:h-8 font-bold text-amber-500 hover:text-amber-400 hover:bg-amber-400/10 rounded-full">
                 Подробнее &rarr;
               </Button>
             </Link>
@@ -1868,7 +1865,7 @@ export function HomePage() {
                 <CarouselContent className="-ml-0 py-2">
                   {videoPages.map((pageVideos: any[], pageIdx: number) => (
                     <CarouselItem key={pageIdx} className="basis-full pl-0">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                         {pageVideos.map((video: any, videoIdx: number) => (
                           <div
                             key={video.id}
