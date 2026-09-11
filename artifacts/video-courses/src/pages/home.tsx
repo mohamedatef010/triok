@@ -2,12 +2,14 @@ import { useState, useRef, Fragment, useEffect, useCallback, useMemo } from "rea
 import { useSEO } from "@/hooks/use-seo";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { useGetFeaturedVideos, useGetVideoPlayback } from "@workspace/api-client-react";
+import { useGetFeaturedVideos, useGetVideoPlayback, useListVideos } from "@workspace/api-client-react";
 import { ModernVideoPlayer } from "@/components/video-player/modern-video-player";
 import { Button } from "@/components/ui/button";
 import {
   Play,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Star,
   CheckCircle,
   Clock,
@@ -29,6 +31,12 @@ import {
   Eye,
 } from "lucide-react";
 
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { SOCIAL_PLATFORMS, openSocialLink } from "@/components/ui/social-icons";
 import { VideoGridSkeleton, ErrorState } from "@/components/ui/states";
 import { Card, CardContent } from "@/components/ui/card";
@@ -373,6 +381,41 @@ export function HomePage() {
 
   const { data: rawFeaturedVideos, isLoading, error } = useGetFeaturedVideos();
   const apiVideos = Array.isArray(rawFeaturedVideos) ? rawFeaturedVideos : [];
+
+  // Total published videos count for calculating remaining count
+  const { data: allVideosData } = useListVideos({ limit: 1 });
+  const totalCatalogVideos = allVideosData?.total ?? apiVideos.length;
+  const remainingVideosCount = Math.max(0, totalCatalogVideos - apiVideos.length);
+
+  // Carousel controls state for videos section
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const onSelect = () => {
+      setCanScrollPrev(carouselApi.canScrollPrev());
+      setCanScrollNext(carouselApi.canScrollNext());
+      setSelectedIndex(carouselApi.selectedScrollSnap());
+    };
+
+    setScrollSnaps(carouselApi.scrollSnapList());
+    onSelect();
+
+    carouselApi.on("select", onSelect);
+    carouselApi.on("reInit", () => {
+      setScrollSnaps(carouselApi.scrollSnapList());
+      onSelect();
+    });
+
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
 
   // Hero Section Settings (managed by admin in /admm/hero-section)
   const { data: heroSettings } = useQuery<any>({
@@ -1745,12 +1788,6 @@ export function HomePage() {
               {/* Updated subheading */}
               <p className="text-muted-foreground text-base">Карточные трюки, иллюзии, секретные техники и мастер-классы от профессионального фокусника. Выбирай то, что тебе интересно, и начинай удивлять окружающих.</p>
             </div>
-            <Button variant="outline" className="hidden sm:flex group items-center gap-2 rounded-full border-primary/20 hover:border-primary hover:text-primary transition-all duration-300 font-bold px-6" asChild>
-              <Link href="/catalog">
-                Все видео
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
-              </Link>
-            </Button>
           </div>
 
           {isLoading ? (
@@ -1764,65 +1801,118 @@ export function HomePage() {
               <p className="text-muted-foreground max-w-sm mx-auto">Новые видеоуроки уже готовятся — следите за обновлениями!</p>
             </div>
           ) : (
-            <>
-              {/* ── Mobile / Tablet: comfortable classic grid ── */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-7">
-                {displayVideos.slice(0, 8).map((video: any, videoIdx: number) => (
-                  <div
-                    key={video.id}
-                    data-sr-delay={String([0, 80, 160, 260, 80, 160, 260, 320][videoIdx] ?? 0)}
-                    className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
-                  >
-                    {renderCourseCard(video)}
-                  </div>
-                ))}
+            <div ref={spiralRef} className="w-full">
+              {/* Spiral start marker */}
+              <div className="flex items-center gap-2 mb-6 sr sr-fade-in">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)] animate-pulse" />
+                <span className="h-px w-10 bg-gradient-to-r from-amber-400/70 to-transparent" />
               </div>
 
-              {/* ── Mobile: "Все видео" Button below videos ── */}
-              <div className={`justify-center mt-8 ${displayVideos.length > 8 ? "flex lg:hidden" : "flex sm:hidden"}`}>
-                <Button 
-                  variant="outline" 
-                  className="w-full xs:w-auto min-w-[200px] group flex items-center justify-center gap-2 rounded-full border-primary/20 hover:border-primary hover:text-primary transition-all duration-300 font-bold px-7 h-12 text-sm shadow-sm"
-                  asChild
-                >
-                  <Link href="/catalog">
-                    Все видео
-                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300" />
-                  </Link>
-                </Button>
-              </div>
-
-              {/* ── Desktop: standard grid layout with fixed columns ── */}
-              <div ref={spiralRef} className="hidden lg:block">
-
-                {/* Spiral start marker */}
-                <div className="flex items-center gap-2 mb-4 sr sr-fade-in">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)] animate-pulse" />
-                  <span className="h-px w-10 bg-gradient-to-r from-amber-400/70 to-transparent" />
-                </div>
-
-                {/* Desktop Grid — fixed 4 columns, natural card sizes */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {/* ── Modern Responsive Video Carousel ── */}
+              <Carousel
+                opts={{
+                  align: "start",
+                  slidesToScroll: "auto",
+                  containScroll: "trimSnaps",
+                }}
+                setApi={setCarouselApi}
+                className="w-full relative"
+              >
+                <CarouselContent className="-ml-5 sm:-ml-6 py-2">
                   {displayVideos.map((video: any, videoIdx: number) => (
-                    <div
+                    <CarouselItem
                       key={video.id}
-                      data-sr-delay={String([0, 100, 200, 300][videoIdx % 4] ?? 0)}
-                      className="sr sr-fade-up group flex flex-col glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
+                      className="pl-5 sm:pl-6 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
                     >
-                      {renderCourseCard(video)}
-                    </div>
+                      <div
+                        data-sr-delay={String([0, 80, 160, 240][videoIdx % 4] ?? 0)}
+                        className="sr sr-fade-up group flex flex-col h-full glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
+                      >
+                        {renderCourseCard(video)}
+                      </div>
+                    </CarouselItem>
                   ))}
+                </CarouselContent>
+              </Carousel>
+
+              {/* Spiral end marker */}
+              <div className="flex items-center justify-end gap-2 mt-6">
+                <span className="h-px w-10 bg-gradient-to-l from-amber-400/70 to-transparent" />
+                <span className="h-2 w-2 rounded-full bg-amber-400/80" />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
+                <span className="h-1 w-1 rounded-full bg-amber-400/40" />
+              </div>
+
+              {/* ── Modern Navigation & "Все видео" Controls below videos (Desktop, Tablet & Mobile) ── */}
+              <div className="flex flex-col items-center justify-center gap-4 mt-8">
+                <div className="inline-flex items-center gap-3 p-1.5 rounded-full bg-card/90 dark:bg-card/70 backdrop-blur-md border border-border/80 shadow-lg shadow-black/5 dark:shadow-black/25">
+                  {/* Left Arrow Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => carouselApi?.scrollPrev()}
+                    disabled={!canScrollPrev}
+                    className="h-11 w-11 rounded-full text-foreground/80 hover:text-amber-500 hover:bg-amber-400/10 disabled:opacity-25 disabled:pointer-events-none transition-all duration-200"
+                    title="Предыдущие видео"
+                    aria-label="Предыдущие видео"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+
+                  {/* "Все видео" Button with remaining videos count badge */}
+                  <Button
+                    variant="outline"
+                    className="group flex items-center justify-center gap-2.5 rounded-full border-primary/25 hover:border-primary hover:text-primary transition-all duration-300 font-bold px-7 h-11 text-sm shadow-sm hover:shadow-md bg-background/60 hover:bg-background"
+                    asChild
+                  >
+                    <Link href="/catalog">
+                      <span>Все видео</span>
+                      {remainingVideosCount > 0 && (
+                        <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-[11px] font-black rounded-full bg-amber-400/15 text-amber-600 dark:text-amber-400 border border-amber-400/30 group-hover:bg-amber-400 group-hover:text-slate-950 transition-colors duration-300">
+                          +{remainingVideosCount}
+                        </span>
+                      )}
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1.5 transition-transform duration-300 text-amber-500" />
+                    </Link>
+                  </Button>
+
+                  {/* Right Arrow Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => carouselApi?.scrollNext()}
+                    disabled={!canScrollNext}
+                    className="h-11 w-11 rounded-full text-foreground/80 hover:text-amber-500 hover:bg-amber-400/10 disabled:opacity-25 disabled:pointer-events-none transition-all duration-200"
+                    title="Следующие видео"
+                    aria-label="Следующие видео"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
                 </div>
 
-                {/* Spiral end marker */}
-                <div className="flex items-center justify-end gap-2 mt-4">
-                  <span className="h-px w-10 bg-gradient-to-l from-amber-400/70 to-transparent" />
-                  <span className="h-2 w-2 rounded-full bg-amber-400/80" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
-                  <span className="h-1 w-1 rounded-full bg-amber-400/40" />
-                </div>
+                {/* Pagination indicator dots */}
+                {scrollSnaps.length > 1 && (
+                  <div className="flex items-center gap-1.5 pt-1" aria-label="Слайды каталога">
+                    {scrollSnaps.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => carouselApi?.scrollTo(idx)}
+                        className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                          idx === selectedIndex
+                            ? "w-7 bg-gradient-to-r from-amber-400 to-amber-500 shadow-[0_0_10px_rgba(251,191,36,0.6)]"
+                            : "w-2 bg-muted-foreground/25 hover:bg-muted-foreground/50"
+                        }`}
+                        aria-label={`Перейти к слайду ${idx + 1}`}
+                        aria-current={idx === selectedIndex ? "true" : undefined}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            </>
+            </div>
           )}
         </div>
       </section>
