@@ -379,13 +379,52 @@ export function HomePage() {
     ]
   });
 
-  const { data: rawFeaturedVideos, isLoading, error } = useGetFeaturedVideos();
-  const apiVideos = Array.isArray(rawFeaturedVideos) ? rawFeaturedVideos : [];
+  const { data: rawFeaturedVideos, isLoading: isFeaturedLoading } = useGetFeaturedVideos();
+  // Fetch up to 32 published videos so arrows can flip through multiple 2-row pages
+  const { data: catalogVideosData, isLoading: isCatalogLoading } = useListVideos({ limit: 32 });
+
+  const isLoading = isFeaturedLoading && isCatalogLoading;
+  const catalogVideos = Array.isArray(catalogVideosData?.videos) ? catalogVideosData.videos : [];
+  const featuredVideos = Array.isArray(rawFeaturedVideos) ? rawFeaturedVideos : [];
+  const allAvailableVideos = catalogVideos.length > 0 ? catalogVideos : featuredVideos;
+  const displayVideos = allAvailableVideos;
+
+  // Responsive page size: Always 2 rows!
+  // Desktop (>= 1024px): 4 cols x 2 rows = 8 cards
+  // Tablet (640px - 1023px): 2 cols x 2 rows = 4 cards
+  // Mobile (< 640px): 1 col x 2 rows = 2 cards
+  const [pageSize, setPageSize] = useState(8);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const w = window.innerWidth;
+      if (w >= 1024) {
+        setPageSize(8);
+      } else if (w >= 640) {
+        setPageSize(4);
+      } else {
+        setPageSize(2);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Split available videos into 2-row pages
+  const videoPages = useMemo(() => {
+    if (allAvailableVideos.length === 0) return [];
+    const pages: any[][] = [];
+    for (let i = 0; i < allAvailableVideos.length; i += pageSize) {
+      pages.push(allAvailableVideos.slice(i, i + pageSize));
+    }
+    return pages;
+  }, [allAvailableVideos, pageSize]);
 
   // Total published videos count for calculating remaining count
-  const { data: allVideosData } = useListVideos({ limit: 1 });
-  const totalCatalogVideos = allVideosData?.total ?? apiVideos.length;
-  const remainingVideosCount = Math.max(0, totalCatalogVideos - apiVideos.length);
+  const totalCatalogVideos = catalogVideosData?.total ?? allAvailableVideos.length;
+  // Remaining videos count beyond the first visible 2-row page
+  const remainingVideosCount = Math.max(0, totalCatalogVideos - Math.min(totalCatalogVideos, pageSize));
 
   // Carousel controls state for videos section
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
@@ -416,6 +455,17 @@ export function HomePage() {
       carouselApi.off("select", onSelect);
     };
   }, [carouselApi]);
+
+  // Re-init carousel when videoPages change (e.g. on screen resize or data loaded)
+  useEffect(() => {
+    if (carouselApi) {
+      carouselApi.reInit();
+      setCanScrollPrev(carouselApi.canScrollPrev());
+      setCanScrollNext(carouselApi.canScrollNext());
+      setSelectedIndex(carouselApi.selectedScrollSnap());
+      setScrollSnaps(carouselApi.scrollSnapList());
+    }
+  }, [carouselApi, videoPages.length, pageSize]);
 
   // Hero Section Settings (managed by admin in /admm/hero-section)
   const { data: heroSettings } = useQuery<any>({
@@ -520,8 +570,6 @@ export function HomePage() {
     };
   };
 
-  // Only show real videos added by admin via API
-  const displayVideos = apiVideos;
 
   // Active Video Modal State
   const [activePreviewVideo, setActivePreviewVideo] = useState<any | null>(null);
@@ -1808,27 +1856,28 @@ export function HomePage() {
                 <span className="h-px w-10 bg-gradient-to-r from-amber-400/70 to-transparent" />
               </div>
 
-              {/* ── Modern Responsive Video Carousel ── */}
+              {/* ── 2-Row Responsive Video Carousel ── */}
               <Carousel
                 opts={{
                   align: "start",
-                  slidesToScroll: "auto",
-                  containScroll: "trimSnaps",
+                  loop: false,
                 }}
                 setApi={setCarouselApi}
                 className="w-full relative"
               >
-                <CarouselContent className="-ml-5 sm:-ml-6 py-2">
-                  {displayVideos.map((video: any, videoIdx: number) => (
-                    <CarouselItem
-                      key={video.id}
-                      className="pl-5 sm:pl-6 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
-                    >
-                      <div
-                        data-sr-delay={String([0, 80, 160, 240][videoIdx % 4] ?? 0)}
-                        className="sr sr-fade-up group flex flex-col h-full glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
-                      >
-                        {renderCourseCard(video)}
+                <CarouselContent className="-ml-0 py-2">
+                  {videoPages.map((pageVideos: any[], pageIdx: number) => (
+                    <CarouselItem key={pageIdx} className="basis-full pl-0">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {pageVideos.map((video: any, videoIdx: number) => (
+                          <div
+                            key={video.id}
+                            data-sr-delay={String([0, 80, 160, 240, 80, 160, 240, 320][videoIdx % 8] ?? 0)}
+                            className="sr sr-fade-up group flex flex-col h-full glass-card-hover rounded-3xl bg-card border shadow-md overflow-hidden relative transition-all duration-400 hover:shadow-2xl hover:border-amber-400/40 hover:-translate-y-1.5"
+                          >
+                            {renderCourseCard(video)}
+                          </div>
+                        ))}
                       </div>
                     </CarouselItem>
                   ))}
