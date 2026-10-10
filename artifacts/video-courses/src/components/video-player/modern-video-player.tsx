@@ -128,6 +128,8 @@ export function ModernVideoPlayer({
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [showVolumePopover, setShowVolumePopover] = useState(false);
+  const volumePopoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Quality settings
   const [qualityOptions, setQualityOptions] = useState<VideoQualityOption[]>([
@@ -484,6 +486,20 @@ export function ModernVideoPlayer({
     setPlaybackSpeed(speed);
     setOpenSettingsMenu(false);
     setSettingsSubmenu("root");
+  };
+
+  const handleVolumeButtonClick = () => {
+    if (isMuted) {
+      setIsMuted(false);
+      if (volume === 0) setVolume(1);
+    } else {
+      setIsMuted(true);
+    }
+    setShowVolumePopover(true);
+    if (volumePopoverTimeoutRef.current) clearTimeout(volumePopoverTimeoutRef.current);
+    volumePopoverTimeoutRef.current = setTimeout(() => {
+      setShowVolumePopover(false);
+    }, 3500);
   };
 
   // Fullscreen toggle (Mobile & Desktop compatible)
@@ -959,23 +975,24 @@ export function ModernVideoPlayer({
               <RotateCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
 
-            {/* Volume Control - Hidden on mobile, visible on desktop/tablets */}
-            <div className="hidden sm:flex items-center group/vol shrink-0">
+            {/* Volume Control - Visible on mobile & desktop */}
+            <div className="relative flex items-center group/vol shrink-0">
               <button
-                onClick={() => setIsMuted((prev) => !prev)}
-                className="h-9 w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+                onClick={handleVolumeButtonClick}
+                className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                 title={isMuted ? "Включить звук (M)" : "Выключить звук (M)"}
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="h-5 w-5 text-red-400" />
+                  <VolumeX className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
                 ) : volume < 0.5 ? (
-                  <Volume1 className="h-5 w-5" />
+                  <Volume1 className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                  <Volume2 className="h-5 w-5" />
+                  <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
                 )}
               </button>
 
-              <div className="w-0 group-hover/vol:w-20 transition-all duration-200 overflow-hidden flex items-center pr-2">
+              {/* Desktop Hover Horizontal Slider */}
+              <div className="hidden sm:flex w-0 group-hover/vol:w-20 transition-all duration-200 overflow-hidden items-center pr-2">
                 <input
                   type="range"
                   min="0"
@@ -990,6 +1007,54 @@ export function ModernVideoPlayer({
                   className="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer accent-amber-400"
                 />
               </div>
+
+              {/* Mobile Volume Slider Popover */}
+              {showVolumePopover && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute bottom-11 left-0 bg-slate-950/95 border border-white/20 rounded-2xl p-2.5 backdrop-blur-2xl shadow-2xl z-50 flex items-center gap-2.5 min-w-[170px] animate-in zoom-in-95 duration-150 sm:hidden"
+                >
+                  <button
+                    onClick={() => {
+                      setIsMuted((prev) => !prev);
+                      if (isMuted && volume === 0) setVolume(1);
+                      if (volumePopoverTimeoutRef.current) clearTimeout(volumePopoverTimeoutRef.current);
+                      volumePopoverTimeoutRef.current = setTimeout(() => setShowVolumePopover(false), 3500);
+                    }}
+                    className="h-8 w-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white shrink-0"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-4 w-4 text-red-400" />
+                    ) : volume < 0.5 ? (
+                      <Volume1 className="h-4 w-4 text-amber-400" />
+                    ) : (
+                      <Volume2 className="h-4 w-4 text-amber-400" />
+                    )}
+                  </button>
+
+                  <div className="flex-1 flex flex-col gap-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-white/80">
+                      <span>Громкость</span>
+                      <span className="text-amber-400 font-extrabold">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={isMuted ? 0 : volume}
+                      onChange={(e) => {
+                        const v = parseFloat(e.target.value);
+                        setVolume(v);
+                        if (v > 0 && isMuted) setIsMuted(false);
+                        if (volumePopoverTimeoutRef.current) clearTimeout(volumePopoverTimeoutRef.current);
+                        volumePopoverTimeoutRef.current = setTimeout(() => setShowVolumePopover(false), 3500);
+                      }}
+                      className="w-full h-2 bg-white/30 rounded-lg appearance-none cursor-pointer accent-amber-400"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Time Display */}
