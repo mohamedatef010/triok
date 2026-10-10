@@ -180,9 +180,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1102.0
         version: 3.1102.0
-      '@smithy/node-http-handler':
-        specifier: ^4.12.1
-        version: 4.12.1
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
@@ -705,9 +702,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.876.0
         version: 3.1102.0
-      '@smithy/node-http-handler':
-        specifier: ^4.12.1
-        version: 4.12.1
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

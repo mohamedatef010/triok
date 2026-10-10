@@ -8,7 +8,6 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-import { NodeHttpHandler } from "@smithy/node-http-handler";
 import http from "node:http";
 import https from "node:https";
 
@@ -18,22 +17,29 @@ if (!process.env.S3_ENDPOINT) {
   } catch {}
 }
 
-const storageRequestHandler = new NodeHttpHandler({
-  httpAgent: new http.Agent({
-    keepAlive: true,
-    maxSockets: 300,
-    maxFreeSockets: 50,
-    timeout: 30000,
-  }),
-  httpsAgent: new https.Agent({
-    keepAlive: true,
-    maxSockets: 300,
-    maxFreeSockets: 50,
-    timeout: 30000,
-  }),
-  connectionTimeout: 5000,
-  socketTimeout: 30000,
-});
+// Dynamically obtain the NodeHttpHandler constructor from the AWS SDK without direct external imports,
+// ensuring esbuild bundles without requiring extra dependencies.
+const defaultClientForHandler = new S3Client({});
+const HandlerClass = (defaultClientForHandler.config.requestHandler as any)?.constructor;
+
+const storageRequestHandler = HandlerClass
+  ? new HandlerClass({
+      httpAgent: new http.Agent({
+        keepAlive: true,
+        maxSockets: 300,
+        maxFreeSockets: 50,
+        timeout: 30000,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: true,
+        maxSockets: 300,
+        maxFreeSockets: 50,
+        timeout: 30000,
+      }),
+      connectionTimeout: 5000,
+      socketTimeout: 30000,
+    })
+  : undefined;
 
 // Internal client — used for server-side operations (uploadFile, getObjectAsString, ensureBucketExists)
 export const s3Client = new S3Client({

@@ -11,8 +11,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.876.0",
-    "@aws-sdk/s3-request-presigner": "^3.876.0",
-    "@smithy/node-http-handler": "^4.12.1"
+    "@aws-sdk/s3-request-presigner": "^3.876.0"
   },
   "devDependencies": {
     "@types/node": "catalog:"
