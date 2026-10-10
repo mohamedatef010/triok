@@ -6,6 +6,7 @@ import os from "os";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client, uploadFile, deleteObject } from "@workspace/storage";
 import { logger } from "./logger";
+import { safeDownloadStream } from "./streamUtils";
 
 if (process.env.FFMPEG_PATH) {
   ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH);
@@ -26,13 +27,7 @@ async function downloadFromS3(key: string, destPath: string): Promise<void> {
   const response = await s3Client.send(command);
   if (!response.Body) throw new Error("No body in S3 response");
 
-  return new Promise((resolve, reject) => {
-    const stream = response.Body as unknown as NodeJS.ReadableStream;
-    const writeStream = fsSync.createWriteStream(destPath);
-    stream.pipe(writeStream);
-    writeStream.on("finish", resolve);
-    writeStream.on("error", reject);
-  });
+  await safeDownloadStream(response.Body as unknown as NodeJS.ReadableStream, destPath);
 }
 
 export async function optimizeAuthorVideoFromS3(

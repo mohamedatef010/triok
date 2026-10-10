@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-zod";
 import { authLimiter } from "../middlewares/rateLimiter";
 import { optimizeAuthorVideoFromS3 } from "../lib/authorMediaProcessor";
+import { safePipeStream } from "../lib/streamUtils";
 
 const router: IRouter = Router();
 
@@ -192,10 +193,7 @@ router.get("/author-media/:filename", async (req, res): Promise<void> => {
     }
 
     const stream = response.Body as NodeJS.ReadableStream;
-    req.on("close", () => {
-      try { (stream as any).destroy?.(); } catch {}
-    });
-    stream.pipe(res);
+    safePipeStream(stream, req, res);
   } catch (error) {
     req.log.error(error);
     res.status(404).json({ error: "Not found" });
@@ -351,7 +349,11 @@ async function serveThumbnail(req: any, res: any): Promise<void> {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
 
     const stream = response.Body as NodeJS.ReadableStream;
-    stream.pipe(res);
+    safePipeStream(stream, req, res, () => {
+      if (!res.headersSent) {
+        res.status(404).json({ error: "Not found" });
+      }
+    });
   } catch {
     res.status(404).json({ error: "Not found" });
   }
@@ -396,7 +398,8 @@ router.get("/preview-videos/:filename", async (req, res): Promise<void> => {
         Key: key,
       }));
       if (!response.Body) { res.status(404).json({ error: "Not found" }); return; }
-      (response.Body as NodeJS.ReadableStream).pipe(res);
+      const stream = response.Body as NodeJS.ReadableStream;
+      safePipeStream(stream, req, res);
       return;
     }
 
@@ -434,23 +437,7 @@ router.get("/preview-videos/:filename", async (req, res): Promise<void> => {
     res.setHeader("Cache-Control", "public, max-age=86400");
 
     const stream = response.Body as NodeJS.ReadableStream;
-    let isCleanedUp = false;
-    const cleanup = () => {
-      if (isCleanedUp) return;
-      isCleanedUp = true;
-      try { (stream as any).destroy?.(); } catch {}
-    };
-
-    req.on("close", cleanup);
-    req.on("end", cleanup);
-    stream.on("error", (err: any) => {
-      cleanup();
-      if (!res.headersSent) {
-        res.status(500).send("Stream read error");
-      }
-    });
-
-    stream.pipe(res);
+    safePipeStream(stream, req, res);
   } catch (error: any) {
     if (error?.name === "InvalidRange" || error?.$metadata?.httpStatusCode === 416) {
       res.status(416).setHeader("Content-Range", `bytes */*`).send("Requested range not satisfiable");

@@ -8,11 +8,32 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
+import { NodeHttpHandler } from "@smithy/node-http-handler";
+import http from "node:http";
+import https from "node:https";
+
 if (!process.env.S3_ENDPOINT) {
   try {
     process.loadEnvFile?.();
   } catch {}
 }
+
+const storageRequestHandler = new NodeHttpHandler({
+  httpAgent: new http.Agent({
+    keepAlive: true,
+    maxSockets: 300,
+    maxFreeSockets: 50,
+    timeout: 30000,
+  }),
+  httpsAgent: new https.Agent({
+    keepAlive: true,
+    maxSockets: 300,
+    maxFreeSockets: 50,
+    timeout: 30000,
+  }),
+  connectionTimeout: 5000,
+  socketTimeout: 30000,
+});
 
 // Internal client — used for server-side operations (uploadFile, getObjectAsString, ensureBucketExists)
 export const s3Client = new S3Client({
@@ -23,6 +44,7 @@ export const s3Client = new S3Client({
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
   },
   forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+  requestHandler: storageRequestHandler,
 });
 
 // Public client — used ONLY for generating presigned URLs that browsers will call directly.

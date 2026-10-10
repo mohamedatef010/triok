@@ -20,6 +20,7 @@ import { processVideoAsync } from "../lib/videoProcessor";
 import jwt from "jsonwebtoken";
 import { videoViewLimiter } from "../middlewares/rateLimiter";
 import { checkUserPurchasedVideo } from "../lib/purchaseCheck";
+import { safePipeStream } from "../lib/streamUtils";
 
 const isProduction = process.env.NODE_ENV === "production";
 const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? "" : "dev-jwt-access-secret-change-in-prod");
@@ -439,10 +440,7 @@ router.get("/attachments/:filename", optionalAuth, async (req, res): Promise<voi
     }
 
     const stream = response.Body as NodeJS.ReadableStream;
-    req.on("close", () => {
-      try { (stream as any).destroy?.(); } catch {}
-    });
-    stream.pipe(res);
+    safePipeStream(stream, req, res);
   } catch (error) {
     req.log.error(error);
     res.status(404).json({ error: "Attachment not found" });
@@ -600,7 +598,8 @@ router.get("/videos/:id/stream", optionalAuth, async (req, res): Promise<void> =
         Key: sourceKey,
       }));
       if (!response.Body) { res.status(404).send("Not found"); return; }
-      (response.Body as NodeJS.ReadableStream).pipe(res);
+      const stream = response.Body as NodeJS.ReadableStream;
+      safePipeStream(stream, req, res);
       return;
     }
 
@@ -639,23 +638,7 @@ router.get("/videos/:id/stream", optionalAuth, async (req, res): Promise<void> =
     res.setHeader("Cache-Control", "private, max-age=86400, must-revalidate");
 
     const stream = response.Body as NodeJS.ReadableStream;
-    let isCleanedUp = false;
-    const cleanup = () => {
-      if (isCleanedUp) return;
-      isCleanedUp = true;
-      try { (stream as any).destroy?.(); } catch {}
-    };
-
-    req.on("close", cleanup);
-    req.on("end", cleanup);
-    stream.on("error", (err: any) => {
-      cleanup();
-      if (!res.headersSent) {
-        res.status(500).send("Stream read error");
-      }
-    });
-
-    stream.pipe(res);
+    safePipeStream(stream, req, res);
   } catch (error: any) {
     if (error?.name === "InvalidRange" || error?.$metadata?.httpStatusCode === 416) {
       res.status(416).setHeader("Content-Range", `bytes */*`).send("Requested range not satisfiable");
