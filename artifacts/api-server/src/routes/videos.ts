@@ -21,6 +21,7 @@ import jwt from "jsonwebtoken";
 import { videoViewLimiter } from "../middlewares/rateLimiter";
 import { checkUserPurchasedVideo } from "../lib/purchaseCheck";
 import { safePipeStream } from "../lib/streamUtils";
+import { verifyAccessToken } from "../lib/auth";
 
 const isProduction = process.env.NODE_ENV === "production";
 const JWT_SECRET = process.env.JWT_SECRET || (isProduction ? "" : "dev-jwt-access-secret-change-in-prod");
@@ -378,7 +379,19 @@ router.get("/attachments/:filename", optionalAuth, async (req, res): Promise<voi
 
   // Extract video ID from filename: format is "${videoId}-${timestamp}-${cleanName}${ext}"
   const videoIdMatch = filename.match(/^(\d+)-/);
-  const videoId = videoIdMatch ? Number(videoIdMatch[1]) : null;
+  let videoId = videoIdMatch ? Number(videoIdMatch[1]) : null;
+
+  if (!videoId) {
+    // Fallback: look up in database if any video has this attachment in its attachments column
+    const videos = await db.select({ id: videosTable.id, attachments: videosTable.attachments }).from(videosTable);
+    for (const v of videos) {
+      const atts = Array.isArray(v.attachments) ? (v.attachments as any[]) : [];
+      if (atts.some((a) => a?.url?.includes(filename))) {
+        videoId = v.id;
+        break;
+      }
+    }
+  }
 
   if (!videoId) {
     res.status(400).json({ error: "Invalid attachment filename" });
@@ -393,11 +406,11 @@ router.get("/attachments/:filename", optionalAuth, async (req, res): Promise<voi
     const rawToken = (req.query.token as string) || (req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : null);
     if (rawToken) {
       try {
-        const decoded: any = jwt.verify(rawToken, JWT_SECRET, { algorithms: ["HS256"] });
-        if (decoded.role === "admin") {
+        const decoded: any = verifyAccessToken(rawToken) || jwt.verify(rawToken, JWT_SECRET, { algorithms: ["HS256"] });
+        if (decoded?.role === "admin") {
           isAdmin = true;
         }
-        if (decoded.userId) {
+        if (decoded?.userId) {
           userId = decoded.userId;
         }
       } catch {}
@@ -429,6 +442,12 @@ router.get("/attachments/:filename", optionalAuth, async (req, res): Promise<voi
     if (response.ContentType) {
       res.setHeader("Content-Type", response.ContentType);
     }
+    const isDownload = req.query.download === "1" || req.query.download === "true";
+    const cleanFilename = filename.replace(/^\d+-\d+-/, "") || filename;
+    res.setHeader(
+      "Content-Disposition",
+      `${isDownload ? "attachment" : "inline"}; filename="${cleanFilename}"; filename*=UTF-8''${encodeURIComponent(cleanFilename)}`
+    );
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Cache-Control", "private, max-age=3600");
     if (response.ContentLength != null) {

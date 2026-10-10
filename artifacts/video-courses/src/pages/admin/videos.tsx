@@ -2485,7 +2485,13 @@ export function AdminVideos() {
                                 <span>{(att.size / 1024).toFixed(0)} KB</span>
                               )}
                               <a
-                                href={att.url}
+                                href={(() => {
+                                  const rawUrl = att.url || "";
+                                  if (!rawUrl || rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) return rawUrl;
+                                  const token = localStorage.getItem("admin_token") || localStorage.getItem("auth_token") || "";
+                                  const sep = rawUrl.includes("?") ? "&" : "?";
+                                  return token ? `${rawUrl}${sep}token=${encodeURIComponent(token)}` : rawUrl;
+                                })()}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-sky-500 hover:underline flex items-center gap-0.5"

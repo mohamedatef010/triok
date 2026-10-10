@@ -252,6 +252,37 @@ export function VideoDetailPage() {
     }
   };
 
+  const getAttachmentDownloadUrl = (att: any) => {
+    const rawUrl = att?.url || att?.fileUrl || "";
+    if (!rawUrl) return "#";
+    if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+      return rawUrl;
+    }
+    const token = localStorage.getItem("auth_token") || localStorage.getItem("admin_token") || "";
+    const sep = rawUrl.includes("?") ? "&" : "?";
+    return token ? `${rawUrl}${sep}token=${encodeURIComponent(token)}&download=1` : `${rawUrl}${sep}download=1`;
+  };
+
+  const handleDownloadAttachment = (e: React.MouseEvent<HTMLAnchorElement>, att: any) => {
+    const rawUrl = att?.url || att?.fileUrl || "";
+    if (!rawUrl || rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+      return;
+    }
+    e.preventDefault();
+    const token = localStorage.getItem("auth_token") || localStorage.getItem("admin_token") || "";
+    const sep = rawUrl.includes("?") ? "&" : "?";
+    const downloadUrl = token ? `${rawUrl}${sep}token=${encodeURIComponent(token)}&download=1` : `${rawUrl}${sep}download=1`;
+    const cleanName = att?.name || att?.title || "material";
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.setAttribute("download", cleanName);
+    link.setAttribute("target", "_blank");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleBuyNow = async () => {
     if (!isAuthenticated) {
       if (video) {
@@ -659,22 +690,23 @@ export function VideoDetailPage() {
                       <FileText className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-xs sm:text-sm font-extrabold text-foreground truncate">
-                        {att.title || "Материал для трюка"}
+                      <h4 className="text-xs sm:text-sm font-extrabold text-foreground truncate" title={att.name || att.title}>
+                        {att.name || att.title || "Материал для трюка"}
                       </h4>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {att.fileSize ? `${Math.round(att.fileSize / 1024)} КБ` : "Готово к скачиванию"}
+                        {(att.size || att.fileSize) ? `${Math.round((att.size || att.fileSize) / 1024)} КБ` : "Готово к скачиванию"}
                       </p>
                     </div>
                   </div>
 
                   {(isPurchasedByUser || video.isPurchased) ? (
                     <a 
-                      href={att.fileUrl} 
-                      download 
+                      href={getAttachmentDownloadUrl(att)} 
+                      onClick={(e) => handleDownloadAttachment(e, att)}
+                      download={att.name || att.title || "material"} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-600 hover:text-white dark:text-sky-400 dark:hover:text-slate-950 font-bold text-xs transition-all shrink-0 border border-sky-500/30"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-600 hover:text-white dark:text-sky-400 dark:hover:text-slate-950 font-bold text-xs transition-all shrink-0 border border-sky-500/30 cursor-pointer"
                     >
                       <Download className="h-3.5 w-3.5" />
                       <span>Скачать</span>
