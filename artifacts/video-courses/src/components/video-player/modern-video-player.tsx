@@ -486,21 +486,54 @@ export function ModernVideoPlayer({
     setSettingsSubmenu("root");
   };
 
-  // Fullscreen toggle
+  // Fullscreen toggle (Mobile & Desktop compatible)
   const toggleFullscreen = useCallback(async () => {
     const container = containerRef.current;
+    const video = videoRef.current;
     if (!container) return;
 
-    if (!document.fullscreenElement) {
+    const doc = document as any;
+    const isCurrentlyFullscreen = !!(
+      doc.fullscreenElement ||
+      doc.webkitFullscreenElement ||
+      doc.mozFullScreenElement ||
+      doc.msFullscreenElement ||
+      (video as any)?.webkitDisplayingFullscreen
+    );
+
+    if (!isCurrentlyFullscreen) {
       try {
-        await container.requestFullscreen();
-        setIsFullscreen(true);
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+          setIsFullscreen(true);
+        } else if ((container as any).webkitRequestFullscreen) {
+          await (container as any).webkitRequestFullscreen();
+          setIsFullscreen(true);
+        } else if ((video as any)?.webkitEnterFullscreen) {
+          (video as any).webkitEnterFullscreen();
+          setIsFullscreen(true);
+        }
       } catch (err) {
-        console.error("Fullscreen error:", err);
+        if ((video as any)?.webkitEnterFullscreen) {
+          try {
+            (video as any).webkitEnterFullscreen();
+            setIsFullscreen(true);
+          } catch (e) {
+            console.error("iOS fullscreen fallback error:", e);
+          }
+        } else {
+          console.error("Fullscreen error:", err);
+        }
       }
     } else {
       try {
-        await document.exitFullscreen();
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        } else if ((video as any)?.webkitExitFullscreen) {
+          (video as any).webkitExitFullscreen();
+        }
         setIsFullscreen(false);
       } catch (err) {
         console.error("Exit fullscreen error:", err);
@@ -511,10 +544,39 @@ export function ModernVideoPlayer({
   // Track fullscreen changes from ESC or native events
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const doc = document as any;
+      const video = videoRef.current as any;
+      const isFs = !!(
+        doc.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement ||
+        video?.webkitDisplayingFullscreen
+      );
+      setIsFullscreen(isFs);
     };
+
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+    document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+    const videoEl = videoRef.current;
+    if (videoEl) {
+      videoEl.addEventListener("webkitbeginfullscreen", handleFullscreenChange);
+      videoEl.addEventListener("webkitendfullscreen", handleFullscreenChange);
+    }
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("MSFullscreenChange", handleFullscreenChange);
+      if (videoEl) {
+        videoEl.removeEventListener("webkitbeginfullscreen", handleFullscreenChange);
+        videoEl.removeEventListener("webkitendfullscreen", handleFullscreenChange);
+      }
+    };
   }, []);
 
   // Picture in Picture toggle
@@ -824,7 +886,7 @@ export function ModernVideoPlayer({
 
       {/* ── Bottom Controls Bar Overlay ── */}
       <div
-        className={`absolute bottom-0 left-0 right-0 p-3 sm:p-4 bg-gradient-to-t from-black/95 via-black/70 to-transparent transition-all duration-300 z-30 ${
+        className={`absolute bottom-0 left-0 right-0 px-2 py-2 sm:p-4 bg-gradient-to-t from-black/95 via-black/70 to-transparent transition-all duration-300 z-30 ${
           showControls ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2 pointer-events-none"
         }`}
       >
@@ -867,38 +929,38 @@ export function ModernVideoPlayer({
         </div>
 
         {/* ── Controls Row ── */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1 sm:gap-2">
           {/* Left Controls */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-0.5 sm:gap-2 min-w-0">
             {/* Play / Pause */}
             <button
               onClick={togglePlay}
-              className="h-9 w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title={isPlaying ? "Пауза (Space)" : "Воспроизведение (Space)"}
             >
-              {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current ml-0.5" />}
+              {isPlaying ? <Pause className="h-4 w-4 sm:h-5 sm:w-5 fill-current" /> : <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current ml-0.5" />}
             </button>
 
             {/* Rewind 10s */}
             <button
               onClick={() => skipRelative(-10)}
-              className="h-9 w-9 rounded-xl text-white/80 hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white/80 hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Назад на 10 сек (←)"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
 
             {/* Forward 10s */}
             <button
               onClick={() => skipRelative(10)}
-              className="h-9 w-9 rounded-xl text-white/80 hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white/80 hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title="Вперед на 10 сек (→)"
             >
-              <RotateCw className="h-4 w-4" />
+              <RotateCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
 
-            {/* Volume Control */}
-            <div className="flex items-center group/vol">
+            {/* Volume Control - Hidden on mobile, visible on desktop/tablets */}
+            <div className="hidden sm:flex items-center group/vol shrink-0">
               <button
                 onClick={() => setIsMuted((prev) => !prev)}
                 className="h-9 w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
@@ -931,28 +993,28 @@ export function ModernVideoPlayer({
             </div>
 
             {/* Time Display */}
-            <div className="text-white/90 text-xs sm:text-sm font-semibold tabular-nums ml-1 flex items-center gap-1">
+            <div className="text-white/90 text-[11px] sm:text-sm font-semibold tabular-nums ml-0.5 sm:ml-1 flex items-center gap-1 shrink-0 whitespace-nowrap">
               <span>{formatTime(currentTime)}</span>
               <span className="text-white/40">/</span>
               <span className="text-white/60">{formatTime(duration)}</span>
             </div>
           </div>
 
-          {/* Right Controls */}
-          <div className="flex items-center gap-1 relative">
+          {/* Right Controls - Guaranteed to fit and never pushed offscreen */}
+          <div className="flex items-center gap-0.5 sm:gap-1 relative shrink-0">
             {/* Settings Menu Toggle (Quality & Speed) */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => {
                   setOpenSettingsMenu((prev) => !prev);
                   setSettingsSubmenu("root");
                 }}
-                className={`h-9 w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer ${
+                className={`h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
                   openSettingsMenu ? "text-amber-400 bg-white/10" : ""
                 }`}
                 title="Настройки"
               >
-                <Settings className="h-4 w-4" />
+                <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </button>
 
               {/* Settings Dropdown Popover */}
@@ -1054,21 +1116,21 @@ export function ModernVideoPlayer({
               )}
             </div>
 
-            {/* Picture in Picture */}
+            {/* Picture in Picture - Hidden on mobile screens */}
             {"pictureInPictureEnabled" in document && (
               <button
                 onClick={togglePiP}
-                className="h-9 w-9 rounded-xl text-white/80 hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+                className="hidden sm:flex h-9 w-9 rounded-xl text-white/80 hover:text-amber-400 hover:bg-white/10 items-center justify-center transition-colors cursor-pointer shrink-0"
                 title="Картинка в картинке"
               >
                 <PictureInPicture className="h-4 w-4" />
               </button>
             )}
 
-            {/* Fullscreen */}
+            {/* Fullscreen Button - Always visible on mobile and desktop */}
             <button
               onClick={toggleFullscreen}
-              className="h-9 w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl text-white hover:text-amber-400 hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer shrink-0"
               title={isFullscreen ? "Выйти из полноэкранного режима (F)" : "На весь экран (F)"}
             >
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
